@@ -1,0 +1,21 @@
+# 로컬 개발용 프로파일: Docker(MySQL/Redis) 없이 H2 인메모리로 백엔드 기동.
+# 사용법: gradlew bootRun --args='--spring.profiles.active=dev'
+# 가상화(SVM) 활성화 후 Docker 준비되면 이 프로파일 없이 기본 설정(MySQL)으로 실행하면 됨.
+spring:
+  datasource:
+    url: jdbc:h2:mem:storyai;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console

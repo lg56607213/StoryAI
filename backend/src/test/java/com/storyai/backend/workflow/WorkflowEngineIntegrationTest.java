@@ -2,9 +2,13 @@ package com.storyai.backend.workflow;
 
 import com.storyai.backend.domain.characterprofile.CharacterProfileRepository;
 import com.storyai.backend.domain.scene.SceneRepository;
+import com.storyai.backend.domain.storycharacter.CharacterRole;
 import com.storyai.backend.domain.videojob.JobStatus;
+import com.storyai.backend.domain.videojob.OutputType;
+import com.storyai.backend.domain.videojob.StoryTheme;
 import com.storyai.backend.domain.videojob.VideoJob;
 import com.storyai.backend.domain.videojob.VideoJobRepository;
+import com.storyai.backend.domain.videojob.VideoStyle;
 import com.storyai.backend.domain.videojob.WorkflowStep;
 import com.storyai.backend.job.VideoJobService;
 import com.storyai.backend.job.dto.CreateVideoJobRequest;
@@ -38,12 +42,20 @@ class WorkflowEngineIntegrationTest {
     @Test
     void runsAllStepsToCompletion() {
         var request = new CreateVideoJobRequest(
-                "우주 모험",
-                "5살 지우",
+                OutputType.VIDEO,
+                StoryTheme.SPACE,
                 "신나는",
-                60,
                 "유아",
-                List.of("https://example.com/photo1.jpg", "https://example.com/photo2.jpg")
+                null,
+                null,
+                false,
+                VideoStyle.ANIM_2D,
+                120,
+                List.of(new CreateVideoJobRequest.CharacterInput(
+                        "지우",
+                        CharacterRole.MAIN,
+                        List.of("https://example.com/photo1.jpg", "https://example.com/photo2.jpg")
+                ))
         );
 
         VideoJob created = videoJobService.createJob(request);

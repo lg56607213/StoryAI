@@ -30,14 +30,17 @@ public class WorkflowStepExecutor {
     private final VideoJobRepository videoJobRepository;
     private final Map<WorkflowStep, WorkflowStepHandler> handlersByStep;
     private final ApplicationEventPublisher eventPublisher;
+    private final WorkflowPlan workflowPlan;
 
     public WorkflowStepExecutor(VideoJobRepository videoJobRepository,
                                  List<WorkflowStepHandler> stepHandlers,
-                                 ApplicationEventPublisher eventPublisher) {
+                                 ApplicationEventPublisher eventPublisher,
+                                 WorkflowPlan workflowPlan) {
         this.videoJobRepository = videoJobRepository;
         this.handlersByStep = stepHandlers.stream()
                 .collect(Collectors.toMap(WorkflowStepHandler::getStep, Function.identity()));
         this.eventPublisher = eventPublisher;
+        this.workflowPlan = workflowPlan;
     }
 
     @Transactional
@@ -66,7 +69,7 @@ public class WorkflowStepExecutor {
             return;
         }
 
-        Optional<WorkflowStep> nextStep = step.next();
+        Optional<WorkflowStep> nextStep = workflowPlan.next(job.getOutputType(), step);
         if (nextStep.isPresent()) {
             job.moveToStep(nextStep.get());
             videoJobRepository.save(job);

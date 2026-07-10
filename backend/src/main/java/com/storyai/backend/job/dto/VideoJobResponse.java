@@ -1,31 +1,68 @@
 package com.storyai.backend.job.dto;
 
+import com.storyai.backend.domain.storycharacter.StoryCharacter;
+import com.storyai.backend.domain.videojob.BookStyle;
 import com.storyai.backend.domain.videojob.JobStatus;
+import com.storyai.backend.domain.videojob.OutputType;
+import com.storyai.backend.domain.videojob.StoryTheme;
 import com.storyai.backend.domain.videojob.VideoJob;
+import com.storyai.backend.domain.videojob.VideoStyle;
 import com.storyai.backend.domain.videojob.WorkflowStep;
+import com.storyai.backend.pricing.Pricing;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record VideoJobResponse(
         Long id,
+        OutputType outputType,
+        StoryTheme theme,
+        BookStyle bookStyle,
+        Integer bookPages,
+        boolean physicalBookRequested,
+        VideoStyle videoStyle,
+        Integer videoDurationSec,
+        List<CharacterSummary> characters,
         JobStatus status,
         WorkflowStep currentStep,
         String generatedTitle,
+        Integer priceKrw,
+        String resultUrl,
         String resultVideoUrl,
         String errorMessage,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
+    public record CharacterSummary(String name, String role) {
+    }
+
     public static VideoJobResponse from(VideoJob job) {
+        List<CharacterSummary> characters = job.getStoryCharacters().stream()
+                .map(VideoJobResponse::toSummary)
+                .toList();
         return new VideoJobResponse(
                 job.getId(),
+                job.getOutputType(),
+                job.getStoryTheme(),
+                job.getBookStyle(),
+                job.getBookPages(),
+                job.isPhysicalBookRequested(),
+                job.getVideoStyle(),
+                job.getVideoDurationSec(),
+                characters,
                 job.getStatus(),
                 job.getCurrentStep(),
                 job.getGeneratedTitle(),
+                Pricing.priceKrw(job),
+                job.getResultUrl(),
                 job.getResultVideoUrl(),
                 job.getErrorMessage(),
                 job.getCreatedAt(),
                 job.getUpdatedAt()
         );
+    }
+
+    private static CharacterSummary toSummary(StoryCharacter c) {
+        return new CharacterSummary(c.getName(), c.getRole().name());
     }
 }

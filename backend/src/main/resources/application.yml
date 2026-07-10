@@ -34,6 +34,13 @@ storyai:
     anthropic-api-key: ${ANTHROPIC_API_KEY:}
     elevenlabs-api-key: ${ELEVENLABS_API_KEY:}
     video-gen-api-key: ${VIDEO_GEN_API_KEY:}
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      text-model: ${GEMINI_TEXT_MODEL:gemini-flash-latest}
+      image-model: ${GEMINI_IMAGE_MODEL:gemini-3.1-flash-image}
   storage:
     s3-bucket: ${S3_BUCKET:}
     aws-region: ${AWS_REGION:ap-northeast-2}
+    local-dir: ${STORAGE_DIR:./storage}
+  pdf:
+    korean-font-path: ${PDF_FONT_PATH:C:/Windows/Fonts/malgun.ttf}

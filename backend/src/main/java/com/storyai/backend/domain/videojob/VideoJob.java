@@ -3,6 +3,7 @@ package com.storyai.backend.domain.videojob;
 import com.storyai.backend.domain.characterprofile.CharacterProfile;
 import com.storyai.backend.domain.media.MediaAsset;
 import com.storyai.backend.domain.scene.Scene;
+import com.storyai.backend.domain.storycharacter.StoryCharacter;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -42,22 +43,50 @@ public class VideoJob {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** 주제 */
+    /** 산출물 종류: 책 or 영상 */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private OutputType outputType = OutputType.VIDEO;
+
+    /** 스토리 주제(공주/왕자/용사 등) */
+    @Enumerated(EnumType.STRING)
+    private StoryTheme storyTheme;
+
+    /** 주제 라벨 (프롬프트/표시용, storyTheme.label과 동일) */
     @Column(nullable = false)
     private String theme;
 
-    /** 등장인물 설명 (예: "5살 딸 지우") */
+    /** 등장인물 요약 (예: "지우, 서준") — 캐릭터 목록에서 파생 */
     @Column(nullable = false)
     private String protagonistDescription;
 
     /** 분위기 */
     private String mood;
 
-    /** 목표 영상 길이(초) */
+    /** 목표 영상 길이(초) — VIDEO일 때 videoDurationSec와 동일하게 세팅 */
     private Integer targetLengthSeconds;
 
     /** 대상 연령 */
     private String targetAgeGroup;
+
+    // --- 책(BOOK) 선택 옵션 ---
+    @Enumerated(EnumType.STRING)
+    private BookStyle bookStyle;
+
+    /** 책 페이지 수 (24 또는 36) */
+    private Integer bookPages;
+
+    /** 실물 책 배송 요청 여부 (요청 정보만 수집, 운영자가 수기 발주) */
+    @Builder.Default
+    private boolean physicalBookRequested = false;
+
+    // --- 영상(VIDEO) 선택 옵션 ---
+    @Enumerated(EnumType.STRING)
+    private VideoStyle videoStyle;
+
+    /** 영상 길이(초) (120 또는 300) */
+    private Integer videoDurationSec;
 
     @Setter
     private String generatedTitle;
@@ -69,6 +98,11 @@ public class VideoJob {
     @Setter
     @Column(length = 1000)
     private String resultVideoUrl;
+
+    /** 최종 산출물 다운로드 URL (책=PDF 다운로드 엔드포인트, 영상=mp4). */
+    @Setter
+    @Column(length = 1000)
+    private String resultUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -86,6 +120,10 @@ public class VideoJob {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "videoJob", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<StoryCharacter> storyCharacters = new ArrayList<>();
 
     @OneToOne(mappedBy = "videoJob", cascade = CascadeType.ALL, orphanRemoval = true)
     private CharacterProfile characterProfile;

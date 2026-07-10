@@ -3,8 +3,10 @@ package com.storyai.backend.domain.videojob;
 import java.util.Optional;
 
 /**
- * Pipeline order is defined by enum declaration order:
- * 입력 -> 스토리생성 -> 장면분리 -> 캐릭터분석 -> 이미지생성 -> 영상생성 -> 음성생성 -> 자막생성 -> 영상합성
+ * 파이프라인 단계 집합. 실제 진행 순서는 outputType(책/영상)에 따라 WorkflowPlan이 정의한다.
+ * - 공통: STORY_GENERATION, CHARACTER_ANALYSIS
+ * - 영상: SCENE_SPLIT -> IMAGE_GENERATION -> VIDEO_GENERATION -> VOICE_GENERATION -> SUBTITLE_GENERATION -> VIDEO_COMPOSITION
+ * - 책:   PAGE_PLANNING -> PAGE_ILLUSTRATION -> PDF_GENERATION
  */
 public enum WorkflowStep {
     STORY_GENERATION,
@@ -14,10 +16,15 @@ public enum WorkflowStep {
     VIDEO_GENERATION,
     VOICE_GENERATION,
     SUBTITLE_GENERATION,
-    VIDEO_COMPOSITION;
+    VIDEO_COMPOSITION,
+
+    // 책(BOOK) 전용 단계
+    PAGE_PLANNING,
+    PAGE_ILLUSTRATION,
+    PDF_GENERATION;
 
     public static WorkflowStep first() {
-        return values()[0];
+        return STORY_GENERATION;
     }
 
     public Optional<WorkflowStep> next() {

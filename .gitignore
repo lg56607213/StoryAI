@@ -26,3 +26,11 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local test photos / uploads / generated images & PDF — NEVER commit real children's photos or API keys
+/*.jpg
+/*.jpeg
+/*.png
+/*.pdf
+backend/storage/
+docs/poc*/

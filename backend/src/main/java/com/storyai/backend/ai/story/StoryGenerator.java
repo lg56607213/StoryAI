@@ -1,0 +1,22 @@
+package com.storyai.backend.ai.story;
+
+import com.storyai.backend.domain.videojob.StoryTheme;
+
+import java.util.List;
+
+/**
+ * 스토리(글) 생성기. 벤더 교체가 쉽도록 인터페이스로 추상화한다.
+ * 현재 구현: Gemini. (나중에 Claude 등으로 교체 가능)
+ */
+public interface StoryGenerator {
+
+    /** API 키 등 설정이 되어 실제 생성이 가능한지. false면 호출부는 더미로 폴백한다. */
+    boolean isAvailable();
+
+    /** 제목 + 줄거리 개요 생성. */
+    StoryOutline outline(StoryTheme theme, String characters, String ageGroup);
+
+    /** 개요를 정확히 pageCount개의 페이지(문구 + 삽화 장면)로 확장. */
+    List<BookPageDraft> pages(StoryTheme theme, String characters, String ageGroup,
+                             StoryOutline outline, int pageCount);
+}
