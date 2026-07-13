@@ -58,7 +58,9 @@ public class GeminiImageGenerator implements ImageGenerator {
         String prompt = styleLine(style) + " Create ONE wide children's storybook illustration for this scene: "
                 + scene + ". " + refInfo
                 + "Only include a character if the scene calls for them. Full scene with background, warm and tender mood. "
+                + "Fill the entire wide frame edge-to-edge with the scene (full background, no empty margins). "
                 + "IMPORTANT: no text, no words, no letters, no watermark in the image.";
-        return gemini.generateImage(prompt, characterSheets);
+        // 가로형 책에 맞춰 landscape(3:2)로 생성 → 페이지를 여백 없이 꽉 채움.
+        return gemini.generateImage(prompt, characterSheets, "3:2");
     }
 }

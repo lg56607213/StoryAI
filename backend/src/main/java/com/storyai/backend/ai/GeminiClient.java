@@ -79,6 +79,14 @@ public class GeminiClient {
 
     /** 텍스트(+선택 참조 이미지)로 이미지를 생성해 PNG 바이트를 반환. */
     public byte[] generateImage(String prompt, List<byte[]> referenceImages) {
+        return generateImage(prompt, referenceImages, null);
+    }
+
+    /**
+     * 이미지 생성. aspectRatio 지정 시 가로/세로 비율을 강제한다(예: "3:2" 가로, "2:3" 세로).
+     * null이면 모델 기본값.
+     */
+    public byte[] generateImage(String prompt, List<byte[]> referenceImages, String aspectRatio) {
         ObjectNode body = mapper.createObjectNode();
         ArrayNode parts = body.putArray("contents").addObject().putArray("parts");
         if (referenceImages != null) {
@@ -89,6 +97,9 @@ public class GeminiClient {
             }
         }
         parts.addObject().put("text", prompt);
+        if (aspectRatio != null && !aspectRatio.isBlank()) {
+            body.putObject("generationConfig").putObject("imageConfig").put("aspectRatio", aspectRatio);
+        }
 
         JsonNode resp = post(imageModel, body);
         for (JsonNode p : resp.path("candidates").path(0).path("content").path("parts")) {

@@ -99,8 +99,8 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         BufferedImage bmp = canvas();
         Graphics2D g = graphics(bmp);
         scatter(g, 60, 60, W - 120, H - 120, 22, 7);
-        drawImageFit(g, image(imgBytes), M, M, 820, H - 2 * M);
-        int tx = 820 + M + 80, tw = W - tx - M;
+        drawImageCover(g, image(imgBytes), M, M, 900, H - 2 * M);
+        int tx = 900 + M + 60, tw = W - tx - M;
         drawParagraph(g, title, jua.deriveFont(78f), ACCENT, tx, H / 2 - 220, tw, 360);
         drawParagraph(g, BYLINE, gaegu.deriveFont(40f), SUBTLE, tx, H / 2 + 170, tw, 90);
         g.dispose();
@@ -126,21 +126,23 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         String text = page.getText() != null ? page.getText() : "";
         Font body = gaegu.deriveFont(56f);
         Font pn = jua.deriveFont(32f);
-        int panelW = (W - 2 * M - GAP) / 2;
+        // 그림을 크게: 좌우 배치는 그림이 폭의 58%, 상하 배치는 그림이 위쪽을 넓게 차지.
+        int content = W - 2 * M - GAP;
+        int imgW = (int) (content * 0.58);
+        int txtW = content - imgW;
 
         switch (lay) {
             case "L" -> {
-                drawImageFit(g, img, M, M, panelW, H - 2 * M);
-                textPanel(g, M + panelW + GAP, M, panelW, H - 2 * M, text, page.getPageNumber(), body, pn, i + 3);
+                drawImageCover(g, img, M, M, imgW, H - 2 * M);
+                textPanel(g, M + imgW + GAP, M, txtW, H - 2 * M, text, page.getPageNumber(), body, pn, i + 3);
             }
             case "R" -> {
-                drawImageFit(g, img, M + panelW + GAP, M, panelW, H - 2 * M);
-                textPanel(g, M, M, panelW, H - 2 * M, text, page.getPageNumber(), body, pn, i + 3);
+                drawImageCover(g, img, M + txtW + GAP, M, imgW, H - 2 * M);
+                textPanel(g, M, M, txtW, H - 2 * M, text, page.getPageNumber(), body, pn, i + 3);
             }
             case "T" -> {
-                int imgH = 800;
-                scatter(g, M, M, W - 2 * M, imgH, 10, i + 20);
-                drawImageFit(g, img, M, M, W - 2 * M, imgH);
+                int imgH = 940;
+                drawImageCover(g, img, M, M, W - 2 * M, imgH);
                 textPanel(g, M, M + imgH + 30, W - 2 * M, H - 2 * M - imgH - 30, text, page.getPageNumber(), body, pn, i + 3);
             }
             case "FL" -> {
@@ -256,6 +258,20 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         double s = Math.min((double) bw / img.getWidth(), (double) bh / img.getHeight());
         int w = (int) (img.getWidth() * s), h = (int) (img.getHeight() * s);
         g.drawImage(img, x + (bw - w) / 2, y + (bh - h) / 2, w, h, null);
+    }
+
+    /** 박스를 꽉 채우도록(cover) 확대 후, 넘치는 부분만 잘라낸다. 여백 없이 그림이 가득 찬다. */
+    private void drawImageCover(Graphics2D g, BufferedImage img, int x, int y, int bw, int bh) {
+        if (img == null) {
+            placeholder(g, x, y, bw, bh);
+            return;
+        }
+        double s = Math.max((double) bw / img.getWidth(), (double) bh / img.getHeight());
+        int w = (int) (img.getWidth() * s), h = (int) (img.getHeight() * s);
+        java.awt.Shape oldClip = g.getClip();
+        g.setClip(new RoundRectangle2D.Float(x, y, bw, bh, 60, 60));
+        g.drawImage(img, x + (bw - w) / 2, y + (bh - h) / 2, w, h, null);
+        g.setClip(oldClip);
     }
 
     private int drawImageCoverHeight(Graphics2D g, BufferedImage img, int x, int y, int bh) {
