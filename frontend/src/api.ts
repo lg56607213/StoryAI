@@ -15,6 +15,7 @@ export interface Pricing {
 export interface Options {
   outputTypes: Option[]
   themes: Option[]
+  ageGroups: Option[]
   bookStyles: Option[]
   bookPageOptions: number[]
   videoStyles: Option[]
@@ -32,8 +33,10 @@ export interface CharacterInput {
 export interface CreateRequest {
   outputType: string
   theme: string
+  ageGroup: string
+  dedication?: string
+  storyDirection?: string
   mood?: string
-  targetAgeGroup?: string
   bookStyle?: string | null
   bookPages?: number | null
   physicalBookRequested: boolean

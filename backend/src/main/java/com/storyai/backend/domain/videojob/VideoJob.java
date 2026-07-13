@@ -67,8 +67,17 @@ public class VideoJob {
     /** 목표 영상 길이(초) — VIDEO일 때 videoDurationSec와 동일하게 세팅 */
     private Integer targetLengthSeconds;
 
-    /** 대상 연령 */
-    private String targetAgeGroup;
+    /** 대상 연령대 (텍스트 분량·의성어 조절) */
+    @Enumerated(EnumType.STRING)
+    private AgeGroup ageGroup;
+
+    /** 헌정 메세지 (선택) — 있으면 헌정 페이지로 삽입 */
+    @Column(columnDefinition = "TEXT")
+    private String dedication;
+
+    /** 스토리 방향 (선택) — 고객이 이야기 틀을 잡아주는 자유 입력 */
+    @Column(columnDefinition = "TEXT")
+    private String storyDirection;
 
     // --- 책(BOOK) 선택 옵션 ---
     @Enumerated(EnumType.STRING)

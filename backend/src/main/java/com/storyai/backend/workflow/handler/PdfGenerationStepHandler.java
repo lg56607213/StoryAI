@@ -77,6 +77,9 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         try (PDDocument doc = new PDDocument()) {
             String title = job.getGeneratedTitle() != null ? job.getGeneratedTitle() : "이야기책";
             addPage(doc, composeCover(title, coverImage(job), jua, gaegu));
+            if (job.getDedication() != null && !job.getDedication().isBlank()) {
+                addPage(doc, composeDedication(job.getDedication(), gaegu, jua));
+            }
             for (int i = 0; i < pages.size(); i++) {
                 addPage(doc, composePage(i, pages.size(), pages.get(i), gaegu, jua));
             }
@@ -100,6 +103,17 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         int tx = 820 + M + 80, tw = W - tx - M;
         drawParagraph(g, title, jua.deriveFont(78f), ACCENT, tx, H / 2 - 220, tw, 360);
         drawParagraph(g, BYLINE, gaegu.deriveFont(40f), SUBTLE, tx, H / 2 + 170, tw, 90);
+        g.dispose();
+        return bmp;
+    }
+
+    private BufferedImage composeDedication(String dedication, Font gaegu, Font jua) {
+        BufferedImage bmp = canvas();
+        Graphics2D g = graphics(bmp);
+        scatter(g, 80, 80, W - 160, H - 160, 16, 11);
+        // 상단 하트(♥) — Jua 폰트에 글리프 있으면 표시
+        drawParagraph(g, "♡", jua.deriveFont(90f), ACCENT, W / 2 - 150, H / 2 - 320, 300, 130);
+        drawParagraph(g, dedication, gaegu.deriveFont(58f), INK, W / 2 - 760, H / 2 - 150, 1520, 420);
         g.dispose();
         return bmp;
     }

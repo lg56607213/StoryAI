@@ -3,6 +3,7 @@ package com.storyai.backend.workflow;
 import com.storyai.backend.domain.characterprofile.CharacterProfileRepository;
 import com.storyai.backend.domain.scene.SceneRepository;
 import com.storyai.backend.domain.storycharacter.CharacterRole;
+import com.storyai.backend.domain.videojob.AgeGroup;
 import com.storyai.backend.domain.videojob.JobStatus;
 import com.storyai.backend.domain.videojob.OutputType;
 import com.storyai.backend.domain.videojob.StoryTheme;
@@ -44,8 +45,10 @@ class WorkflowEngineIntegrationTest {
         var request = new CreateVideoJobRequest(
                 OutputType.VIDEO,
                 StoryTheme.SPACE,
+                AgeGroup.AGE_5_6,
                 "신나는",
-                "유아",
+                null,
+                null,
                 null,
                 null,
                 false,

@@ -40,6 +40,9 @@ function App() {
 
   const [outputType, setOutputType] = useState('BOOK')
   const [theme, setTheme] = useState('')
+  const [ageGroup, setAgeGroup] = useState('')
+  const [dedication, setDedication] = useState('')
+  const [storyDirection, setStoryDirection] = useState('')
   const [bookStyle, setBookStyle] = useState('')
   const [bookPages, setBookPages] = useState<number | null>(null)
   const [physical, setPhysical] = useState(false)
@@ -59,6 +62,7 @@ function App() {
       .then((o) => {
         setOptions(o)
         setTheme(o.themes[0]?.code ?? '')
+        setAgeGroup(o.ageGroups[0]?.code ?? '')
         setBookStyle(o.bookStyles[0]?.code ?? '')
         setBookPages(o.bookPageOptions[0] ?? null)
         setVideoStyle(o.videoStyles[0]?.code ?? '')
@@ -92,6 +96,7 @@ function App() {
 
   const canSubmit =
     !!theme &&
+    !!ageGroup &&
     (isBook ? !!bookStyle && !!bookPages : !!videoStyle && !!videoDuration) &&
     characters.every((c) => c.name.trim() && c.photos.length > 0) &&
     !submitting
@@ -155,6 +160,9 @@ function App() {
       const created = await createProject({
         outputType,
         theme,
+        ageGroup,
+        dedication: dedication.trim() || undefined,
+        storyDirection: storyDirection.trim() || undefined,
         physicalBookRequested: isBook ? physical : false,
         bookStyle: isBook ? bookStyle : null,
         bookPages: isBook ? bookPages : null,
@@ -281,6 +289,18 @@ function App() {
               key={o.code}
               className={`chip ${theme === o.code ? 'on' : ''}`}
               onClick={() => setTheme(o.code)}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+        <label className="field-label">대상 연령 (글의 분량·표현이 맞춰집니다)</label>
+        <div className="chips">
+          {options.ageGroups.map((o) => (
+            <button
+              key={o.code}
+              className={`chip ${ageGroup === o.code ? 'on' : ''}`}
+              onClick={() => setAgeGroup(o.code)}
             >
               {o.label}
             </button>
@@ -420,6 +440,28 @@ function App() {
         <p className="muted small">
           ※ 얼굴이 또렷한 사진 3~5장을 올리면 더 닮게 나와요.
         </p>
+      </section>
+
+      <section className="card">
+        <h3 className="step">5. 특별한 요청 <span className="muted small">(선택)</span></h3>
+        <label className="field-label">헌정 메세지 <span className="muted small">— 책 첫 장에 들어가요</span></label>
+        <textarea
+          className="text area"
+          placeholder="예: 사랑하는 소영이에게, 언제나 반짝반짝 빛나렴. — 엄마아빠가"
+          value={dedication}
+          maxLength={200}
+          rows={2}
+          onChange={(e) => setDedication(e.target.value)}
+        />
+        <label className="field-label">스토리 방향 <span className="muted small">— 원하는 이야기 틀 (없으면 비워두세요)</span></label>
+        <textarea
+          className="text area"
+          placeholder="예: 동생과 함께 용기를 내어 잃어버린 강아지를 찾아주는 이야기"
+          value={storyDirection}
+          maxLength={300}
+          rows={3}
+          onChange={(e) => setStoryDirection(e.target.value)}
+        />
       </section>
 
       <section className="card summary">

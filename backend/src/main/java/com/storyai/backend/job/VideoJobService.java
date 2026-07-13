@@ -47,7 +47,9 @@ public class VideoJobService {
                 .theme(request.theme().getLabel())
                 .protagonistDescription(protagonist)
                 .mood(request.mood())
-                .targetAgeGroup(request.targetAgeGroup())
+                .ageGroup(request.ageGroup())
+                .dedication(blankToNull(request.dedication()))
+                .storyDirection(blankToNull(request.storyDirection()))
                 .bookStyle(isBook ? request.bookStyle() : null)
                 .bookPages(isBook ? request.bookPages() : null)
                 .physicalBookRequested(isBook && request.physicalBookRequested())
@@ -90,6 +92,10 @@ public class VideoJobService {
                 .orElseThrow(() -> new VideoJobNotFoundException(jobId));
         job.getStoryCharacters().size(); // 응답 매핑 전 lazy 컬렉션 초기화
         return job;
+    }
+
+    private String blankToNull(String s) {
+        return (s == null || s.isBlank()) ? null : s.trim();
     }
 
     /** outputType에 따른 조건부 필수/범위 검증. 위반 시 IllegalArgumentException(→ 400). */

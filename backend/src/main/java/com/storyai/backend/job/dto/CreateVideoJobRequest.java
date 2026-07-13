@@ -1,6 +1,7 @@
 package com.storyai.backend.job.dto;
 
 import com.storyai.backend.domain.storycharacter.CharacterRole;
+import com.storyai.backend.domain.videojob.AgeGroup;
 import com.storyai.backend.domain.videojob.BookStyle;
 import com.storyai.backend.domain.videojob.OutputType;
 import com.storyai.backend.domain.videojob.StoryTheme;
@@ -19,8 +20,12 @@ import java.util.List;
 public record CreateVideoJobRequest(
         @NotNull OutputType outputType,
         @NotNull StoryTheme theme,
+        @NotNull AgeGroup ageGroup,
         String mood,
-        String targetAgeGroup,
+
+        // 헌정 메세지(선택) · 스토리 방향(선택, 있으면 스토리에 반영)
+        String dedication,
+        String storyDirection,
 
         // 책 옵션
         BookStyle bookStyle,

@@ -1,6 +1,7 @@
 package com.storyai.backend.catalog;
 
 import com.storyai.backend.domain.storycharacter.CharacterRole;
+import com.storyai.backend.domain.videojob.AgeGroup;
 import com.storyai.backend.domain.videojob.BookStyle;
 import com.storyai.backend.domain.videojob.OutputType;
 import com.storyai.backend.domain.videojob.StoryTheme;
@@ -34,6 +35,7 @@ public class CatalogController {
                 "videoStyles", enumOptions(VideoStyle.values(), VideoStyle::name, VideoStyle::getLabel),
                 "videoDurationOptions", List.of(120, 300),
                 "characterRoles", enumOptions(CharacterRole.values(), CharacterRole::name, CharacterRole::getLabel),
+                "ageGroups", enumOptions(AgeGroup.values(), AgeGroup::name, AgeGroup::getLabel),
                 "pricing", pricing()
         );
     }

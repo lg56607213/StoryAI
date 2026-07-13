@@ -112,6 +112,11 @@
   outline: none;
   border-color: #ff9a76;
 }
+textarea.area {
+  resize: vertical;
+  line-height: 1.6;
+  font-family: inherit;
+}
 
 .photo-pick {
   width: 68px;

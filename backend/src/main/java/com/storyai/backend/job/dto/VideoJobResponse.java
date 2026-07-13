@@ -1,6 +1,7 @@
 package com.storyai.backend.job.dto;
 
 import com.storyai.backend.domain.storycharacter.StoryCharacter;
+import com.storyai.backend.domain.videojob.AgeGroup;
 import com.storyai.backend.domain.videojob.BookStyle;
 import com.storyai.backend.domain.videojob.JobStatus;
 import com.storyai.backend.domain.videojob.OutputType;
@@ -17,6 +18,9 @@ public record VideoJobResponse(
         Long id,
         OutputType outputType,
         StoryTheme theme,
+        AgeGroup ageGroup,
+        String dedication,
+        String storyDirection,
         BookStyle bookStyle,
         Integer bookPages,
         boolean physicalBookRequested,
@@ -44,6 +48,9 @@ public record VideoJobResponse(
                 job.getId(),
                 job.getOutputType(),
                 job.getStoryTheme(),
+                job.getAgeGroup(),
+                job.getDedication(),
+                job.getStoryDirection(),
                 job.getBookStyle(),
                 job.getBookPages(),
                 job.isPhysicalBookRequested(),
