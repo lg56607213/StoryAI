@@ -33,6 +33,9 @@ public class GeminiStoryGenerator implements StoryGenerator {
                 - 대상 연령: %s (%s)
                 - 스토리 방향(고객 요청): %s
                 주제와 스토리 방향을 반영하되, 주인공 이름을 이야기에 실제로 등장시켜줘. 폭력적이거나 무서운 내용은 금지.
+                매우 중요(등장인물 고정): 사람 등장인물은 오직 위 "주인공(들)" 목록에 있는 인물만 사용해.
+                목록에 없는 다른 아이·친구·형제·동생·부모 등 사람을 새로 만들어 등장시키지 마
+                (주제에 맞는 동물이나 상상 속 캐릭터 조력자는 괜찮음).
                 반드시 아래 JSON 형식으로만 답해: {"title": "동화 제목", "synopsis": "3~4문장 줄거리"}
                 """.formatted(theme.getLabel(), safe(characters), ag.getLabel(), ag.getGuide(), direction);
 
@@ -58,9 +61,13 @@ public class GeminiStoryGenerator implements StoryGenerator {
                 - 3~4페이지쯤 자연스럽게 옷을 갈아입거나 마법으로 "%s" 주제에 어울리는 특별한 옷으로 변신하는 장면을 넣어줘.
                 - 그 이후 페이지는 주제 의상으로 모험.
 
+                매우 중요(인물 고정): 모든 페이지의 text와 scene에는 위 "등장인물" 목록의 인물만 등장해야 한다.
+                목록에 없는 다른 아이·친구·형제·사람을 절대 추가하지 마. scene 영문에도 목록의 인물만 묘사할 것
+                (예: 주인공이 1명이면 scene에 "two children"처럼 두 명이 나오게 쓰지 말고 그 1명만 묘사).
+
                 각 페이지 객체는 세 필드를 가진다:
                   "text": 위 "텍스트 작성 지침"을 반드시 따른 한국어 이야기 문구
-                  "scene": 삽화 생성용 장면 설명(영문, 배경/동작/등장인물/의상 포함, 한 문장)
+                  "scene": 삽화 생성용 장면 설명(영문, 배경/동작/의상 포함, 한 문장). 위 등장인물만 등장, 다른 사람 금지.
                   "outfit": "everyday" 또는 "costume" (전환 전=everyday, 전환 후=costume)
                 처음-중간-끝의 흐름을 갖추고 마지막은 따뜻하게 마무리. 정확히 %d개.
                 반드시 JSON만: {"pages": [{"text": "...", "scene": "...", "outfit": "everyday"}, ...]}

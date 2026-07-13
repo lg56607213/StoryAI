@@ -49,15 +49,20 @@ public class GeminiImageGenerator implements ImageGenerator {
 
     @Override
     public byte[] illustrate(String scene, List<byte[]> characterSheets, String style) {
+        int n = characterSheets.size();
         StringBuilder refInfo = new StringBuilder();
-        for (int i = 0; i < characterSheets.size(); i++) {
+        for (int i = 0; i < n; i++) {
             refInfo.append("Reference image ").append(i + 1)
                     .append(" is a main character - keep this character IDENTICAL (same face, likeness, hairstyle, "
                             + "and the exact outfit shown in the reference). ");
         }
+        String peopleRule = "This whole story has EXACTLY " + n + " human character" + (n == 1 ? "" : "s")
+                + ". Draw ONLY the " + n + " reference character" + (n == 1 ? "" : "s") + " above. "
+                + "Do NOT add, invent, duplicate, or draw ANY other person, child, friend, sibling, or bystander "
+                + "that is not one of the references - even if the scene text seems to mention someone else. ";
         String prompt = styleLine(style) + " Create ONE wide children's storybook illustration for this scene: "
-                + scene + ". " + refInfo
-                + "Only include a character if the scene calls for them. Full scene with background, warm and tender mood. "
+                + scene + ". " + refInfo + peopleRule
+                + "Full scene with background, warm and tender mood. "
                 + "Fill the entire wide frame edge-to-edge with the scene (full background, no empty margins). "
                 + "IMPORTANT: no text, no words, no letters, no watermark in the image.";
         // 가로형 책에 맞춰 landscape(3:2)로 생성 → 페이지를 여백 없이 꽉 채움.
