@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import ImageCropper from './ImageCropper'
 import {
   createProject,
   getOptions,
@@ -9,6 +10,12 @@ import {
   type JobResponse,
   type Options,
 } from './api'
+
+interface CropQueue {
+  charIdx: number
+  files: File[]
+  pos: number
+}
 
 const STEP_LABELS: Record<string, string> = {
   STORY_GENERATION: '스토리 생성 중',
@@ -51,6 +58,7 @@ function App() {
   const [characters, setCharacters] = useState<CharacterDraft[]>([
     { name: '', role: 'MAIN', photos: [], previews: [] },
   ])
+  const [cropQueue, setCropQueue] = useState<CropQueue | null>(null)
 
   const [job, setJob] = useState<JobResponse | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -118,18 +126,36 @@ function App() {
 
   function onPhotosPick(idx: number, files: FileList | null) {
     if (!files || files.length === 0) return
-    const added = Array.from(files)
+    // 바로 담지 않고 크롭 모달로 보냄(부모+자녀 사진에서 자녀만 자르도록)
+    setCropQueue({ charIdx: idx, files: Array.from(files), pos: 0 })
+  }
+
+  function addPhotoToChar(idx: number, file: File) {
     setCharacters((prev) =>
       prev.map((c, i) =>
         i === idx
-          ? {
-              ...c,
-              photos: [...c.photos, ...added],
-              previews: [...c.previews, ...added.map((f) => URL.createObjectURL(f))],
-            }
+          ? { ...c, photos: [...c.photos, file], previews: [...c.previews, URL.createObjectURL(file)] }
           : c,
       ),
     )
+  }
+
+  function advanceCrop() {
+    setCropQueue((q) => {
+      if (!q) return null
+      const next = q.pos + 1
+      return next < q.files.length ? { ...q, pos: next } : null
+    })
+  }
+
+  function onCropConfirm(cropped: File) {
+    if (cropQueue) addPhotoToChar(cropQueue.charIdx, cropped)
+    advanceCrop()
+  }
+
+  function onCropSkip() {
+    if (cropQueue) addPhotoToChar(cropQueue.charIdx, cropQueue.files[cropQueue.pos])
+    advanceCrop()
   }
 
   function removePhoto(idx: number, photoIdx: number) {
@@ -474,6 +500,15 @@ function App() {
         </button>
       </section>
       {submitError && <p className="error-text center">{submitError}</p>}
+      {cropQueue && (
+        <ImageCropper
+          file={cropQueue.files[cropQueue.pos]}
+          index={cropQueue.pos}
+          total={cropQueue.files.length}
+          onCancel={onCropSkip}
+          onConfirm={onCropConfirm}
+        />
+      )}
     </main>
   )
 }
