@@ -72,15 +72,17 @@ public class CharacterAnalysisStepHandler implements WorkflowStepHandler {
             log.warn("캐릭터 '{}' 사진 바이트를 찾을 수 없어 시트 생성 건너뜀", character.getName());
             return;
         }
+        String style = job.getBookStyle() != null ? job.getBookStyle().getGuide() : null;
         try {
             // 1) 평상복 시트 (실제 옷 보존) → 표지·도입부용
-            byte[] everyday = imageGenerator.everydaySheet(photos, character.getName());
+            byte[] everyday = imageGenerator.everydaySheet(photos, character.getName(), style);
             String everydayUrl = localStorage.storeGenerated(job.getId(), "sheet-everyday-" + character.getId() + ".png", everyday);
             character.setEverydaySheetUrl(everydayUrl);
 
-            // 2) 주제 의상 시트 (평상복 얼굴 고정 → 드레스 등) → 전환 이후용
-            byte[] costume = imageGenerator.costumeSheet(everyday, character.getRole(), character.getName());
-            String costumeUrl = localStorage.storeGenerated(job.getId(), "sheet-costume-" + character.getId() + ".png", costume);
+            // 2) 주제 의상 시트 (평상복 얼굴 고정 → 주제에 맞는 옷) → 전환 이후용
+            String costume = job.getStoryTheme().costumeFor(character.getRole());
+            byte[] costumeImg = imageGenerator.costumeSheet(everyday, costume, style);
+            String costumeUrl = localStorage.storeGenerated(job.getId(), "sheet-costume-" + character.getId() + ".png", costumeImg);
             character.setCharacterSheetUrl(costumeUrl);
 
             storyCharacterRepository.save(character);

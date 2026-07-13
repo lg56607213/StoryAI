@@ -46,12 +46,13 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
             log.info("삽화 실제 생성 불가(키/시트 없음) → placeholder 사용");
         }
 
+        String style = job.getBookStyle() != null ? job.getBookStyle().getGuide() : null;
         int generated = 0;
         for (BookPage page : pages) {
             List<byte[]> sheets = sheetsForPage(characters, page.getOutfit());
             if (canGenerate && generated < illustrateLimit && !sheets.isEmpty()) {
                 try {
-                    byte[] img = imageGenerator.illustrate(page.getSceneDescription(), sheets);
+                    byte[] img = imageGenerator.illustrate(page.getSceneDescription(), sheets, style);
                     String url = localStorage.storeGenerated(job.getId(), "page-" + page.getPageNumber() + ".png", img);
                     page.setImageUrl(url);
                     generated++;
