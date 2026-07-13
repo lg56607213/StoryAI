@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import ImageCropper from './ImageCropper'
 import {
@@ -37,9 +37,6 @@ interface CharacterDraft {
   photos: File[]
   previews: string[]
 }
-
-const won = (n: number | null | undefined) =>
-  n == null ? '-' : n.toLocaleString('ko-KR') + '원'
 
 function App() {
   const [options, setOptions] = useState<Options | null>(null)
@@ -95,12 +92,6 @@ function App() {
   }, [job])
 
   const isBook = outputType === 'BOOK'
-
-  const price = useMemo(() => {
-    if (!options || !isBook) return null
-    if (physical) return options.pricing.bookHardcopyKrw
-    return options.pricing.bookPdf.find((p) => p.pages === bookPages)?.priceKrw ?? null
-  }, [options, isBook, physical, bookPages])
 
   const canSubmit =
     !!theme &&
@@ -258,7 +249,7 @@ function App() {
               <div className="check">✓</div>
               <h2>{job.generatedTitle ?? '완성되었어요!'}</h2>
               <p className="muted">
-                {job.outputType === 'BOOK' ? '동화책' : '영상'} · {won(job.priceKrw)}
+                {job.outputType === 'BOOK' ? '동화책' : '영상'}
                 {job.physicalBookRequested && ' · 실물(인쇄본) 요청됨'}
               </p>
               {job.outputType === 'BOOK' && job.resultUrl ? (
@@ -352,18 +343,15 @@ function App() {
             </div>
             <label className="field-label">페이지 수</label>
             <div className="chips">
-              {options.bookPageOptions.map((p) => {
-                const pdf = options.pricing.bookPdf.find((x) => x.pages === p)
-                return (
-                  <button
-                    key={p}
-                    className={`chip ${bookPages === p ? 'on' : ''}`}
-                    onClick={() => setBookPages(p)}
-                  >
-                    {p}페이지 · {won(pdf?.priceKrw)}
-                  </button>
-                )
-              })}
+              {options.bookPageOptions.map((p) => (
+                <button
+                  key={p}
+                  className={`chip ${bookPages === p ? 'on' : ''}`}
+                  onClick={() => setBookPages(p)}
+                >
+                  {p}페이지
+                </button>
+              ))}
             </div>
             <label className="check-row">
               <input
@@ -371,7 +359,7 @@ function App() {
                 checked={physical}
                 onChange={(e) => setPhysical(e.target.checked)}
               />
-              실물 인쇄본으로 받기 (+ 배송, {won(options.pricing.bookHardcopyKrw)})
+              실물 인쇄본으로 받기 (배송)
             </label>
           </>
         ) : (
@@ -490,11 +478,7 @@ function App() {
         />
       </section>
 
-      <section className="card summary">
-        <div>
-          <span className="muted">예상 금액</span>
-          <strong className="price">{isBook ? won(price) : '준비 중'}</strong>
-        </div>
+      <section className="card submit-bar">
         <button className="btn primary" disabled={!canSubmit} onClick={onSubmit}>
           {submitting ? '만드는 중…' : '만들기 시작'}
         </button>
