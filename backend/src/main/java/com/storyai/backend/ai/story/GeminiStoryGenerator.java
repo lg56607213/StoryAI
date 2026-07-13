@@ -31,7 +31,7 @@ public class GeminiStoryGenerator implements StoryGenerator {
                 반드시 아래 JSON 형식으로만 답해: {"title": "동화 제목", "synopsis": "3~4문장 줄거리"}
                 """.formatted(theme.getLabel(), safe(characters), safe(ageGroup));
 
-        JsonNode json = gemini.generateJson(prompt);
+        JsonNode json = generateJsonRetry(prompt);
         return new StoryOutline(
                 json.path("title").asText("%s 이야기".formatted(theme.getLabel())),
                 json.path("synopsis").asText(""));
@@ -45,24 +45,45 @@ public class GeminiStoryGenerator implements StoryGenerator {
                 - 제목: %s
                 - 줄거리: %s
                 - 주제: %s / 등장인물: %s / 연령: %s
-                각 페이지 객체는 다음 두 필드를 가진다:
-                  "text": 1~2문장의 쉽고 리듬감 있는 한국어 이야기 문구
-                  "scene": 삽화 생성용 장면 설명(영문, 배경/동작/등장인물/분위기 포함, 한 문장)
-                처음-중간-끝의 흐름을 갖추고 마지막은 따뜻하게 마무리. 정확히 %d개.
-                반드시 JSON만: {"pages": [{"text": "...", "scene": "..."}, ...]}
-                """.formatted(pageCount, safe(outline.title()), safe(outline.synopsis()),
-                theme.getLabel(), safe(characters), safe(ageGroup), pageCount);
 
-        JsonNode json = gemini.generateJson(prompt);
+                중요(옷 연출): 주인공이 "본인"이라는 느낌이 강하게 들도록,
+                - 처음 2~3페이지는 아이가 "평상복(everyday, 자기 실제 옷)"을 입고 집/방 등 일상에서 시작.
+                - 3~4페이지쯤 자연스럽게 옷을 갈아입거나 마법으로 %s 주제 의상(공주 드레스 등)으로 변신하는 장면을 넣어줘.
+                - 그 이후 페이지는 주제 의상으로 모험.
+
+                각 페이지 객체는 세 필드를 가진다:
+                  "text": 1~2문장의 쉽고 리듬감 있는 한국어 이야기 문구
+                  "scene": 삽화 생성용 장면 설명(영문, 배경/동작/등장인물/의상 포함, 한 문장)
+                  "outfit": "everyday" 또는 "costume" (전환 전=everyday, 전환 후=costume)
+                처음-중간-끝의 흐름을 갖추고 마지막은 따뜻하게 마무리. 정확히 %d개.
+                반드시 JSON만: {"pages": [{"text": "...", "scene": "...", "outfit": "everyday"}, ...]}
+                """.formatted(pageCount, safe(outline.title()), safe(outline.synopsis()),
+                theme.getLabel(), safe(characters), safe(ageGroup), theme.getLabel(), pageCount);
+
+        JsonNode json = generateJsonRetry(prompt);
         List<BookPageDraft> pages = new ArrayList<>();
         for (JsonNode p : json.path("pages")) {
-            pages.add(new BookPageDraft(p.path("text").asText(""), p.path("scene").asText("")));
+            String outfit = "everyday".equals(p.path("outfit").asText("costume")) ? "everyday" : "costume";
+            pages.add(new BookPageDraft(p.path("text").asText(""), p.path("scene").asText(""), outfit));
         }
         // 개수가 모자라면 마지막으로 채우고, 넘치면 잘라 정확히 pageCount로 맞춘다.
         while (pages.size() < pageCount) {
-            pages.add(pages.isEmpty() ? new BookPageDraft("", "") : pages.get(pages.size() - 1));
+            pages.add(pages.isEmpty() ? new BookPageDraft("", "", "costume") : pages.get(pages.size() - 1));
         }
         return pages.subList(0, pageCount);
+    }
+
+    /** 일시적 실패(네트워크·5xx 등)로 스토리가 더미로 폴백되는 것을 줄이기 위해 최대 3회 재시도. */
+    private JsonNode generateJsonRetry(String prompt) {
+        RuntimeException last = null;
+        for (int attempt = 0; attempt < 3; attempt++) {
+            try {
+                return gemini.generateJson(prompt);
+            } catch (RuntimeException e) {
+                last = e;
+            }
+        }
+        throw last;
     }
 
     private String safe(String s) {

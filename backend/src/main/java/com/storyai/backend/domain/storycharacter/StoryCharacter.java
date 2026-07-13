@@ -57,8 +57,13 @@ public class StoryCharacter {
     @Builder.Default
     private List<String> photoUrls = new ArrayList<>();
 
-    /** 업로드 사진으로 생성한 캐릭터 시트(참조 이미지) URL. 모든 페이지 삽화가 이걸 참조해 일관성 유지. */
+    /** 주제 의상(공주 드레스 등) 캐릭터 시트 URL. 전환 이후 페이지 삽화가 참조. */
     @Setter
     @Column(length = 1000)
     private String characterSheetUrl;
+
+    /** 아이 실제 옷을 그대로 살린 평상복 캐릭터 시트 URL. 표지·도입부 삽화가 참조("본인" 인식용). */
+    @Setter
+    @Column(length = 1000)
+    private String everydaySheetUrl;
 }

@@ -52,15 +52,15 @@ public class CharacterAnalysisStepHandler implements WorkflowStepHandler {
                 .build();
         characterProfileRepository.save(profile);
 
-        // 책: 인물별 파스텔 캐릭터 시트 생성 (참조 이미지). 키/사진 없으면 조용히 건너뜀.
+        // 책: 인물별 캐릭터 시트 2종(평상복=실제 옷 / 주제 의상) 생성. 키/사진 없으면 조용히 건너뜀.
         if (job.getOutputType() == OutputType.BOOK && imageGenerator.isAvailable()) {
             for (StoryCharacter character : storyCharacterRepository.findByVideoJobIdOrderByIdAsc(job.getId())) {
-                generateSheet(job, character);
+                generateSheets(job, character);
             }
         }
     }
 
-    private void generateSheet(VideoJob job, StoryCharacter character) {
+    private void generateSheets(VideoJob job, StoryCharacter character) {
         List<byte[]> photos = new ArrayList<>();
         for (String url : character.getPhotoUrls()) {
             byte[] bytes = localStorage.loadByUrl(url);
@@ -73,9 +73,16 @@ public class CharacterAnalysisStepHandler implements WorkflowStepHandler {
             return;
         }
         try {
-            byte[] sheet = imageGenerator.characterSheet(photos, character.getRole(), character.getName());
-            String url = localStorage.storeGenerated(job.getId(), "sheet-" + character.getId() + ".png", sheet);
-            character.setCharacterSheetUrl(url);
+            // 1) 평상복 시트 (실제 옷 보존) → 표지·도입부용
+            byte[] everyday = imageGenerator.everydaySheet(photos, character.getName());
+            String everydayUrl = localStorage.storeGenerated(job.getId(), "sheet-everyday-" + character.getId() + ".png", everyday);
+            character.setEverydaySheetUrl(everydayUrl);
+
+            // 2) 주제 의상 시트 (평상복 얼굴 고정 → 드레스 등) → 전환 이후용
+            byte[] costume = imageGenerator.costumeSheet(everyday, character.getRole(), character.getName());
+            String costumeUrl = localStorage.storeGenerated(job.getId(), "sheet-costume-" + character.getId() + ".png", costume);
+            character.setCharacterSheetUrl(costumeUrl);
+
             storyCharacterRepository.save(character);
         } catch (Exception e) {
             log.warn("캐릭터 '{}' 시트 생성 실패: {}", character.getName(), e.getMessage());

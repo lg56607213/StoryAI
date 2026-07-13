@@ -49,6 +49,10 @@ public class BookPage {
     @Column(columnDefinition = "TEXT")
     private String sceneDescription;
 
+    /** 이 페이지의 의상: "everyday"(실제 옷) 또는 "costume"(주제 의상). 어떤 캐릭터 시트를 참조할지 결정. */
+    @Setter
+    private String outfit;
+
     /** 삽화 이미지 URL (PAGE_ILLUSTRATION에서 채움) */
     @Setter
     @Column(length = 1000)

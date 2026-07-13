@@ -275,7 +275,12 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         List<StoryCharacter> chars = storyCharacterRepository.findByVideoJobIdOrderByIdAsc(job.getId());
         StoryCharacter main = chars.stream().filter(c -> c.getRole() == CharacterRole.MAIN).findFirst()
                 .orElse(chars.isEmpty() ? null : chars.get(0));
-        return main != null ? localStorage.loadByUrl(main.getCharacterSheetUrl()) : null;
+        if (main == null) {
+            return null;
+        }
+        // 표지는 "본인" 인식을 위해 평상복(실제 옷) 시트를 우선 사용.
+        byte[] everyday = localStorage.loadByUrl(main.getEverydaySheetUrl());
+        return everyday != null ? everyday : localStorage.loadByUrl(main.getCharacterSheetUrl());
     }
 
     private Font loadFont(String resource) throws Exception {

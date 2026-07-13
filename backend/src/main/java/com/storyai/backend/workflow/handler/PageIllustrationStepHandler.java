@@ -39,16 +39,17 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
     @Override
     public void execute(VideoJob job) {
         List<BookPage> pages = bookPageRepository.findByVideoJobIdOrderByPageNumberAsc(job.getId());
+        List<StoryCharacter> characters = storyCharacterRepository.findByVideoJobIdOrderByIdAsc(job.getId());
 
-        List<byte[]> sheets = loadCharacterSheets(job);
-        boolean canGenerate = imageGenerator.isAvailable() && !sheets.isEmpty();
+        boolean canGenerate = imageGenerator.isAvailable() && hasAnySheet(characters);
         if (!canGenerate) {
             log.info("삽화 실제 생성 불가(키/시트 없음) → placeholder 사용");
         }
 
         int generated = 0;
         for (BookPage page : pages) {
-            if (canGenerate && generated < illustrateLimit) {
+            List<byte[]> sheets = sheetsForPage(characters, page.getOutfit());
+            if (canGenerate && generated < illustrateLimit && !sheets.isEmpty()) {
                 try {
                     byte[] img = imageGenerator.illustrate(page.getSceneDescription(), sheets);
                     String url = localStorage.storeGenerated(job.getId(), "page-" + page.getPageNumber() + ".png", img);
@@ -68,15 +69,28 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
         }
     }
 
-    private List<byte[]> loadCharacterSheets(VideoJob job) {
+    /** 페이지 의상(everyday/costume)에 맞는 캐릭터 시트를 인물별로 고른다. 없으면 다른 시트로 폴백. */
+    private List<byte[]> sheetsForPage(List<StoryCharacter> characters, String outfit) {
+        boolean everyday = "everyday".equals(outfit);
         List<byte[]> sheets = new ArrayList<>();
-        for (StoryCharacter c : storyCharacterRepository.findByVideoJobIdOrderByIdAsc(job.getId())) {
-            byte[] bytes = localStorage.loadByUrl(c.getCharacterSheetUrl());
+        for (StoryCharacter c : characters) {
+            String primary = everyday ? c.getEverydaySheetUrl() : c.getCharacterSheetUrl();
+            String fallback = everyday ? c.getCharacterSheetUrl() : c.getEverydaySheetUrl();
+            byte[] bytes = localStorage.loadByUrl(primary);
+            if (bytes == null) {
+                bytes = localStorage.loadByUrl(fallback);
+            }
             if (bytes != null) {
                 sheets.add(bytes);
             }
         }
         return sheets;
+    }
+
+    private boolean hasAnySheet(List<StoryCharacter> characters) {
+        return characters.stream().anyMatch(c ->
+                localStorage.loadByUrl(c.getCharacterSheetUrl()) != null
+                        || localStorage.loadByUrl(c.getEverydaySheetUrl()) != null);
     }
 
     private String placeholder(VideoJob job, BookPage page) {

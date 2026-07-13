@@ -11,8 +11,11 @@ public interface ImageGenerator {
 
     boolean isAvailable();
 
-    /** 아이 사진 여러 장 → 파스텔 캐릭터 시트(참조 이미지) PNG 바이트. */
-    byte[] characterSheet(List<byte[]> photos, CharacterRole role, String name);
+    /** 아이 사진 여러 장 → 실제 옷을 그대로 살린 "평상복" 캐릭터 시트 PNG (본인 인식용). */
+    byte[] everydaySheet(List<byte[]> photos, String name);
+
+    /** 평상복 시트(얼굴 고정) → 주제 의상(공주 드레스 등)으로 갈아입힌 "주제 의상" 시트 PNG. */
+    byte[] costumeSheet(byte[] everydaySheet, CharacterRole role, String name);
 
     /** 장면 설명 + 캐릭터 시트(들) → 페이지 삽화 PNG 바이트. */
     byte[] illustrate(String scene, List<byte[]> characterSheets);

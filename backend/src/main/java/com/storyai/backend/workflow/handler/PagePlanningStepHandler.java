@@ -42,6 +42,7 @@ public class PagePlanningStepHandler implements WorkflowStepHandler {
                     .pageNumber(i + 1)
                     .text(d.text())
                     .sceneDescription(d.scene())
+                    .outfit(d.outfit())
                     .build();
             bookPageRepository.save(page);
         }
@@ -61,7 +62,8 @@ public class PagePlanningStepHandler implements WorkflowStepHandler {
         return IntStream.rangeClosed(1, pages)
                 .mapToObj(i -> new BookPageDraft(
                         "%s (%d/%d)".formatted(job.getSynopsis(), i, pages),
-                        "A gentle storybook scene featuring %s.".formatted(job.getProtagonistDescription())))
+                        "A gentle storybook scene featuring %s.".formatted(job.getProtagonistDescription()),
+                        i <= 2 ? "everyday" : "costume"))
                 .toList();
     }
 }
