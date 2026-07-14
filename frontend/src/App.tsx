@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import ImageCropper from './ImageCropper'
 import {
+  confirmProject,
   createProject,
   getOptions,
   getProject,
@@ -63,6 +64,11 @@ function App() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const pollRef = useRef<number | null>(null)
+
+  // 미리보기 확정(구매) 관련
+  const [purchaseType, setPurchaseType] = useState<'PDF' | 'BOOK'>('PDF')
+  const [email, setEmail] = useState('')
+  const [confirming, setConfirming] = useState(false)
 
   useEffect(() => {
     getOptions()
@@ -209,6 +215,23 @@ function App() {
     setSubmitError(null)
   }
 
+  async function onConfirm() {
+    if (!job) return
+    setSubmitError(null)
+    setConfirming(true)
+    try {
+      const updated = await confirmProject(job.id, {
+        purchaseType,
+        deliveryEmail: email.trim() || undefined,
+      })
+      setJob(updated) // status RUNNING → 폴링이 다시 시작되어 전체 생성 진행
+    } catch (e) {
+      setSubmitError(String((e as Error).message ?? e))
+    } finally {
+      setConfirming(false)
+    }
+  }
+
   if (loadError) {
     return (
       <main className="app">
@@ -233,6 +256,9 @@ function App() {
   if (job) {
     const done = job.status === 'COMPLETED'
     const failed = job.status === 'FAILED'
+    // 책 미리보기 완료 = 확정(구매) 단계
+    const isPreview = done && job.outputType === 'BOOK' && job.bookPhase === 'PREVIEW'
+    const isFinal = done && !isPreview
     return (
       <main className="app">
         <header className="hero">
@@ -253,7 +279,45 @@ function App() {
               <p className="error-text">{job.errorMessage}</p>
             </>
           )}
-          {done && (
+          {isPreview && (
+            <>
+              <div className="check">👀</div>
+              <h2>{job.generatedTitle ?? '미리보기가 나왔어요!'}</h2>
+              <p className="muted">표지와 앞부분을 먼저 보여드려요. 마음에 들면 전체 책을 만들어 드릴게요.</p>
+              {job.resultUrl && (
+                <a className="btn ghost" href={job.resultUrl} target="_blank" rel="noreferrer">
+                  미리보기 열어보기
+                </a>
+              )}
+              <label className="field-label">받는 방법</label>
+              <div className="chips">
+                <button
+                  className={`chip ${purchaseType === 'PDF' ? 'on' : ''}`}
+                  onClick={() => setPurchaseType('PDF')}
+                >
+                  PDF로 받기
+                </button>
+                <button
+                  className={`chip ${purchaseType === 'BOOK' ? 'on' : ''}`}
+                  onClick={() => setPurchaseType('BOOK')}
+                >
+                  실물 책으로 받기
+                </button>
+              </div>
+              <input
+                className="text"
+                type="email"
+                placeholder="완성본 받을 이메일 (선택)"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <button className="btn primary" disabled={confirming} onClick={onConfirm}>
+                {confirming ? '주문 확정 중…' : '이걸로 전체 만들기'}
+              </button>
+              <p className="muted small">전체 생성은 몇 분 걸려요. 결제는 이후 단계에서 붙습니다.</p>
+            </>
+          )}
+          {isFinal && (
             <>
               <div className="check">✓</div>
               <h2>{job.generatedTitle ?? '완성되었어요!'}</h2>
@@ -263,7 +327,7 @@ function App() {
               </p>
               {job.outputType === 'BOOK' && job.resultUrl ? (
                 <a className="btn primary" href={job.resultUrl} target="_blank" rel="noreferrer">
-                  PDF 다운로드
+                  전체 책 다운로드
                 </a>
               ) : (
                 <p className="muted">영상 다운로드는 준비 중입니다.</p>

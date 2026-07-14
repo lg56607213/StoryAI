@@ -2,6 +2,7 @@ package com.storyai.backend.job.dto;
 
 import com.storyai.backend.domain.storycharacter.StoryCharacter;
 import com.storyai.backend.domain.videojob.AgeGroup;
+import com.storyai.backend.domain.videojob.BookPhase;
 import com.storyai.backend.domain.videojob.BookStyle;
 import com.storyai.backend.domain.videojob.JobStatus;
 import com.storyai.backend.domain.videojob.OutputType;
@@ -23,6 +24,7 @@ public record VideoJobResponse(
         String storyDirection,
         BookStyle bookStyle,
         Integer bookPages,
+        BookPhase bookPhase,
         boolean physicalBookRequested,
         VideoStyle videoStyle,
         Integer videoDurationSec,
@@ -53,6 +55,7 @@ public record VideoJobResponse(
                 job.getStoryDirection(),
                 job.getBookStyle(),
                 job.getBookPages(),
+                job.getBookPhase(),
                 job.isPhysicalBookRequested(),
                 job.getVideoStyle(),
                 job.getVideoDurationSec(),

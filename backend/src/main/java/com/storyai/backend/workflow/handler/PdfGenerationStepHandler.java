@@ -57,6 +57,10 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
     private final BookPageRepository bookPageRepository;
     private final StoryCharacterRepository storyCharacterRepository;
     private final LocalStorage localStorage;
+    private final com.storyai.backend.notify.EmailNotifier emailNotifier;
+
+    @org.springframework.beans.factory.annotation.Value("${storyai.book.preview-pages:4}")
+    private int previewPages;
 
     @Override
     public WorkflowStep getStep() {
@@ -66,6 +70,11 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
     @Override
     public void execute(VideoJob job) {
         List<BookPage> pages = bookPageRepository.findByVideoJobIdOrderByPageNumberAsc(job.getId());
+        // 미리보기 단계면 앞쪽 previewPages 페이지만 PDF에 담는다.
+        boolean preview = job.getBookPhase() == com.storyai.backend.domain.videojob.BookPhase.PREVIEW;
+        if (preview && pages.size() > previewPages) {
+            pages = pages.subList(0, previewPages);
+        }
         Font jua, gaegu;
         try {
             jua = loadFont("/fonts/Jua-Regular.ttf");
@@ -93,6 +102,12 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         }
 
         job.setResultUrl("/api/video-jobs/%d/download".formatted(job.getId()));
+
+        // 전체 생성이 끝나면 완성본 전송 알림(현재 스텁: 로그). 미리보기 단계에선 보내지 않음.
+        if (!preview) {
+            emailNotifier.sendBookReady(job.getDeliveryEmail(),
+                    job.getGeneratedTitle() != null ? job.getGeneratedTitle() : "동화책", job.getResultUrl());
+        }
     }
 
     // ---------- 페이지 합성 ----------

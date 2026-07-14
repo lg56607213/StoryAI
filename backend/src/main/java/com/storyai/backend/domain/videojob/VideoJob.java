@@ -79,6 +79,21 @@ public class VideoJob {
     @Column(length = 1000)
     private String dedicationPhotoUrl;
 
+    /** 책 생성 단계(미리보기/전체). 미리보기 후 confirm으로 FULL 전환. 영상은 항상 FULL. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private BookPhase bookPhase = BookPhase.FULL;
+
+    /** 구매 유형("PDF" 또는 "BOOK") — 미리보기 확정 시 선택 */
+    @Setter
+    private String purchaseType;
+
+    /** 완성본을 보낼 이메일(선택) — 미리보기 확정 시 입력 */
+    @Setter
+    @Column(length = 320)
+    private String deliveryEmail;
+
     /** 스토리 방향 (선택) — 고객이 이야기 틀을 잡아주는 자유 입력 */
     @Column(columnDefinition = "TEXT")
     private String storyDirection;
@@ -164,5 +179,15 @@ public class VideoJob {
 
     public void moveToStep(WorkflowStep step) {
         this.currentStep = step;
+    }
+
+    /** 미리보기 확정 → 전체 생성 단계로 전환하고 삽화 단계부터 워크플로우를 재개시킨다. */
+    public void startFullGeneration(String purchaseType, String deliveryEmail) {
+        this.bookPhase = BookPhase.FULL;
+        this.purchaseType = purchaseType;
+        this.deliveryEmail = deliveryEmail;
+        this.status = JobStatus.RUNNING;
+        this.currentStep = WorkflowStep.PAGE_ILLUSTRATION;
+        this.errorMessage = null;
     }
 }

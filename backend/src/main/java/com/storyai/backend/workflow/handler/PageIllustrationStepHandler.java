@@ -5,6 +5,7 @@ import com.storyai.backend.domain.bookpage.BookPage;
 import com.storyai.backend.domain.bookpage.BookPageRepository;
 import com.storyai.backend.domain.storycharacter.StoryCharacter;
 import com.storyai.backend.domain.storycharacter.StoryCharacterRepository;
+import com.storyai.backend.domain.videojob.BookPhase;
 import com.storyai.backend.domain.videojob.VideoJob;
 import com.storyai.backend.domain.videojob.WorkflowStep;
 import com.storyai.backend.storage.LocalStorage;
@@ -31,6 +32,10 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
     @Value("${storyai.book.illustrate-limit:9999}")
     private int illustrateLimit;
 
+    /** 미리보기 단계에서 실제로 그릴 앞쪽 페이지 수(표지 배경 포함). */
+    @Value("${storyai.book.preview-pages:4}")
+    private int previewPages;
+
     @Override
     public WorkflowStep getStep() {
         return WorkflowStep.PAGE_ILLUSTRATION;
@@ -47,11 +52,24 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
         }
 
         String style = job.getBookStyle() != null ? job.getBookStyle().getGuide() : null;
+        // 미리보기 단계면 앞쪽 previewPages 페이지만 그린다(비용 최소화). 전체 단계면 전부.
+        boolean preview = job.getBookPhase() == BookPhase.PREVIEW;
+        int upTo = preview ? Math.min(previewPages, pages.size()) : pages.size();
         // 삽화 생성이 실패해도 빈 페이지가 나가지 않도록: 직전 성공 삽화 → 없으면 아이 캐릭터 시트를 재사용.
         String lastGoodUrl = null;
         String sheetFallbackUrl = firstSheetUrl(characters);
-        int generated = 0, reused = 0;
-        for (BookPage page : pages) {
+        int generated = 0, reused = 0, kept = 0;
+        for (int idx = 0; idx < pages.size(); idx++) {
+            BookPage page = pages.get(idx);
+            if (idx >= upTo) {
+                continue; // 미리보기: 뒷 페이지는 아직 생성하지 않음
+            }
+            // 이미 실제 삽화가 있으면(미리보기에서 생성됨) 재사용해 비용 절약.
+            if (localStorage.loadByUrl(page.getImageUrl()) != null) {
+                lastGoodUrl = page.getImageUrl();
+                kept++;
+                continue;
+            }
             List<byte[]> sheets = sheetsForPage(characters, page.getOutfit());
             String url = null;
             if (canGenerate && generated < illustrateLimit && !sheets.isEmpty()) {
@@ -77,12 +95,8 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
             page.setImageUrl(url);
             bookPageRepository.save(page);
         }
-        if (reused > 0) {
-            log.info("삽화 대체 재사용 {}건 — 빈 페이지 없이 완성", reused);
-        }
-        if (canGenerate && pages.size() > illustrateLimit) {
-            log.info("비용 제한(illustrate-limit={}): {}/{} 페이지만 실제 삽화 생성", illustrateLimit, generated, pages.size());
-        }
+        log.info("삽화 단계 완료: phase={}, 생성 {}, 재사용(기존) {}, 대체 {} / 대상 {}페이지",
+                job.getBookPhase(), generated, kept, reused, upTo);
     }
 
     /** 페이지 의상(everyday/costume)에 맞는 캐릭터 시트를 인물별로 고른다. 없으면 다른 시트로 폴백. */

@@ -52,6 +52,7 @@ export interface JobResponse {
   theme: string
   bookStyle: string | null
   bookPages: number | null
+  bookPhase: 'PREVIEW' | 'FULL'
   physicalBookRequested: boolean
   videoStyle: string | null
   videoDurationSec: number | null
@@ -104,4 +105,16 @@ export function createProject(req: CreateRequest): Promise<JobResponse> {
 
 export function getProject(id: number): Promise<JobResponse> {
   return fetch(`/api/video-jobs/${id}`).then((r) => handle<JobResponse>(r))
+}
+
+/** 미리보기 확정 → 전체 생성 시작. 구매 유형(PDF/BOOK)과 받을 이메일(선택)을 넘긴다. */
+export function confirmProject(
+  id: number,
+  req: { purchaseType: string; deliveryEmail?: string },
+): Promise<JobResponse> {
+  return fetch(`/api/video-jobs/${id}/confirm`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  }).then((r) => handle<JobResponse>(r))
 }

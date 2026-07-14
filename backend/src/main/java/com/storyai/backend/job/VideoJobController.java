@@ -2,6 +2,7 @@ package com.storyai.backend.job;
 
 import com.storyai.backend.domain.videojob.OutputType;
 import com.storyai.backend.domain.videojob.VideoJob;
+import com.storyai.backend.job.dto.ConfirmVideoJobRequest;
 import com.storyai.backend.job.dto.CreateVideoJobRequest;
 import com.storyai.backend.job.dto.VideoJobResponse;
 import com.storyai.backend.storage.LocalStorage;
@@ -37,6 +38,12 @@ public class VideoJobController {
     @GetMapping("/{id}")
     public VideoJobResponse get(@PathVariable Long id) {
         return VideoJobResponse.from(videoJobService.getJob(id));
+    }
+
+    /** 미리보기 확정 → 전체 생성 시작(구매유형·이메일 수집, 결제는 이후). */
+    @PostMapping("/{id}/confirm")
+    public VideoJobResponse confirm(@PathVariable Long id, @RequestBody ConfirmVideoJobRequest request) {
+        return VideoJobResponse.from(videoJobService.confirmFull(id, request));
     }
 
     /** 완성된 책 PDF 다운로드. (영상 다운로드는 Slice 4에서) */

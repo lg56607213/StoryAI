@@ -5,7 +5,9 @@ import com.storyai.backend.domain.media.MediaAssetRepository;
 import com.storyai.backend.domain.media.MediaType;
 import com.storyai.backend.domain.storycharacter.StoryCharacter;
 import com.storyai.backend.domain.storycharacter.StoryCharacterRepository;
+import com.storyai.backend.domain.videojob.BookPhase;
 import com.storyai.backend.domain.videojob.OutputType;
+import com.storyai.backend.job.dto.ConfirmVideoJobRequest;
 import com.storyai.backend.domain.videojob.VideoJob;
 import com.storyai.backend.domain.videojob.VideoJobRepository;
 import com.storyai.backend.domain.videojob.WorkflowStep;
@@ -43,6 +45,8 @@ public class VideoJobService {
 
         VideoJob job = VideoJob.builder()
                 .outputType(request.outputType())
+                // 책은 미리보기부터, 영상은 바로 전체 생성.
+                .bookPhase(isBook ? BookPhase.PREVIEW : BookPhase.FULL)
                 .storyTheme(request.theme())
                 .theme(request.theme().getLabel())
                 .protagonistDescription(protagonist)
@@ -83,6 +87,24 @@ public class VideoJobService {
         }
 
         // 커밋 이후 비동기로 워크플로우 첫 단계가 시작된다.
+        workflowEngine.start(job.getId());
+        return job;
+    }
+
+    /** 미리보기 확정 → 전체 생성 재개. 구매유형·이메일을 저장하고 삽화 단계부터 워크플로우를 다시 태운다. */
+    @Transactional
+    public VideoJob confirmFull(Long jobId, ConfirmVideoJobRequest request) {
+        VideoJob job = videoJobRepository.findById(jobId)
+                .orElseThrow(() -> new VideoJobNotFoundException(jobId));
+        if (job.getOutputType() != OutputType.BOOK) {
+            throw new IllegalArgumentException("책 주문만 확정할 수 있습니다.");
+        }
+        if (job.getBookPhase() == BookPhase.FULL) {
+            throw new IllegalArgumentException("이미 전체 생성이 진행/완료된 주문입니다.");
+        }
+        job.startFullGeneration(blankToNull(request.purchaseType()), blankToNull(request.deliveryEmail()));
+        videoJobRepository.save(job);
+        // 커밋 이후 PAGE_ILLUSTRATION부터 재개된다.
         workflowEngine.start(job.getId());
         return job;
     }
