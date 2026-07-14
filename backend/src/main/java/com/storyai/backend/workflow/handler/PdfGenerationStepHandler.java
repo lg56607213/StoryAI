@@ -100,11 +100,15 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
     private BufferedImage composeCover(String title, byte[] imgBytes, Font jua, Font gaegu) {
         BufferedImage bmp = canvas();
         Graphics2D g = graphics(bmp);
-        scatter(g, 60, 60, W - 120, H - 120, 22, 7);
-        drawImageCover(g, image(imgBytes), M, M, 900, H - 2 * M);
-        int tx = 900 + M + 60, tw = W - tx - M;
-        drawParagraph(g, title, jua.deriveFont(78f), ACCENT, tx, H / 2 - 220, tw, 360);
-        drawParagraph(g, BYLINE, gaegu.deriveFont(40f), SUBTLE, tx, H / 2 + 170, tw, 90);
+        // 표지 = 장면 풀블리드 + 하단 제목 밴드 (서점 책 표지 느낌).
+        drawImageFullBleed(g, image(imgBytes), W, H);
+        int bandM = 90, bandH = 430, by = H - bandH - 90;
+        g.setColor(new Color(0, 0, 0, 30));
+        g.fill(new RoundRectangle2D.Float(bandM + 6, by + 10, W - 2 * bandM, bandH, 70, 70));
+        g.setColor(new Color(255, 252, 247, 236));
+        g.fill(new RoundRectangle2D.Float(bandM, by, W - 2 * bandM, bandH, 70, 70));
+        drawParagraph(g, title, jua.deriveFont(92f), ACCENT, bandM + 80, by + 66, W - 2 * bandM - 160, 236);
+        drawParagraph(g, BYLINE, gaegu.deriveFont(42f), SUBTLE, bandM + 80, by + bandH - 128, W - 2 * bandM - 160, 88);
         g.dispose();
         return bmp;
     }
@@ -147,55 +151,47 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
     private BufferedImage composePage(int i, int total, BookPage page, Font gaegu, Font jua) {
         BufferedImage bmp = canvas();
         Graphics2D g = graphics(bmp);
-        String lay = layoutFor(i, total);
         BufferedImage img = image(localStorage.loadByUrl(page.getImageUrl()));
         String text = page.getText() != null ? page.getText() : "";
-        Font body = gaegu.deriveFont(56f);
-        Font pn = jua.deriveFont(32f);
-        // 그림을 크게: 좌우 배치는 그림이 폭의 58%, 상하 배치는 그림이 위쪽을 넓게 차지.
-        int content = W - 2 * M - GAP;
-        int imgW = (int) (content * 0.58);
-        int txtW = content - imgW;
+        Font body = gaegu.deriveFont(60f);
+        Font pn = jua.deriveFont(30f);
 
-        switch (lay) {
-            case "L" -> {
-                drawImageCover(g, img, M, M, imgW, H - 2 * M);
-                textPanel(g, M + imgW + GAP, M, txtW, H - 2 * M, text, page.getPageNumber(), body, pn, i + 3);
-            }
-            case "R" -> {
-                drawImageCover(g, img, M + txtW + GAP, M, imgW, H - 2 * M);
-                textPanel(g, M, M, txtW, H - 2 * M, text, page.getPageNumber(), body, pn, i + 3);
-            }
-            case "T" -> {
-                int imgH = 940;
-                drawImageCover(g, img, M, M, W - 2 * M, imgH);
-                textPanel(g, M, M + imgH + 30, W - 2 * M, H - 2 * M - imgH - 30, text, page.getPageNumber(), body, pn, i + 3);
-            }
-            case "FL" -> {
-                int iw = drawImageCoverHeight(g, img, 0, 0, H);
-                int panX = Math.max(iw + 40, W - 820);
-                textPanel(g, panX, (H - 900) / 2, W - panX - 70, 900, text, page.getPageNumber(), body, pn, i + 3);
-            }
-            case "FR" -> {
-                int iw = img != null ? (int) (img.getWidth() * ((double) H / img.getHeight())) : W / 2;
-                if (img != null) g.drawImage(img, W - iw, 0, iw, H, null);
-                int panW = Math.min(760, (W - iw) - 110);
-                if (panW < 620) panW = 620;
-                textPanel(g, 70, (H - 900) / 2, panW, 900, text, page.getPageNumber(), body, pn, i + 3);
-            }
-            default -> { }
+        // 그림을 페이지 전체에 꽉 채우고(풀블리드), 글은 반투명 밴드에 얹는다 → 빈 여백 제거.
+        drawImageFullBleed(g, img, W, H);
+        if (!text.isBlank()) {
+            int bandM = 90, bandH = 340;
+            // 페이지마다 밴드를 아래/위 번갈아 배치해 단조롭지 않게.
+            boolean bottom = (i % 2 == 0);
+            int by = bottom ? H - bandH - 80 : 80;
+            drawCaptionBand(g, bandM, by, W - 2 * bandM, bandH, text, page.getPageNumber(), body, pn);
         }
         g.dispose();
         return bmp;
     }
 
-    /** 페이지 인덱스에 따라 레이아웃을 정한다(도입·엔딩=풀블리드, 3의 배수=상하, 그 외 좌/우/풀블리드 순환). */
-    private String layoutFor(int i, int total) {
-        if (i == 0 || i == total - 1) {
-            return "FL";
+    /** 반투명 흰 밴드에 이야기 문구를 얹는다(그림 위 캡션). 빈 패널 없이 페이지가 꽉 찬다. */
+    private void drawCaptionBand(Graphics2D g, int x, int y, int w, int h, String text, int pageNum,
+                                 Font body, Font pn) {
+        g.setColor(new Color(0, 0, 0, 26));
+        g.fill(new RoundRectangle2D.Float(x + 6, y + 8, w, h, 64, 64));
+        g.setColor(new Color(255, 252, 247, 233));
+        g.fill(new RoundRectangle2D.Float(x, y, w, h, 64, 64));
+        int pad = 72;
+        drawParagraph(g, text, body, INK, x + pad, y + pad, w - 2 * pad, h - 2 * pad - 40);
+        if (pageNum > 0) {
+            drawParagraph(g, String.valueOf(pageNum), pn, ACCENT, x, y + h - 60, w, 44);
         }
-        String[] cycle = {"R", "L", "T", "R", "L", "T", "R", "L", "FR"};
-        return cycle[(i - 1) % cycle.length];
+    }
+
+    /** 그림을 페이지(또는 박스) 전체에 여백 없이 꽉 채운다(cover, 둥근 모서리 없음). */
+    private void drawImageFullBleed(Graphics2D g, BufferedImage img, int w, int h) {
+        if (img == null) {
+            placeholder(g, 0, 0, w, h);
+            return;
+        }
+        double s = Math.max((double) w / img.getWidth(), (double) h / img.getHeight());
+        int iw = (int) (img.getWidth() * s), ih = (int) (img.getHeight() * s);
+        g.drawImage(img, (w - iw) / 2, (h - ih) / 2, iw, ih, null);
     }
 
     // ---------- 그리기 헬퍼 ----------
@@ -328,13 +324,20 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
     }
 
     private byte[] coverImage(VideoJob job) {
+        // 표지 배경 = 첫 삽화(장면). 초반은 실제 옷 차림이라 "본인" 인식에도 좋고 장면이라 표지가 풍성함.
+        for (BookPage p : bookPageRepository.findByVideoJobIdOrderByPageNumberAsc(job.getId())) {
+            byte[] scene = localStorage.loadByUrl(p.getImageUrl());
+            if (scene != null) {
+                return scene;
+            }
+        }
+        // 폴백: 주인공 평상복(실제 옷) 시트.
         List<StoryCharacter> chars = storyCharacterRepository.findByVideoJobIdOrderByIdAsc(job.getId());
         StoryCharacter main = chars.stream().filter(c -> c.getRole() == CharacterRole.MAIN).findFirst()
                 .orElse(chars.isEmpty() ? null : chars.get(0));
         if (main == null) {
             return null;
         }
-        // 표지는 "본인" 인식을 위해 평상복(실제 옷) 시트를 우선 사용.
         byte[] everyday = localStorage.loadByUrl(main.getEverydaySheetUrl());
         return everyday != null ? everyday : localStorage.loadByUrl(main.getCharacterSheetUrl());
     }
