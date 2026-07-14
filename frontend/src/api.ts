@@ -35,6 +35,7 @@ export interface CreateRequest {
   theme: string
   ageGroup: string
   dedication?: string
+  dedicationPhotoUrl?: string
   storyDirection?: string
   mood?: string
   bookStyle?: string | null

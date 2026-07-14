@@ -75,6 +75,10 @@ public class VideoJob {
     @Column(columnDefinition = "TEXT")
     private String dedication;
 
+    /** 헌정 페이지에 넣을 가족 사진 URL (선택) — AI 변환 없이 업로드 원본을 그대로 삽입 */
+    @Column(length = 1000)
+    private String dedicationPhotoUrl;
+
     /** 스토리 방향 (선택) — 고객이 이야기 틀을 잡아주는 자유 입력 */
     @Column(columnDefinition = "TEXT")
     private String storyDirection;

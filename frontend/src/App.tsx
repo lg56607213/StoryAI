@@ -46,6 +46,8 @@ function App() {
   const [theme, setTheme] = useState('')
   const [ageGroup, setAgeGroup] = useState('')
   const [dedication, setDedication] = useState('')
+  const [dedicationPhoto, setDedicationPhoto] = useState<File | null>(null)
+  const [dedicationPhotoPreview, setDedicationPhotoPreview] = useState<string | null>(null)
   const [storyDirection, setStoryDirection] = useState('')
   const [bookStyle, setBookStyle] = useState('')
   const [bookPages, setBookPages] = useState<number | null>(null)
@@ -174,11 +176,18 @@ function App() {
         const urls = await uploadPhotos(c.photos)
         chars.push({ name: c.name.trim(), role: c.role, photoUrls: urls })
       }
+      // 헌정 페이지용 가족 사진(선택) — 변환 없이 원본 그대로 삽입.
+      let dedicationPhotoUrl: string | undefined
+      if (dedicationPhoto) {
+        const [url] = await uploadPhotos([dedicationPhoto])
+        dedicationPhotoUrl = url
+      }
       const created = await createProject({
         outputType,
         theme,
         ageGroup,
         dedication: dedication.trim() || undefined,
+        dedicationPhotoUrl,
         storyDirection: storyDirection.trim() || undefined,
         physicalBookRequested: isBook ? physical : false,
         bookStyle: isBook ? bookStyle : null,
@@ -467,6 +476,43 @@ function App() {
           rows={2}
           onChange={(e) => setDedication(e.target.value)}
         />
+        <label className="field-label">가족 사진 <span className="muted small">— 헌정 페이지에 실제 사진 그대로 들어가요 (선택)</span></label>
+        <div className="ded-photo">
+          <label className="ded-photo-pick">
+            {dedicationPhotoPreview ? (
+              <img src={dedicationPhotoPreview} alt="가족 사진" />
+            ) : (
+              <span>사진 추가</span>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (!f) return
+                setDedicationPhoto(f)
+                setDedicationPhotoPreview((prev) => {
+                  if (prev) URL.revokeObjectURL(prev)
+                  return URL.createObjectURL(f)
+                })
+                e.target.value = ''
+              }}
+            />
+          </label>
+          {dedicationPhotoPreview && (
+            <button
+              type="button"
+              className="btn ghost small"
+              onClick={() => {
+                if (dedicationPhotoPreview) URL.revokeObjectURL(dedicationPhotoPreview)
+                setDedicationPhoto(null)
+                setDedicationPhotoPreview(null)
+              }}
+            >
+              사진 빼기
+            </button>
+          )}
+        </div>
         <label className="field-label">스토리 방향 <span className="muted small">— 원하는 이야기 틀 (없으면 비워두세요)</span></label>
         <textarea
           className="text area"

@@ -77,8 +77,10 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         try (PDDocument doc = new PDDocument()) {
             String title = job.getGeneratedTitle() != null ? job.getGeneratedTitle() : "이야기책";
             addPage(doc, composeCover(title, coverImage(job), jua, gaegu));
-            if (job.getDedication() != null && !job.getDedication().isBlank()) {
-                addPage(doc, composeDedication(job.getDedication(), gaegu, jua));
+            byte[] dedicationPhoto = localStorage.loadByUrl(job.getDedicationPhotoUrl());
+            boolean hasDedText = job.getDedication() != null && !job.getDedication().isBlank();
+            if (hasDedText || dedicationPhoto != null) {
+                addPage(doc, composeDedication(job.getDedication(), dedicationPhoto, gaegu, jua));
             }
             for (int i = 0; i < pages.size(); i++) {
                 addPage(doc, composePage(i, pages.size(), pages.get(i), gaegu, jua));
@@ -107,15 +109,39 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         return bmp;
     }
 
-    private BufferedImage composeDedication(String dedication, Font gaegu, Font jua) {
+    private BufferedImage composeDedication(String dedication, byte[] photoBytes, Font gaegu, Font jua) {
         BufferedImage bmp = canvas();
         Graphics2D g = graphics(bmp);
-        scatter(g, 80, 80, W - 160, H - 160, 16, 11);
-        // 상단 하트(♥) — Jua 폰트에 글리프 있으면 표시
-        drawParagraph(g, "♡", jua.deriveFont(90f), ACCENT, W / 2 - 150, H / 2 - 320, 300, 130);
-        drawParagraph(g, dedication, gaegu.deriveFont(58f), INK, W / 2 - 760, H / 2 - 150, 1520, 420);
+        scatter(g, 80, 80, W - 160, H - 160, 14, 11);
+        BufferedImage photo = image(photoBytes);
+        String msg = (dedication == null || dedication.isBlank()) ? "" : dedication;
+        if (photo != null) {
+            // 왼쪽: 흰 액자에 실제 가족 사진(AI 변환 없이 원본 그대로).
+            int fw = 900, fh = 1060, fx = 175, fy = (H - fh) / 2;
+            drawPhotoFrame(g, photo, fx, fy, fw, fh);
+            // 오른쪽: 하트 + 헌정 메시지.
+            int tx = fx + fw + 110, tw = W - tx - 150;
+            drawParagraph(g, "♡", jua.deriveFont(84f), ACCENT, tx, H / 2 - 340, tw, 120);
+            if (!msg.isEmpty()) {
+                drawParagraph(g, msg, gaegu.deriveFont(54f), INK, tx, H / 2 - 170, tw, 460);
+            }
+        } else {
+            // 사진 없으면 기존처럼 하트+메시지 중앙 배치.
+            drawParagraph(g, "♡", jua.deriveFont(90f), ACCENT, W / 2 - 150, H / 2 - 320, 300, 130);
+            drawParagraph(g, msg, gaegu.deriveFont(58f), INK, W / 2 - 760, H / 2 - 150, 1520, 420);
+        }
         g.dispose();
         return bmp;
+    }
+
+    /** 흰 매트 액자에 사진을 원본 비율 그대로(fit) 넣는다. AI 변환 없이 업로드 사진을 그대로 표시. */
+    private void drawPhotoFrame(Graphics2D g, BufferedImage photo, int x, int y, int w, int h) {
+        g.setColor(new Color(60, 50, 55, 30)); // 그림자
+        g.fill(new RoundRectangle2D.Float(x + 12, y + 16, w, h, 36, 36));
+        g.setColor(Color.WHITE);             // 흰 액자
+        g.fill(new RoundRectangle2D.Float(x, y, w, h, 36, 36));
+        int pad = 34;                         // 사진 전체가 보이도록 비율 유지(fit)
+        drawImageFit(g, photo, x + pad, y + pad, w - 2 * pad, h - 2 * pad);
     }
 
     private BufferedImage composePage(int i, int total, BookPage page, Font gaegu, Font jua) {

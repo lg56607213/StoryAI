@@ -25,6 +25,8 @@ public record CreateVideoJobRequest(
 
         // 헌정 메세지(선택) · 스토리 방향(선택, 있으면 스토리에 반영)
         String dedication,
+        // 헌정 페이지용 가족 사진 URL(선택) — 변환 없이 원본 그대로 삽입
+        String dedicationPhotoUrl,
         String storyDirection,
 
         // 책 옵션

@@ -49,6 +49,7 @@ public class VideoJobService {
                 .mood(request.mood())
                 .ageGroup(request.ageGroup())
                 .dedication(blankToNull(request.dedication()))
+                .dedicationPhotoUrl(blankToNull(request.dedicationPhotoUrl()))
                 .storyDirection(blankToNull(request.storyDirection()))
                 .bookStyle(isBook ? request.bookStyle() : null)
                 .bookPages(isBook ? request.bookPages() : null)
