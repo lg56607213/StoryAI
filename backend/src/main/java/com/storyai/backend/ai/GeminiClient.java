@@ -112,27 +112,54 @@ public class GeminiClient {
                 + resp.path("candidates").path(0).path("finishReason").asText());
     }
 
+    /**
+     * Gemini 호출. 일시적 오류(429/5xx·네트워크)는 지수 백오프로 재시도한다.
+     * 재시도 불가능한 4xx(잘못된 요청 등)는 즉시 실패. 이미지 삽화 503 실패로 빈 페이지가 나던 문제를 완화.
+     */
     private JsonNode post(String model, JsonNode body) {
         if (!isConfigured()) {
             throw new IllegalStateException("GEMINI_API_KEY가 설정되지 않았습니다.");
         }
-        try {
-            HttpRequest req = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE + model + ":generateContent"))
-                    .timeout(Duration.ofSeconds(180))
-                    .header("x-goog-api-key", apiKey)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body), StandardCharsets.UTF_8))
-                    .build();
-            HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (res.statusCode() != 200) {
-                throw new IllegalStateException("Gemini API " + res.statusCode() + ": " + res.body());
+        int maxAttempts = 4;
+        IllegalStateException last = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                HttpRequest req = HttpRequest.newBuilder()
+                        .uri(URI.create(BASE + model + ":generateContent"))
+                        .timeout(Duration.ofSeconds(180))
+                        .header("x-goog-api-key", apiKey)
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body), StandardCharsets.UTF_8))
+                        .build();
+                HttpResponse<String> res = http.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                int sc = res.statusCode();
+                if (sc == 200) {
+                    return mapper.readTree(res.body());
+                }
+                last = new IllegalStateException("Gemini API " + sc + ": " + res.body());
+                boolean retryable = sc == 429 || sc >= 500; // 과부하/일시 오류만 재시도
+                if (!retryable) {
+                    throw last;
+                }
+                log.warn("Gemini {} 일시 오류 (시도 {}/{}) → 재시도", sc, attempt, maxAttempts);
+            } catch (IllegalStateException e) {
+                throw e; // 재시도 불가(4xx)
+            } catch (Exception e) {
+                last = new IllegalStateException("Gemini 호출 실패: " + e.getMessage(), e);
+                log.warn("Gemini 네트워크 오류 (시도 {}/{}): {}", attempt, maxAttempts, e.getMessage());
             }
-            return mapper.readTree(res.body());
-        } catch (IllegalStateException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new IllegalStateException("Gemini 호출 실패: " + e.getMessage(), e);
+            if (attempt < maxAttempts) {
+                sleepMs(700L * (1L << (attempt - 1))); // 700ms, 1.4s, 2.8s
+            }
+        }
+        throw last;
+    }
+
+    private void sleepMs(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
         }
     }
 
