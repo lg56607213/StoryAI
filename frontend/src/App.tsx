@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import ImageCropper from './ImageCropper'
 import {
+  apiUrl,
   confirmProject,
   createProject,
   getOptions,
@@ -285,7 +286,7 @@ function App() {
               <h2>{job.generatedTitle ?? '미리보기가 나왔어요!'}</h2>
               <p className="muted">표지와 앞부분을 먼저 보여드려요. 마음에 들면 전체 책을 만들어 드릴게요.</p>
               {job.resultUrl && (
-                <a className="btn ghost" href={job.resultUrl} target="_blank" rel="noreferrer">
+                <a className="btn ghost" href={apiUrl(job.resultUrl)} target="_blank" rel="noreferrer">
                   미리보기 열어보기
                 </a>
               )}
@@ -326,7 +327,7 @@ function App() {
                 {job.physicalBookRequested && ' · 실물(인쇄본) 요청됨'}
               </p>
               {job.outputType === 'BOOK' && job.resultUrl ? (
-                <a className="btn primary" href={job.resultUrl} target="_blank" rel="noreferrer">
+                <a className="btn primary" href={apiUrl(job.resultUrl)} target="_blank" rel="noreferrer">
                   전체 책 다운로드
                 </a>
               ) : (

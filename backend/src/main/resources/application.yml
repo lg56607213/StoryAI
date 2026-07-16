@@ -16,11 +16,6 @@ spring:
       hibernate:
         format_sql: true
 
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-
   servlet:
     multipart:
       max-file-size: 20MB
@@ -41,6 +36,14 @@ storyai:
   storage:
     s3-bucket: ${S3_BUCKET:}
     aws-region: ${AWS_REGION:ap-northeast-2}
+    # 배포 시 Railway 볼륨 마운트 경로로 지정(예: /data/storage). 지정 안 하면 로컬 ./storage.
     local-dir: ${STORAGE_DIR:./storage}
-  pdf:
-    korean-font-path: ${PDF_FONT_PATH:C:/Windows/Fonts/malgun.ttf}
+  cors:
+    # 배포 시 프론트 도메인으로 지정(예: https://storyai.example.com). 기본 "*"는 개발용.
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
+  rate-limit:
+    # IP당 하루 최대 "만들기" 요청 수(비용 폭탄 방지). 0이면 제한 없음.
+    jobs-per-day: ${RATE_LIMIT_JOBS_PER_DAY:0}
+  book:
+    preview-pages: ${PREVIEW_PAGES:4}
+    illustrate-limit: ${ILLUSTRATE_LIMIT:9999}

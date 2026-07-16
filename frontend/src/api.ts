@@ -1,4 +1,8 @@
-// StoryAI 백엔드 API 클라이언트. dev 서버는 vite.config.ts의 프록시로 /api → :8080 로 전달한다.
+// StoryAI 백엔드 API 클라이언트.
+// dev: vite.config.ts 프록시로 /api → :8080. prod: VITE_API_BASE(백엔드 도메인)를 앞에 붙인다.
+const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '')
+/** 상대 API 경로(예: "/api/...")를 배포 백엔드 절대 URL로 변환. dev에선 그대로 프록시. */
+export const apiUrl = (path: string) => `${API_BASE}${path}`
 
 export interface Option {
   code: string
@@ -83,20 +87,20 @@ async function handle<T>(res: Response): Promise<T> {
 }
 
 export function getOptions(): Promise<Options> {
-  return fetch('/api/options').then((r) => handle<Options>(r))
+  return fetch(apiUrl('/api/options')).then((r) => handle<Options>(r))
 }
 
 /** 사진 파일들을 서버에 업로드하고 저장된 URL 목록을 반환. */
 export function uploadPhotos(files: File[]): Promise<string[]> {
   const form = new FormData()
   files.forEach((f) => form.append('files', f))
-  return fetch('/api/uploads', { method: 'POST', body: form })
+  return fetch(apiUrl('/api/uploads'), { method: 'POST', body: form })
     .then((r) => handle<{ urls: string[] }>(r))
     .then((d) => d.urls)
 }
 
 export function createProject(req: CreateRequest): Promise<JobResponse> {
-  return fetch('/api/video-jobs', {
+  return fetch(apiUrl('/api/video-jobs'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
@@ -104,7 +108,7 @@ export function createProject(req: CreateRequest): Promise<JobResponse> {
 }
 
 export function getProject(id: number): Promise<JobResponse> {
-  return fetch(`/api/video-jobs/${id}`).then((r) => handle<JobResponse>(r))
+  return fetch(apiUrl(`/api/video-jobs/${id}`)).then((r) => handle<JobResponse>(r))
 }
 
 /** 미리보기 확정 → 전체 생성 시작. 구매 유형(PDF/BOOK)과 받을 이메일(선택)을 넘긴다. */
@@ -112,7 +116,7 @@ export function confirmProject(
   id: number,
   req: { purchaseType: string; deliveryEmail?: string },
 ): Promise<JobResponse> {
-  return fetch(`/api/video-jobs/${id}/confirm`, {
+  return fetch(apiUrl(`/api/video-jobs/${id}/confirm`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
