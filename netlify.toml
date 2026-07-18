@@ -3,7 +3,8 @@
 [build]
   base = "frontend"
   command = "npm run build"
-  publish = "frontend/dist"
+  # base가 frontend이므로 publish는 그 안 기준(=frontend/dist).
+  publish = "dist"
 
 [build.environment]
   # Vite 8은 Node 20+ 필요. Netlify 기본이 낮아서 빌드 실패 → 버전 고정.
