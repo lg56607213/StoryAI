@@ -54,10 +54,10 @@
 
 ## 4) 배포 순서 (클릭 단위 — 앞 단계 주소가 뒤에 필요)
 
-**리포에 이미 준비됨**: `backend/Dockerfile`(백엔드 빌드), `netlify.toml`(프론트 빌드).
+**리포에 이미 준비됨**: 루트 `Dockerfile`+`railway.json`(백엔드 빌드, Root Directory 설정 불필요), `netlify.toml`(프론트 빌드).
 
 1. **Railway → New Project → Deploy from GitHub** → StoryAI 선택
-2. 백엔드 서비스 설정: **Settings → Root Directory = `backend`** (Dockerfile 자동 인식)
+2. Root Directory는 **설정하지 않아도 됨** — 루트 `railway.json`이 루트 `Dockerfile`로 백엔드를 빌드함. (혹시 Root Directory에 값이 있으면 비워둘 것)
 3. 같은 프로젝트에 **+ New → Database → MySQL** 추가
 4. **+ New → Volume** 생성 → 백엔드 서비스에 **Mount path = `/data`**
 5. 백엔드 **Variables**에 위 2)의 변수들 입력 → 자동 재배포

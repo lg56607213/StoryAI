@@ -1,0 +1,11 @@
+.git/
+frontend/
+docs/
+node_modules/
+*.jpg
+*.jpeg
+*.png
+*.pdf
+backend/build/
+backend/.gradle/
+backend/storage/

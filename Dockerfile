@@ -1,11 +1,9 @@
-# StoryAI 백엔드 컨테이너 (Railway 등에서 사용)
-# 1단계: Gradle 래퍼로 실행 가능한 부트 JAR 빌드
+# StoryAI 백엔드 컨테이너 — 리포 루트에서 빌드 (Railway가 루트를 분석하므로 Root Directory 설정 불필요)
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
-COPY . .
+COPY backend/ .
 RUN chmod +x gradlew && ./gradlew bootJar --no-daemon
 
-# 2단계: JRE만 담아 가볍게 실행
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
