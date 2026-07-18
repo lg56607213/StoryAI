@@ -38,6 +38,17 @@
 
 ## ⏳ 남은 작업
 
+### 0) [진행중] 로그인 (구글/카카오) — 다음 세션 이어서
+현재까지: 배포 완료(https://todayhero.co.kr). CORS 코드는 인증정보 허용으로 바꿈(`675e7bc`). **로그인 코드는 아직 시작 안 함.**
+남은 절차(순서대로):
+1. **[사장님] Railway 변수** `CORS_ALLOWED_ORIGINS=https://todayhero.co.kr,https://www.todayhero.co.kr,https://dapper-selkie-898d41.netlify.app` 추가.
+2. **[사장님+안내] api.todayhero.co.kr 붙이기** — Railway StoryAI → Settings → Networking → Custom Domain에 `api.todayhero.co.kr` 입력 → 나온 CNAME 대상을 Netlify DNS(도메인 관리)에 CNAME `api`로 등록. (쿠키 로그인을 같은 도메인 계열로 안정화)
+   - 그 후 Netlify `VITE_API_BASE=https://api.todayhero.co.kr`, Railway `CORS_ALLOWED_ORIGINS=https://todayhero.co.kr`로 정리.
+3. **[사장님+안내] OAuth 앱 등록**: Google Cloud OAuth 클라이언트 + Kakao Developers 앱 → client id/secret. 리다이렉트 URI = `https://api.todayhero.co.kr/login/oauth2/code/{google|kakao}`.
+4. **[개발] 백엔드 코드**: `spring-boot-starter-oauth2-client`+`security` 추가, User 엔티티, SecurityConfig(OAuth2 로그인, /api/health·/api/options 공개), 카카오 커스텀 provider, `/api/me`, 로그인/로그아웃. 키는 env(GOOGLE_CLIENT_ID/SECRET, KAKAO_CLIENT_ID/SECRET).
+5. **[개발] 프론트**: 로그인 버튼(구글/카카오), 로그인 상태 표시, 주문을 회원에 연결.
+6. **[개발] 회원별 생성 제한** (IP 제한 → 회원 기준으로).
+
 ### 1) 실제 이메일 발송 (지금 스텁) — 외부 계정 필요
 - `build.gradle`에 `spring-boot-starter-mail` 추가 → `application.yml`에 SMTP(예: Gmail 앱비밀번호/SendGrid) → `EmailNotifier.send()`를 JavaMailSender+PDF첨부로 교체.
 - **카카오톡**: 사업자등록 + 채널 + 알림톡 심사 필요 → 이후.
@@ -70,3 +81,11 @@
 - 백엔드: `backend/` 에서 `gradlew.bat bootRun --args=--spring.profiles.active=dev` (GEMINI_API_KEY 환경변수 주입)
 - 프론트: `frontend/` 에서 `npm run dev` (→ :5173, /api는 :8080 프록시)
 - 주의: H2 메모리라 백엔드 재시작 시 업로드/주문 데이터 초기화됨(사진 파일은 디스크에 남음).
+
+## 🏠 다른 PC(집)에서 이어서 하기
+1. `git clone https://github.com/lg56607213/StoryAI` (또는 기존 폴더면 `git pull`).
+2. **`.env` 재생성** (gitignore라 리포에 없음): 루트에 `.env` 만들고 `GEMINI_API_KEY=AQ.…`(Google AI Studio 키) 한 줄.
+3. 필요 도구: **JDK 21**, **Node 22**. (로컬 테스트할 때만 — 코드 수정→push하면 Railway/Netlify 자동 재배포되므로 라이브에서 바로 확인도 가능)
+4. **Claude Code를 StoryAI 폴더에서 열고** "로그인 작업 이어서 하자" 라고 하면 위 "0) 로그인" 절차부터 진행.
+5. 로그인/배포 설정에 필요한 계정 로그인 준비: **Railway, Netlify, Google Cloud, Kakao Developers**.
+- 참고: 코드 작성은 Claude가, 앱 등록·대시보드 클릭은 사장님이 (Claude가 화면 보며 안내).
