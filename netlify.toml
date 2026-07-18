@@ -1,0 +1,15 @@
+# StoryAI 프론트엔드 배포 설정 (Netlify)
+# frontend/ 를 빌드해 정적 사이트로 서빙한다.
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "frontend/dist"
+
+# SPA: 어떤 경로로 들어와도 index.html 로 (새로고침 404 방지)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# 참고: 백엔드 주소는 Netlify 환경변수 VITE_API_BASE 로 지정한다
+#  (Site settings → Environment variables → VITE_API_BASE = https://<railway-백엔드-도메인>)

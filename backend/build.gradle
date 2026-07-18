@@ -38,6 +38,11 @@ tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 }
 
+// 실행 불가한 -plain.jar 는 만들지 않는다 (컨테이너에서 boot jar 하나만 쓰도록).
+tasks.named('jar') {
+	enabled = false
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 }

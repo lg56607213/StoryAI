@@ -29,37 +29,47 @@
 
 ---
 
-## 2) 백엔드 환경변수 (Railway에 설정)
+## 2) 백엔드 환경변수 (Railway → 백엔드 서비스 → Variables)
 
-| 변수 | 예시 | 설명 |
+| 변수 | 값 | 설명 |
 |---|---|---|
-| `SPRING_PROFILES_ACTIVE` | (비움) | 기본 프로파일=MySQL. dev 넣지 말 것 |
-| `DB_HOST` `DB_PORT` `DB_NAME` `DB_USERNAME` `DB_PASSWORD` | Railway MySQL 정보 | DB 접속 |
-| `STORAGE_DIR` | `/data/storage` | **볼륨 마운트 경로**(중요: 안 하면 파일 유실) |
-| `GEMINI_API_KEY` | AQ.… | 이미지·스토리 생성 |
-| `CORS_ALLOWED_ORIGINS` | `https://내도메인` | 프론트 도메인 |
+| `DB_HOST` | `${{MySQL.MYSQLHOST}}` | Railway MySQL 참조 |
+| `DB_PORT` | `${{MySQL.MYSQLPORT}}` | 〃 |
+| `DB_NAME` | `${{MySQL.MYSQLDATABASE}}` | 〃 |
+| `DB_USERNAME` | `${{MySQL.MYSQLUSER}}` | 〃 |
+| `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` | 〃 |
+| `STORAGE_DIR` | `/data/storage` | **볼륨 경로**(안 하면 파일 유실) |
+| `GEMINI_API_KEY` | `AQ.…` | 이미지·스토리 생성 |
+| `CORS_ALLOWED_ORIGINS` | `https://<netlify주소>` | 프론트 도메인 |
 | `RATE_LIMIT_JOBS_PER_DAY` | `20` | 비용 방어 |
-| `SERVER_PORT` | Railway가 주는 `$PORT` | 포트 |
 
-## 3) 프론트 환경변수 (Netlify)
-| 변수 | 예시 |
+> `${{MySQL.XXX}}`는 Railway의 "변수 참조" 문법 — 백엔드가 MySQL 서비스 값을 자동으로 물어옴. `PORT`는 Railway가 자동 주입(따로 설정 X). `SPRING_PROFILES_ACTIVE`는 **비워둠**(기본=MySQL).
+
+## 3) 프론트 환경변수 (Netlify → Site settings → Environment variables)
+| 변수 | 값 |
 |---|---|
-| `VITE_API_BASE` | `https://api.내도메인` (백엔드 주소) |
+| `VITE_API_BASE` | `https://<railway-백엔드-도메인>` |
 
 ---
 
-## 4) 배포 순서 (의존성 순 — 앞 단계 주소가 뒤 단계에 필요)
+## 4) 배포 순서 (클릭 단위 — 앞 단계 주소가 뒤에 필요)
 
-1. **Railway 프로젝트 생성 → MySQL 추가** → DB 접속정보 확보
-2. **Railway 볼륨 생성**, 백엔드 서비스에 마운트(`/data`), `STORAGE_DIR=/data/storage`
-3. **백엔드 배포**(GitHub 연결, `backend/` 빌드) + 위 env 설정 → **백엔드 URL** 확보
-   - 헬스체크: `GET /api/health`
-4. (로그인 붙일 때) 구글/카카오 **리다이렉트 URI** 등록 = `백엔드URL/login/oauth2/...`
-5. **프론트 배포**(Netlify, `frontend/` 빌드, `VITE_API_BASE=백엔드URL`) → **Netlify URL** 확보
-6. **가비아 도메인 연결**: 루트 도메인 → Netlify, `api.도메인` → Railway (DNS)
-7. 최종 도메인으로 `CORS_ALLOWED_ORIGINS`, OAuth 리다이렉트 갱신
-8. (결제 붙이면) PG 키 설정
-9. **라이브 E2E 테스트**: 사진 업로드 → 미리보기 → (결제) → 전체 생성 → 다운로드/이메일
+**리포에 이미 준비됨**: `backend/Dockerfile`(백엔드 빌드), `netlify.toml`(프론트 빌드).
+
+1. **Railway → New Project → Deploy from GitHub** → StoryAI 선택
+2. 백엔드 서비스 설정: **Settings → Root Directory = `backend`** (Dockerfile 자동 인식)
+3. 같은 프로젝트에 **+ New → Database → MySQL** 추가
+4. **+ New → Volume** 생성 → 백엔드 서비스에 **Mount path = `/data`**
+5. 백엔드 **Variables**에 위 2)의 변수들 입력 → 자동 재배포
+6. 백엔드 **Settings → Networking → Generate Domain** → **백엔드 URL 확보**
+   - 확인: 브라우저에서 `백엔드URL/api/health`
+7. **Netlify → Add new site → Import from GitHub** → StoryAI 선택 (netlify.toml이 빌드 자동 설정)
+8. Netlify **환경변수 `VITE_API_BASE = 백엔드URL`** 입력 → 재배포 → **Netlify URL 확보**
+9. 백엔드 `CORS_ALLOWED_ORIGINS`를 **Netlify URL**로 갱신
+10. (도메인) 가비아 DNS: 루트 → Netlify, `api.도메인` → Railway. 그 후 CORS/VITE_API_BASE를 최종 도메인으로 갱신
+11. **라이브 E2E**: 사진 업로드 → 미리보기 → (결제) → 전체 생성 → 다운로드
+
+> 로그인(구글/카카오) 리다이렉트 URI 등록은 백엔드 URL이 정해진 뒤(6번 이후) 로그인 붙일 때 진행.
 
 ---
 
