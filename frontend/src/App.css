@@ -14,6 +14,67 @@
   gap: 8px;
   padding: 4px 0 0;
 }
+.login-bar-spacer {
+  flex: 1;
+}
+
+/* 홈(랜딩) */
+.landing-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 20px;
+  align-items: center;
+}
+.landing-img {
+  width: 100%;
+  border-radius: 14px;
+  display: block;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+.landing-copy h2 {
+  font-size: 22px;
+  margin: 0 0 10px;
+  color: #3a3540;
+  line-height: 1.3;
+}
+.landing-cta {
+  margin-top: 16px;
+  font-size: 17px;
+  padding: 14px 24px;
+}
+.how {
+  margin: 0;
+  padding-left: 4px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.how li {
+  color: #5a545f;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.how b {
+  color: #3a3540;
+}
+.sample-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.sample-grid img {
+  width: 100%;
+  border-radius: 12px;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+@media (max-width: 560px) {
+  .landing-hero {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* 로그인 화면 */
 .login-screen {
