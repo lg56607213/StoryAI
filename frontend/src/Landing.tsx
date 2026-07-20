@@ -97,7 +97,7 @@ export default function Landing({
           <div className="lp-feature"><h3>실물 하드커버</h3><p>파일뿐 아니라 진짜 양장 책으로 제작·배송.</p></div>
           <div className="lp-feature"><h3>연령별 맞춤 글</h3><p>3~10세, 나이에 맞춰 문장 길이와 의성어까지 조절.</p></div>
           <div className="lp-feature"><h3>헌정 가족사진</h3><p>첫 장에 부모님의 메시지와 가족사진을 그대로 담아요.</p></div>
-          <div className="lp-feature"><h3>영상으로도</h3><p>동화책을 영상으로도 만들 수 있어요.</p></div>
+          <div className="lp-feature"><h3>우리 아이 이름으로</h3><p>표지와 이야기에 아이 이름이 들어가 더 특별해요.</p></div>
           <div className="lp-feature"><h3>안 닮으면 다시</h3><p>미리보기로 먼저 확인, 마음에 안 들면 다시 만들어드려요.</p></div>
         </div>
       </section>

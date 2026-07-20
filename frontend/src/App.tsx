@@ -301,7 +301,7 @@ function App() {
         <div className="login-screen">
           <header className="hero">
             <h1>TodayHero</h1>
-            <p>아이 사진으로 만드는 우리 아이 주인공 동화책 · 영상</p>
+            <p>아이 사진으로 만드는 우리 아이 주인공 동화책</p>
           </header>
           <section className="card login-card">
             <p className="login-lead">로그인하고 우리 아이 동화를 만들어보세요</p>
@@ -424,22 +424,23 @@ function App() {
       </div>
       <header className="hero">
         <h1>TodayHero</h1>
-        <p>아이 사진으로 만드는 우리 아이 주인공 동화책 · 영상</p>
+        <p>아이 사진으로 만드는 우리 아이 주인공 동화책</p>
       </header>
 
       <section className="card">
         <h3 className="step">1. 무엇을 만들까요?</h3>
         <div className="chips">
-          {options.outputTypes.map((o) => (
-            <button
-              key={o.code}
-              className={`chip ${outputType === o.code ? 'on' : ''}`}
-              onClick={() => setOutputType(o.code)}
-            >
-              {o.code === 'BOOK' ? '📖 ' : '🎬 '}
-              {o.label}
-            </button>
-          ))}
+          {options.outputTypes
+            .filter((o) => o.code === 'BOOK')
+            .map((o) => (
+              <button
+                key={o.code}
+                className={`chip ${outputType === o.code ? 'on' : ''}`}
+                onClick={() => setOutputType(o.code)}
+              >
+                📖 {o.label}
+              </button>
+            ))}
         </div>
       </section>
 
