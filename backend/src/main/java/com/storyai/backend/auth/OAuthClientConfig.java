@@ -35,6 +35,12 @@ public class OAuthClientConfig {
 
     @Bean
     public ClientRegistrationRepository clientRegistrationRepository() {
+        // 환경변수에 실수로 붙은 앞뒤 공백/개행 제거(흔한 401 원인).
+        googleId = trim(googleId);
+        googleSecret = trim(googleSecret);
+        kakaoId = trim(kakaoId);
+        kakaoSecret = trim(kakaoSecret);
+
         List<ClientRegistration> regs = new ArrayList<>();
         if (StringUtils.hasText(googleId)) {
             regs.add(CommonOAuth2Provider.GOOGLE.getBuilder("google")
@@ -50,6 +56,10 @@ public class OAuthClientConfig {
                 kakaoId == null ? 0 : kakaoId.trim().length(),
                 kakaoSecret == null ? 0 : kakaoSecret.trim().length());
         return new InMemoryClientRegistrationRepository(regs);
+    }
+
+    private String trim(String s) {
+        return s == null ? null : s.trim();
     }
 
     /** 카카오는 표준 provider가 아니라 직접 구성한다. */
