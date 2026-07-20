@@ -28,6 +28,8 @@ spring:
 server:
   # Railway 등 PaaS는 PORT 환경변수를 주입한다. 없으면 SERVER_PORT, 그것도 없으면 8080.
   port: ${PORT:${SERVER_PORT:8080}}
+  # 프록시(Railway) 뒤에서 X-Forwarded-Proto/Host를 신뢰 → https 리다이렉트 주소를 올바로 생성(OAuth 필수).
+  forward-headers-strategy: framework
   servlet:
     session:
       cookie:
