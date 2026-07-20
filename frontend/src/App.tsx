@@ -543,6 +543,15 @@ function App() {
         <p className="muted small">
           첫 번째 인물이 주인공이에요. 둘째나 친구를 함께 추가할 수 있어요.
         </p>
+        <div className="photo-guide">
+          <b>📸 사진 잘 올리는 법</b>
+          <ul>
+            <li><b>정면 1장 + 다른 각도(살짝 옆) 1~2장</b>을 함께 올리면 더 닮게 나와요.</li>
+            <li>밝고 선명한 <b>최근 사진</b>, 얼굴이 크게 나온 걸 추천해요.</li>
+            <li>여러 장이면 좋지만 <b>2~4장이면 충분</b>해요. (많아도 비용은 거의 안 늘어요)</li>
+            <li>선글라스·마스크·심한 필터, 아기 때 사진 섞기는 피해주세요.</li>
+          </ul>
+        </div>
         {characters.map((c, idx) => (
           <div className="character-card" key={idx}>
             <div className="character-top">

@@ -851,3 +851,16 @@ textarea.area {
 .lp-modal input[type='file'] { font-size: 13px; }
 .lp-error { color: #d6455f; font-size: 13.5px; margin: 10px 0 0; }
 .lp-modal-submit { width: 100%; margin-top: 18px; }
+
+/* 사진 업로드 가이드 */
+.photo-guide {
+  background: #fff6ee;
+  border: 1px solid #f0dcc8;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin: 12px 0 4px;
+}
+.photo-guide > b { display: block; font-size: 14px; color: #c1671f; margin-bottom: 8px; }
+.photo-guide ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
+.photo-guide li { font-size: 13px; line-height: 1.5; color: #6a5f55; }
+.photo-guide li b { color: #4a4038; }
