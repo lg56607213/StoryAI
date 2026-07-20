@@ -43,6 +43,12 @@ public class OAuthClientConfig {
         if (StringUtils.hasText(kakaoId)) {
             regs.add(kakao());
         }
+        // 값은 남기지 않고, 환경변수가 제대로 로드됐는지(길이)만 로그로 확인.
+        org.slf4j.LoggerFactory.getLogger(OAuthClientConfig.class).info(
+                "OAuth 설정: googleId={}, kakaoId 길이={}, kakaoSecret 길이={}",
+                StringUtils.hasText(googleId) ? "설정됨" : "없음",
+                kakaoId == null ? 0 : kakaoId.trim().length(),
+                kakaoSecret == null ? 0 : kakaoSecret.trim().length());
         return new InMemoryClientRegistrationRepository(regs);
     }
 
