@@ -261,10 +261,30 @@ function App() {
     )
   }
 
-  if (!options) {
+  if (!options || me === null) {
     return (
       <main className="app">
         <div className="card">불러오는 중…</div>
+      </main>
+    )
+  }
+
+  // 로그인 안 했고 로그인 기능이 켜져 있으면 → 로그인 화면 먼저.
+  if (!me.authenticated && me.loginEnabled) {
+    return (
+      <main className="app">
+        <div className="login-screen">
+          <header className="hero">
+            <h1>TodayHero</h1>
+            <p>아이 사진으로 만드는 우리 아이 주인공 동화책 · 영상</p>
+          </header>
+          <section className="card login-card">
+            <p className="login-lead">로그인하고 우리 아이 동화를 만들어보세요</p>
+            <a className="btn login-kakao" href={loginUrl('kakao')}>카카오로 시작하기</a>
+            <a className="btn login-google" href={loginUrl('google')}>구글로 시작하기</a>
+            <p className="muted small center">로그인하면 만든 동화를 내 계정에 안전하게 보관해요</p>
+          </section>
+        </div>
       </main>
     )
   }
@@ -279,7 +299,7 @@ function App() {
     return (
       <main className="app">
         <header className="hero">
-          <h1>StoryAI</h1>
+          <h1>TodayHero</h1>
           <p>우리 아이가 주인공인 동화</p>
         </header>
         <div className="card result">
@@ -381,7 +401,7 @@ function App() {
         ) : null}
       </div>
       <header className="hero">
-        <h1>StoryAI</h1>
+        <h1>TodayHero</h1>
         <p>아이 사진으로 만드는 우리 아이 주인공 동화책 · 영상</p>
       </header>
 
