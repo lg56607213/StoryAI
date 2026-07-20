@@ -29,13 +29,15 @@ public class GeminiImageGenerator implements ImageGenerator {
 
     @Override
     public byte[] everydaySheet(List<byte[]> photos, String name, String style) {
-        String prompt = "You are given several photos of the SAME real young child"
+        String prompt = "You are given photos of the SAME real young child"
                 + (name != null && !name.isBlank() ? " (name: " + name + ")" : "")
-                + ". Create ONE full-body character reference portrait that strongly and recognizably looks like the "
-                + "SAME specific child (same face, cheeks, eyes, smile, hairstyle). CRUCIAL: keep the child's REAL "
-                + "everyday clothing/outfit exactly as worn in the photos - the same top/T-shirt, its colors and "
-                + "pattern - do NOT put the child in any costume. " + styleLine(style)
-                + " Standing, gentle happy smile, plain warm cream background, centered. No text, no watermark.";
+                + ". Create ONE full-body character reference portrait that looks STRONGLY and recognizably like the "
+                + "SAME specific child - keep the exact face shape, round cheeks, eyes, eyebrows, nose, mouth and smile, "
+                + "skin tone, and hairstyle (including any hairband or hair accessory). "
+                + "CRUCIAL: keep the child's REAL everyday outfit exactly as worn in the photos - the same top, its colors, "
+                + "pattern and sleeves - do NOT change, simplify, or invent clothing, and do NOT put the child in a costume. "
+                + styleLine(style)
+                + " Standing, facing forward, gentle happy smile, plain warm cream background, centered. No text, no watermark.";
         return gemini.generateImage(prompt, photos);
     }
 
