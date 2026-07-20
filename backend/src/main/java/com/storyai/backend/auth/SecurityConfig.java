@@ -50,7 +50,12 @@ public class SecurityConfig {
             http.oauth2Login(oauth -> oauth
                     .userInfoEndpoint(u -> u.userService(oAuth2UserService.getObject()))
                     .successHandler((req, res, a) -> res.sendRedirect(frontendUrl))
-                    .failureHandler((req, res, e) -> res.sendRedirect(frontendUrl + "?login=fail")));
+                    .failureHandler((req, res, e) -> {
+                        // 실패 원인을 로그로 남겨 Railway에서 확인 가능하게.
+                        org.slf4j.LoggerFactory.getLogger(SecurityConfig.class)
+                                .warn("OAuth 로그인 실패: {}", e.getMessage(), e);
+                        res.sendRedirect(frontendUrl + "?login=fail");
+                    }));
         }
 
         return http.build();
