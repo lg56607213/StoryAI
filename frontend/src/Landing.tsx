@@ -55,8 +55,14 @@ export default function Landing({
           <p className="muted">화면 속 파일이 아니라, 튼튼한 양장 하드커버로 제작해 배송해드려요. 아이가 몇 번이고 펼쳐보는 진짜 책이 됩니다.</p>
         </div>
         <div className="lp-hardcover-imgs">
-          <img src="/hero-book.jpg" alt="하드커버 표지" />
-          <img src="/book-open.jpg" alt="펼친 내지" />
+          <figure className="lp-hc-cover">
+            <img src="/hero-book.jpg" alt="하드커버 표지" />
+            <figcaption>양장 하드커버 표지</figcaption>
+          </figure>
+          <figure className="lp-hc-open">
+            <img src="/book-open.jpg" alt="펼친 내지 — 실제 인쇄 예시" />
+            <figcaption>펼치면 이렇게 — 실제 받아보는 페이지 그대로예요</figcaption>
+          </figure>
         </div>
         <div className="lp-badges">
           <div className="lp-badge"><b>양장 하드커버</b><span>튼튼하고 고급스러운 제본</span></div>
