@@ -21,11 +21,23 @@ spring:
       max-file-size: 20MB
       max-request-size: 100MB
 
+  # 소셜 로그인 클라이언트 등록은 application.yml이 아니라 OAuthClientConfig에서
+  # 프로그램으로 만든다(키가 비면 아예 등록 안 함 → 앱 정상 부팅). GOOGLE_CLIENT_ID/SECRET,
+  # KAKAO_CLIENT_ID/SECRET 환경변수로 주입.
+
 server:
   # Railway 등 PaaS는 PORT 환경변수를 주입한다. 없으면 SERVER_PORT, 그것도 없으면 8080.
   port: ${PORT:${SERVER_PORT:8080}}
+  servlet:
+    session:
+      cookie:
+        # 프론트/백엔드가 다른 도메인이면 none+secure, 같은 도메인 계열이면 lax.
+        same-site: ${COOKIE_SAMESITE:lax}
+        secure: ${COOKIE_SECURE:false}
 
 storyai:
+  # 로그인 성공 후 돌아갈 프론트 주소.
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
   ai:
     anthropic-api-key: ${ANTHROPIC_API_KEY:}
     elevenlabs-api-key: ${ELEVENLABS_API_KEY:}

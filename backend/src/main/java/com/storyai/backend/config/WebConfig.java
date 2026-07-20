@@ -1,29 +1,37 @@
 package com.storyai.backend.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
- * CORS 설정. 배포 시 프론트(Netlify 도메인)에서 백엔드(Railway)로의 교차 출처 요청을 허용한다.
- * 허용 도메인은 storyai.cors.allowed-origins (env CORS_ALLOWED_ORIGINS)로 지정. 기본 "*"는 개발용.
+ * CORS 설정 (CorsConfigurationSource 빈).
+ * Spring Security 필터가 이 빈을 사용해 프론트(도메인)에서 백엔드로의 교차 출처 + 쿠키 요청을 허용한다.
+ * 허용 도메인은 storyai.cors.allowed-origins (env CORS_ALLOWED_ORIGINS). 기본 "*"는 개발용.
  */
 @Configuration
-public class WebConfig implements WebMvcConfigurer {
+public class WebConfig {
 
     @Value("${storyai.cors.allowed-origins:*}")
     private String allowedOrigins;
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        String[] origins = allowedOrigins.split("\\s*,\\s*");
-        // allowedOriginPatterns는 "*"라도 인증정보(쿠키) 허용과 함께 쓸 수 있다(로그인 대비).
-        registry.addMapping("/api/**")
-                .allowedOriginPatterns(origins)
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true)
-                .maxAge(3600);
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration cfg = new CorsConfiguration();
+        // allowedOriginPatterns는 "*"라도 쿠키 허용과 함께 사용 가능(로그인 대비).
+        cfg.setAllowedOriginPatterns(Arrays.asList(allowedOrigins.split("\\s*,\\s*")));
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowCredentials(true);
+        cfg.setMaxAge(3600L);
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return source;
     }
 }

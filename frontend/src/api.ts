@@ -86,15 +86,18 @@ async function handle<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>
 }
 
+// 모든 요청에 로그인 세션 쿠키를 함께 보낸다.
+const withCreds: RequestInit = { credentials: 'include' }
+
 export function getOptions(): Promise<Options> {
-  return fetch(apiUrl('/api/options')).then((r) => handle<Options>(r))
+  return fetch(apiUrl('/api/options'), withCreds).then((r) => handle<Options>(r))
 }
 
 /** 사진 파일들을 서버에 업로드하고 저장된 URL 목록을 반환. */
 export function uploadPhotos(files: File[]): Promise<string[]> {
   const form = new FormData()
   files.forEach((f) => form.append('files', f))
-  return fetch(apiUrl('/api/uploads'), { method: 'POST', body: form })
+  return fetch(apiUrl('/api/uploads'), { method: 'POST', body: form, ...withCreds })
     .then((r) => handle<{ urls: string[] }>(r))
     .then((d) => d.urls)
 }
@@ -104,11 +107,12 @@ export function createProject(req: CreateRequest): Promise<JobResponse> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
+    ...withCreds,
   }).then((r) => handle<JobResponse>(r))
 }
 
 export function getProject(id: number): Promise<JobResponse> {
-  return fetch(apiUrl(`/api/video-jobs/${id}`)).then((r) => handle<JobResponse>(r))
+  return fetch(apiUrl(`/api/video-jobs/${id}`), withCreds).then((r) => handle<JobResponse>(r))
 }
 
 /** 미리보기 확정 → 전체 생성 시작. 구매 유형(PDF/BOOK)과 받을 이메일(선택)을 넘긴다. */
@@ -120,5 +124,28 @@ export function confirmProject(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
+    ...withCreds,
   }).then((r) => handle<JobResponse>(r))
+}
+
+// ---- 로그인 ----
+export interface Me {
+  authenticated: boolean
+  loginEnabled?: boolean
+  provider?: string
+  name?: string | null
+  email?: string | null
+}
+
+export function getMe(): Promise<Me> {
+  return fetch(apiUrl('/api/me'), withCreds).then((r) => handle<Me>(r))
+}
+
+export function logout(): Promise<void> {
+  return fetch(apiUrl('/api/logout'), { method: 'POST', ...withCreds }).then(() => undefined)
+}
+
+/** 소셜 로그인 시작 주소(브라우저 전체 이동용). */
+export function loginUrl(provider: 'google' | 'kakao'): string {
+  return apiUrl(`/oauth2/authorization/${provider}`)
 }

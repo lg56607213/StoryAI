@@ -5,11 +5,15 @@ import {
   apiUrl,
   confirmProject,
   createProject,
+  getMe,
   getOptions,
   getProject,
+  loginUrl,
+  logout,
   uploadPhotos,
   type CharacterInput,
   type JobResponse,
+  type Me,
   type Options,
 } from './api'
 
@@ -43,6 +47,7 @@ interface CharacterDraft {
 function App() {
   const [options, setOptions] = useState<Options | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [me, setMe] = useState<Me | null>(null)
 
   const [outputType, setOutputType] = useState('BOOK')
   const [theme, setTheme] = useState('')
@@ -70,6 +75,17 @@ function App() {
   const [purchaseType, setPurchaseType] = useState<'PDF' | 'BOOK'>('PDF')
   const [email, setEmail] = useState('')
   const [confirming, setConfirming] = useState(false)
+
+  useEffect(() => {
+    getMe()
+      .then(setMe)
+      .catch(() => setMe({ authenticated: false }))
+  }, [])
+
+  async function onLogout() {
+    await logout().catch(() => {})
+    setMe({ authenticated: false })
+  }
 
   useEffect(() => {
     getOptions()
@@ -351,6 +367,19 @@ function App() {
   // 생성 폼
   return (
     <main className="app">
+      <div className="login-bar">
+        {me?.authenticated ? (
+          <>
+            <span className="muted small">{me.name ?? '회원'}님</span>
+            <button className="btn ghost small" onClick={onLogout}>로그아웃</button>
+          </>
+        ) : me?.loginEnabled ? (
+          <>
+            <a className="btn ghost small" href={loginUrl('kakao')}>카카오 로그인</a>
+            <a className="btn ghost small" href={loginUrl('google')}>구글 로그인</a>
+          </>
+        ) : null}
+      </div>
       <header className="hero">
         <h1>StoryAI</h1>
         <p>아이 사진으로 만드는 우리 아이 주인공 동화책 · 영상</p>
