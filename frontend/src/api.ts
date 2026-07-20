@@ -149,3 +149,38 @@ export function logout(): Promise<void> {
 export function loginUrl(provider: 'google' | 'kakao'): string {
   return apiUrl(`/oauth2/authorization/${provider}`)
 }
+
+// ---- 후기 ----
+export interface Review {
+  id: number
+  authorName: string
+  rating: number
+  content: string
+  photoUrl: string | null
+  createdAt: string | null
+}
+
+export interface ReviewList {
+  count: number
+  average: number
+  items: Review[]
+}
+
+export function getReviews(): Promise<ReviewList> {
+  return fetch(apiUrl('/api/reviews'), withCreds).then((r) => handle<ReviewList>(r))
+}
+
+/** 후기 작성(로그인 필수). 사진은 선택. */
+export function createReview(input: {
+  rating: number
+  content: string
+  photo?: File | null
+}): Promise<Review> {
+  const form = new FormData()
+  form.append('rating', String(input.rating))
+  form.append('content', input.content)
+  if (input.photo) form.append('photo', input.photo)
+  return fetch(apiUrl('/api/reviews'), { method: 'POST', body: form, ...withCreds }).then((r) =>
+    handle<Review>(r),
+  )
+}

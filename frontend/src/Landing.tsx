@@ -1,4 +1,6 @@
-import type { Me } from './api'
+import { useEffect, useState } from 'react'
+import { apiUrl, createReview, getReviews, loginUrl } from './api'
+import type { Me, Review } from './api'
 
 /**
  * 상용 홈페이지(랜딩). 마케팅·기획·CS 관점을 반영한 섹션 구성.
@@ -120,35 +122,7 @@ export default function Landing({
       </section>
 
       {/* 후기 */}
-      <section className="lp-section lp-reviews">
-        <div className="lp-section-head">
-          <p className="lp-eyebrow">고객 후기 · 포토리뷰</p>
-          <h2>먼저 만난 부모님들</h2>
-          <p className="muted small">아래는 예시 후기예요. 실제 후기가 쌓이면 이 자리에 보여집니다.</p>
-        </div>
-        <div className="lp-review-grid">
-          <div className="lp-review">
-            <div className="lp-stars">★★★★★</div>
-            <p>“아이가 자기 얼굴이 나온 책이라고 매일 밤 가져와요. 하드커버라 선물로도 좋았어요.”</p>
-            <div className="lp-review-meta"><span className="lp-example">예시</span> 5세 아이 엄마</div>
-          </div>
-          <div className="lp-review has-photo">
-            <img src="/book-open.jpg" alt="포토리뷰" />
-            <div className="lp-stars">★★★★★</div>
-            <p>“펼쳐진 그림이 정말 예뻐요. 미리보기로 확인하고 주문해서 안심됐어요.”</p>
-            <div className="lp-review-meta"><span className="lp-example">예시</span> 7세 아이 아빠</div>
-          </div>
-          <div className="lp-review has-photo">
-            <img src="/hero-book.jpg" alt="포토리뷰" />
-            <div className="lp-stars">★★★★☆</div>
-            <p>“책 퀄리티가 생각보다 좋네요. 둘째 것도 만들려고요.”</p>
-            <div className="lp-review-meta"><span className="lp-example">예시</span> 4세·6세 남매 엄마</div>
-          </div>
-        </div>
-        <div className="center">
-          <button className="btn ghost" onClick={onStart}>나도 후기 남기기 (구매 후)</button>
-        </div>
-      </section>
+      <ReviewsSection me={me} />
 
       {/* 상품·가격 */}
       <section className="lp-section lp-pricing">
@@ -215,6 +189,190 @@ export default function Landing({
           상호 · 대표 · 사업자등록번호 · 주소 · 문의 이메일 (사업자 정보 등록 예정)
         </p>
       </footer>
+    </div>
+  )
+}
+
+/** 별점 문자열(채운 별 + 빈 별). */
+function stars(n: number) {
+  const f = Math.max(0, Math.min(5, Math.round(n)))
+  return '★★★★★'.slice(0, f) + '☆☆☆☆☆'.slice(0, 5 - f)
+}
+
+/** 예시 후기(실제 후기가 하나도 없을 때만 노출, "예시" 배지 표시). */
+const EXAMPLE_REVIEWS = [
+  { rating: 5, content: '아이가 자기 얼굴이 나온 책이라고 매일 밤 가져와요. 하드커버라 선물로도 좋았어요.', who: '5세 아이 엄마', photo: null as string | null },
+  { rating: 5, content: '펼쳐진 그림이 정말 예뻐요. 미리보기로 확인하고 주문해서 안심됐어요.', who: '7세 아이 아빠', photo: '/book-open.jpg' },
+  { rating: 4, content: '책 퀄리티가 생각보다 좋네요. 둘째 것도 만들려고요.', who: '4세·6세 남매 엄마', photo: '/hero-book.jpg' },
+]
+
+/**
+ * 고객 후기 섹션: 실제 후기를 불러와 표시하고, 로그인 사용자는 별점·글·사진으로 후기를 남긴다.
+ * 실제 후기가 없으면 예시 후기를 "예시" 배지와 함께 보여준다.
+ */
+function ReviewsSection({ me }: { me: Me | null }) {
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [count, setCount] = useState(0)
+  const [average, setAverage] = useState(0)
+  const [open, setOpen] = useState(false)
+
+  const load = () =>
+    getReviews()
+      .then((d) => {
+        setReviews(d.items)
+        setCount(d.count)
+        setAverage(d.average)
+      })
+      .catch(() => undefined)
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  const hasReal = reviews.length > 0
+
+  return (
+    <section className="lp-section lp-reviews">
+      <div className="lp-section-head">
+        <p className="lp-eyebrow">고객 후기 · 포토리뷰</p>
+        <h2>먼저 만난 부모님들</h2>
+        {hasReal ? (
+          <p className="muted small">
+            <b className="lp-avg">{stars(average)} {average.toFixed(1)}</b> · 후기 {count}개
+          </p>
+        ) : (
+          <p className="muted small">아래는 예시 후기예요. 실제 후기가 쌓이면 이 자리에 보여집니다.</p>
+        )}
+      </div>
+
+      <div className="lp-review-grid">
+        {hasReal
+          ? reviews.map((r) => (
+              <div key={r.id} className={r.photoUrl ? 'lp-review has-photo' : 'lp-review'}>
+                {r.photoUrl && <img src={apiUrl(r.photoUrl)} alt="포토리뷰" loading="lazy" />}
+                <div className="lp-stars">{stars(r.rating)}</div>
+                <p>{r.content}</p>
+                <div className="lp-review-meta">{r.authorName}{r.createdAt ? ` · ${r.createdAt}` : ''}</div>
+              </div>
+            ))
+          : EXAMPLE_REVIEWS.map((r, i) => (
+              <div key={i} className={r.photo ? 'lp-review has-photo' : 'lp-review'}>
+                {r.photo && <img src={r.photo} alt="포토리뷰" />}
+                <div className="lp-stars">{stars(r.rating)}</div>
+                <p>“{r.content}”</p>
+                <div className="lp-review-meta"><span className="lp-example">예시</span> {r.who}</div>
+              </div>
+            ))}
+      </div>
+
+      <div className="center">
+        <button className="btn primary" onClick={() => setOpen(true)}>후기 남기기</button>
+      </div>
+
+      {open && (
+        <ReviewModal
+          me={me}
+          onClose={() => setOpen(false)}
+          onSubmitted={() => {
+            setOpen(false)
+            load()
+          }}
+        />
+      )}
+    </section>
+  )
+}
+
+/** 후기 작성 모달. 비로그인 시 로그인 안내, 로그인 시 별점·글·사진 폼. */
+function ReviewModal({
+  me,
+  onClose,
+  onSubmitted,
+}: {
+  me: Me | null
+  onClose: () => void
+  onSubmitted: () => void
+}) {
+  const [rating, setRating] = useState(5)
+  const [content, setContent] = useState('')
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [sending, setSending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const submit = () => {
+    if (!content.trim()) {
+      setError('후기 내용을 입력해 주세요.')
+      return
+    }
+    setSending(true)
+    setError(null)
+    createReview({ rating, content: content.trim(), photo })
+      .then(() => onSubmitted())
+      .catch((e) => setError(e?.message ?? '전송에 실패했어요.'))
+      .finally(() => setSending(false))
+  }
+
+  return (
+    <div className="lp-modal-backdrop" onClick={onClose}>
+      <div className="lp-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="lp-modal-x" onClick={onClose} aria-label="닫기">✕</button>
+        <h3>후기 남기기</h3>
+
+        {!me?.authenticated ? (
+          <div className="lp-modal-login">
+            <p className="muted">후기는 로그인 후 남길 수 있어요.</p>
+            {me?.loginEnabled ? (
+              <div className="lp-modal-login-btns">
+                <a className="btn login-kakao" href={loginUrl('kakao')}>카카오로 로그인</a>
+                <a className="btn login-google" href={loginUrl('google')}>구글로 로그인</a>
+              </div>
+            ) : (
+              <p className="muted small">지금은 로그인이 준비 중이에요.</p>
+            )}
+          </div>
+        ) : (
+          <>
+            <label className="lp-field-label">별점</label>
+            <div className="lp-star-pick">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={n <= rating ? 'on' : ''}
+                  onClick={() => setRating(n)}
+                  aria-label={`${n}점`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+
+            <label className="lp-field-label">후기</label>
+            <textarea
+              className="lp-textarea"
+              value={content}
+              maxLength={1000}
+              placeholder="아이 반응, 그림·책 퀄리티 등 솔직한 후기를 남겨 주세요."
+              onChange={(e) => setContent(e.target.value)}
+            />
+
+            <label className="lp-field-label">사진 (선택)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setPhoto(e.target.files?.[0] ?? null)}
+            />
+            {photo && <p className="muted small">{photo.name}</p>}
+
+            {error && <p className="lp-error">{error}</p>}
+
+            <button className="btn primary lp-modal-submit" onClick={submit} disabled={sending}>
+              {sending ? '올리는 중…' : '후기 등록'}
+            </button>
+            <p className="muted small center">{me.name ?? '회원'}님 이름으로 등록돼요.</p>
+          </>
+        )}
+      </div>
     </div>
   )
 }
