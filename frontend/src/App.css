@@ -762,3 +762,11 @@ textarea.area {
   .lp-steps, .lp-feature-grid, .lp-review-grid, .lp-badges { grid-template-columns: 1fr; }
   .lp-hardcover-imgs, .lp-gallery, .lp-price-grid { grid-template-columns: 1fr; }
 }
+.lp-gallery-item { margin: 0; }
+.lp-gallery-item figcaption {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 14px;
+  color: #6a636f;
+  font-weight: 600;
+}

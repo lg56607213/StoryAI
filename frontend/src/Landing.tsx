@@ -94,17 +94,22 @@ export default function Landing({
         </div>
       </section>
 
-      {/* 갤러리 */}
+      {/* 갤러리 — 실제 아이가 주인공이 된 예시 */}
       <section className="lp-section">
         <div className="lp-section-head">
           <p className="lp-eyebrow">작품 갤러리</p>
           <h2>이런 그림이 나와요</h2>
+          <p className="muted">실제 아이 사진으로 만든 예시예요. 우리 아이가 동화의 주인공이 됩니다.</p>
         </div>
         <div className="lp-gallery">
-          <img src="/sample-1.jpg" alt="숲속 모험" />
-          <img src="/sample-2.jpg" alt="바다 여행" />
-          <img src="/gallery-3.jpg" alt="공주·왕자" />
-          <img src="/gallery-4.jpg" alt="공룡 나라" />
+          <figure className="lp-gallery-item">
+            <img src="/example-girl.jpg" alt="공주가 된 아이" />
+            <figcaption>공주가 된 우리 아이</figcaption>
+          </figure>
+          <figure className="lp-gallery-item">
+            <img src="/example-boy.jpg" alt="용사가 된 아이" />
+            <figcaption>용사가 된 우리 아이</figcaption>
+          </figure>
         </div>
       </section>
 
