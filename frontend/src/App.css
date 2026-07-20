@@ -770,3 +770,18 @@ textarea.area {
   color: #6a636f;
   font-weight: 600;
 }
+.lp-gallery-ba { display: flex; flex-direction: column; gap: 20px; }
+.lp-ba-item { margin: 0; }
+.lp-ba-item img {
+  width: 100%;
+  border-radius: 16px;
+  display: block;
+  border: 1px solid var(--lp-border);
+}
+.lp-ba-item figcaption {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 15px;
+  color: #6a636f;
+  font-weight: 600;
+}

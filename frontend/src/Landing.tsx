@@ -101,13 +101,13 @@ export default function Landing({
           <h2>이런 그림이 나와요</h2>
           <p className="muted">실제 아이 사진으로 만든 예시예요. 우리 아이가 동화의 주인공이 됩니다.</p>
         </div>
-        <div className="lp-gallery">
-          <figure className="lp-gallery-item">
-            <img src="/example-girl.jpg" alt="공주가 된 아이" />
+        <div className="lp-gallery-ba">
+          <figure className="lp-ba-item">
+            <img src="/example-girl.jpg" alt="공주가 된 우리 아이 — 실제 사진에서 변형" />
             <figcaption>공주가 된 우리 아이</figcaption>
           </figure>
-          <figure className="lp-gallery-item">
-            <img src="/example-boy.jpg" alt="용사가 된 아이" />
+          <figure className="lp-ba-item">
+            <img src="/example-boy.jpg" alt="용사가 된 우리 아이 — 실제 사진에서 변형" />
             <figcaption>용사가 된 우리 아이</figcaption>
           </figure>
         </div>
