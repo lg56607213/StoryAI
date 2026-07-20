@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import ImageCropper from './ImageCropper'
+import Landing from './Landing'
 import {
   apiUrl,
   confirmProject,
@@ -285,56 +286,9 @@ function App() {
     )
   }
 
-  // 홈(랜딩) 화면 — 마케팅 + "아이책 만들기" 버튼.
+  // 홈(랜딩) 화면.
   if (view === 'home') {
-    return (
-      <main className="app">
-        <div className="login-bar">
-          {me.authenticated ? (
-            <>
-              <span className="muted small">{me.name ?? '회원'}님</span>
-              <button className="btn ghost small" onClick={onLogout}>로그아웃</button>
-            </>
-          ) : null}
-        </div>
-        <header className="hero">
-          <h1>TodayHero</h1>
-          <p>우리 아이가 주인공인 동화책 · 영상</p>
-        </header>
-
-        <section className="card landing-hero">
-          <img className="landing-img" src="/sample-1.jpg" alt="동화 샘플" />
-          <div className="landing-copy">
-            <h2>우리 아이가 동화의 주인공이 돼요</h2>
-            <p className="muted">
-              아이 사진 한 장이면, AI가 우리 아이를 닮은 캐릭터로 세상에 하나뿐인 동화책을 만들어드려요.
-            </p>
-            <button className="btn primary landing-cta" onClick={startCreate}>아이책 만들기 →</button>
-          </div>
-        </section>
-
-        <section className="card">
-          <h3 className="step">이렇게 만들어져요</h3>
-          <ol className="how">
-            <li><b>1. 사진 올리기</b> — 우리 아이 사진을 올려요 (형제·친구도 함께 가능)</li>
-            <li><b>2. 주제·스타일 고르기</b> — 공주·용사·바다 등 주제 + 그림체·연령 선택</li>
-            <li><b>3. AI가 완성</b> — 미리보기로 먼저 확인하고, 마음에 들면 전체 완성</li>
-          </ol>
-        </section>
-
-        <section className="card">
-          <h3 className="step">이런 느낌이에요</h3>
-          <div className="sample-grid">
-            <img src="/sample-1.jpg" alt="샘플 1" />
-            <img src="/sample-2.jpg" alt="샘플 2" />
-          </div>
-        </section>
-
-        <section className="card submit-bar">
-          <button className="btn primary" onClick={startCreate}>아이책 만들기 시작</button>
-        </section>
-      </main>
-    )
+    return <Landing me={me} onStart={startCreate} onLogout={onLogout} />
   }
 
   // (여기부터는 view === 'create') 로그인 안 했으면 → 로그인 화면.
