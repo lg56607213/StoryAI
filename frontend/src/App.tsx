@@ -84,7 +84,13 @@ function App() {
 
   async function onLogout() {
     await logout().catch(() => {})
-    setMe({ authenticated: false })
+    setJob(null)
+    // 로그아웃 후 로그인 상태를 다시 받아온다(loginEnabled 유지 → 로그인 화면으로 전환).
+    try {
+      setMe(await getMe())
+    } catch {
+      setMe({ authenticated: false, loginEnabled: true })
+    }
   }
 
   useEffect(() => {
