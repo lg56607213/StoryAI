@@ -9,8 +9,8 @@
 [build.environment]
   # Vite 8은 Node 20+ 필요. Netlify 기본이 낮아서 빌드 실패 → 버전 고정.
   NODE_VERSION = "22"
-  # 백엔드(Railway) 주소 — 빌드 시 프론트에 주입됨. (공개 URL이라 파일에 둬도 됨)
-  VITE_API_BASE = "https://storyai-production-031d.up.railway.app"
+  # 백엔드 주소 — api 서브도메인(같은 도메인 계열)이라 로그인 쿠키가 안정적.
+  VITE_API_BASE = "https://api.todayhero.co.kr"
 
 # SPA: 어떤 경로로 들어와도 index.html 로 (새로고침 404 방지)
 [[redirects]]
