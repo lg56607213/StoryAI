@@ -11,6 +11,7 @@ import {
   getProject,
   loginUrl,
   logout,
+  testEmail,
   uploadPhotos,
   type CharacterInput,
   type JobResponse,
@@ -102,6 +103,20 @@ function App() {
   function goHome() {
     setJob(null)
     setView('home')
+  }
+  // 발송 설정 확인용: 본인 이메일로 테스트 메일 발송.
+  function handleTestEmail() {
+    testEmail()
+      .then((r) => {
+        if (r.sent) {
+          alert(`테스트 메일을 ${r.to} 로 보냈어요! 📬\n받은편지함(안 보이면 스팸함)을 확인하세요.`)
+        } else {
+          alert(
+            `발송 실패 ❌\n원인: ${r.error ?? '알 수 없음'}\n(SMTP 설정: ${r.mailConfigured ? '됨' : '안 됨 — Railway 환경변수 확인'})`,
+          )
+        }
+      })
+      .catch((e) => alert(`오류: ${e.message}`))
   }
 
   useEffect(() => {
@@ -417,6 +432,7 @@ function App() {
         <span className="login-bar-spacer" />
         {me?.authenticated ? (
           <>
+            <button className="btn ghost small" onClick={handleTestEmail}>✉️ 메일테스트</button>
             <span className="muted small">{me.name ?? '회원'}님</span>
             <button className="btn ghost small" onClick={onLogout}>로그아웃</button>
           </>

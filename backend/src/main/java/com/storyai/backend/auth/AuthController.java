@@ -6,7 +6,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import com.storyai.backend.notify.EmailNotifier;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,6 +25,7 @@ import java.util.Map;
 public class AuthController {
 
     private final ObjectProvider<ClientRegistrationRepository> clientRegistrations;
+    private final EmailNotifier emailNotifier;
 
     @GetMapping("/me")
     public Map<String, Object> me(Authentication authentication) {
@@ -55,6 +58,49 @@ public class AuthController {
             res.put("authenticated", false);
         }
         return res;
+    }
+
+    /**
+     * 메일 발송 테스트: 로그인한 "본인" 이메일로 테스트 메일을 보낸다.
+     * (본인에게만 발송 → 스팸 악용 불가, 상시 유지해도 안전)
+     */
+    @PostMapping("/me/test-email")
+    public Map<String, Object> testEmail(Authentication authentication) {
+        Map<String, Object> res = new HashMap<>();
+        res.put("mailConfigured", emailNotifier.isConfigured());
+        if (!(authentication instanceof OAuth2AuthenticationToken token)) {
+            res.put("sent", false);
+            res.put("error", "로그인이 필요합니다.");
+            return res;
+        }
+        String email = emailOf(token);
+        res.put("to", email);
+        if (email == null || email.isBlank()) {
+            res.put("sent", false);
+            res.put("error", "계정에서 이메일을 찾을 수 없어요(카카오는 이메일 동의 필요).");
+            return res;
+        }
+        try {
+            emailNotifier.sendSimple(email, "[투데이히어로] 메일 발송 테스트 ✉️",
+                    "이 메일이 보이면 발송 설정이 정상입니다! 🎉\n실제 주문 완성 시 고객에게 이 주소로 PDF가 발송됩니다.\n\n— 투데이히어로");
+            res.put("sent", true);
+        } catch (Exception e) {
+            res.put("sent", false);
+            res.put("error", e.getMessage());
+        }
+        return res;
+    }
+
+    /** 로그인 토큰에서 이메일 추출(구글/카카오). */
+    private String emailOf(OAuth2AuthenticationToken token) {
+        Map<String, Object> attrs = token.getPrincipal().getAttributes();
+        if ("kakao".equals(token.getAuthorizedClientRegistrationId())) {
+            if (attrs.get("kakao_account") instanceof Map<?, ?> acc) {
+                return str(acc.get("email"));
+            }
+            return null;
+        }
+        return str(attrs.get("email"));
     }
 
     private String str(Object o) {

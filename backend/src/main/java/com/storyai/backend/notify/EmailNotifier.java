@@ -34,6 +34,28 @@ public class EmailNotifier {
         this.mailSenderProvider = mailSenderProvider;
     }
 
+    /** SMTP가 설정되어 실제 발송이 가능한 상태인지. */
+    public boolean isConfigured() {
+        return mailSenderProvider.getIfAvailable() != null;
+    }
+
+    /** 테스트용 간단 발송. 실패하면 예외를 던져 원인을 즉시 알 수 있게 한다(로그 삼키지 않음). */
+    public void sendSimple(String to, String subject, String body) throws Exception {
+        JavaMailSender sender = mailSenderProvider.getIfAvailable();
+        if (sender == null) {
+            throw new IllegalStateException("SMTP 미설정: SPRING_MAIL_HOST/USERNAME/PASSWORD 환경변수를 확인하세요.");
+        }
+        MimeMessage message = sender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+        helper.setTo(to);
+        if (from != null && !from.isBlank()) {
+            helper.setFrom(from);
+        }
+        helper.setSubject(subject);
+        helper.setText(body, false);
+        sender.send(message);
+    }
+
     /** 완성본 PDF를 이메일로 발송한다. pdfBytes 가 있으면 첨부한다. */
     public void sendBookReady(String toEmail, String title, byte[] pdfBytes, String downloadUrl) {
         String safeTitle = (title == null || title.isBlank()) ? "동화책" : title;

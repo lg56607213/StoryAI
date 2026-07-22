@@ -146,6 +146,20 @@ export function logout(): Promise<void> {
   return fetch(apiUrl('/api/logout'), { method: 'POST', ...withCreds }).then(() => undefined)
 }
 
+export interface TestEmailResult {
+  mailConfigured: boolean
+  to?: string
+  sent: boolean
+  error?: string
+}
+
+/** 로그인한 본인 이메일로 테스트 메일 발송(발송 설정 확인용). */
+export function testEmail(): Promise<TestEmailResult> {
+  return fetch(apiUrl('/api/me/test-email'), { method: 'POST', ...withCreds }).then((r) =>
+    handle<TestEmailResult>(r),
+  )
+}
+
 /** 소셜 로그인 시작 주소(브라우저 전체 이동용). */
 export function loginUrl(provider: 'google' | 'kakao'): string {
   return apiUrl(`/oauth2/authorization/${provider}`)
