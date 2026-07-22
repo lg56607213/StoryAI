@@ -17,6 +17,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 @Slf4j
 @Component
@@ -35,6 +40,10 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
     /** 미리보기 단계에서 실제로 그릴 앞쪽 페이지 수(표지 배경 포함). */
     @Value("${storyai.book.preview-pages:4}")
     private int previewPages;
+
+    /** 삽화 병렬 생성 동시 실행 수(Gemini 부하/429 제어). */
+    @Value("${storyai.book.illustrate-concurrency:4}")
+    private int illustrateConcurrency;
 
     @Override
     public WorkflowStep getStep() {
@@ -55,34 +64,75 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
         // 미리보기 단계면 앞쪽 previewPages 페이지만 그린다(비용 최소화). 전체 단계면 전부.
         boolean preview = job.getBookPhase() == BookPhase.PREVIEW;
         int upTo = preview ? Math.min(previewPages, pages.size()) : pages.size();
-        // 삽화 생성이 실패해도 빈 페이지가 나가지 않도록: 직전 성공 삽화 → 없으면 아이 캐릭터 시트를 재사용.
-        String lastGoodUrl = null;
         String sheetFallbackUrl = firstSheetUrl(characters);
-        int generated = 0, reused = 0, kept = 0;
-        for (int idx = 0; idx < pages.size(); idx++) {
-            BookPage page = pages.get(idx);
-            if (idx >= upTo) {
-                continue; // 미리보기: 뒷 페이지는 아직 생성하지 않음
+
+        // 1) 생성 대상 선별: phase 범위 내 & 아직 실제 삽화 없는 페이지(비용 한도까지).
+        List<Integer> targets = new ArrayList<>();
+        if (canGenerate) {
+            for (int idx = 0; idx < upTo; idx++) {
+                if (localStorage.loadByUrl(pages.get(idx).getImageUrl()) == null) {
+                    targets.add(idx);
+                }
             }
+            if (targets.size() > illustrateLimit) {
+                targets = targets.subList(0, illustrateLimit);
+            }
+        }
+
+        // 2) 삽화를 병렬로 생성한다(각 페이지는 동일 캐릭터 시트를 참조 → 순서와 무관하게 일관성 유지).
+        //    JPA 저장은 여기서 하지 않고(스레드 안전), 결과 URL만 모은다.
+        Map<Integer, String> generatedUrls = new ConcurrentHashMap<>();
+        int poolSize = Math.max(1, Math.min(illustrateConcurrency, Math.max(1, targets.size())));
+        if (!targets.isEmpty()) {
+            ExecutorService pool = Executors.newFixedThreadPool(poolSize);
+            try {
+                List<Future<?>> futures = new ArrayList<>();
+                for (int idx : targets) {
+                    final int i = idx;
+                    final BookPage page = pages.get(i);
+                    futures.add(pool.submit(() -> {
+                        List<byte[]> sheets = sheetsForPage(characters, page.getOutfit());
+                        if (sheets.isEmpty()) {
+                            return;
+                        }
+                        try {
+                            byte[] img = imageGenerator.illustrate(page.getSceneDescription(), sheets, style);
+                            String url = localStorage.storeGenerated(
+                                    job.getId(), "page-" + page.getPageNumber() + ".png", img);
+                            generatedUrls.put(i, url);
+                        } catch (Exception e) {
+                            log.warn("페이지 {} 삽화 실패(재시도 후에도): {}", page.getPageNumber(), e.getMessage());
+                        }
+                    }));
+                }
+                for (Future<?> f : futures) {
+                    try {
+                        f.get();
+                    } catch (Exception e) {
+                        log.warn("삽화 작업 대기 오류: {}", e.getMessage());
+                    }
+                }
+            } finally {
+                pool.shutdown();
+            }
+        }
+
+        // 3) 페이지 순서대로 결과를 반영 + 빈 페이지 방지(직전 성공 삽화 → 없으면 아이 시트 재사용). 저장은 메인 스레드.
+        String lastGoodUrl = null;
+        int generated = 0, reused = 0, kept = 0;
+        for (int idx = 0; idx < upTo; idx++) {
+            BookPage page = pages.get(idx);
             // 이미 실제 삽화가 있으면(미리보기에서 생성됨) 재사용해 비용 절약.
             if (localStorage.loadByUrl(page.getImageUrl()) != null) {
                 lastGoodUrl = page.getImageUrl();
                 kept++;
                 continue;
             }
-            List<byte[]> sheets = sheetsForPage(characters, page.getOutfit());
-            String url = null;
-            if (canGenerate && generated < illustrateLimit && !sheets.isEmpty()) {
-                try {
-                    byte[] img = imageGenerator.illustrate(page.getSceneDescription(), sheets, style);
-                    url = localStorage.storeGenerated(job.getId(), "page-" + page.getPageNumber() + ".png", img);
-                    generated++;
-                    lastGoodUrl = url;
-                } catch (Exception e) {
-                    log.warn("페이지 {} 삽화 실패(재시도 후에도): {}", page.getPageNumber(), e.getMessage());
-                }
-            }
-            if (url == null) {
+            String url = generatedUrls.get(idx);
+            if (url != null) {
+                generated++;
+                lastGoodUrl = url;
+            } else {
                 // 빈 페이지 절대 금지: 실제 이미지(직전 페이지 → 아이 시트)를 재사용.
                 url = lastGoodUrl != null ? lastGoodUrl : sheetFallbackUrl;
                 if (url != null) {
@@ -95,8 +145,8 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
             page.setImageUrl(url);
             bookPageRepository.save(page);
         }
-        log.info("삽화 단계 완료: phase={}, 생성 {}, 재사용(기존) {}, 대체 {} / 대상 {}페이지",
-                job.getBookPhase(), generated, kept, reused, upTo);
+        log.info("삽화 단계 완료(병렬 동시{}): phase={}, 생성 {}, 재사용(기존) {}, 대체 {} / 대상 {}페이지",
+                poolSize, job.getBookPhase(), generated, kept, reused, upTo);
     }
 
     /** 페이지 의상(everyday/costume)에 맞는 캐릭터 시트를 인물별로 고른다. 없으면 다른 시트로 폴백. */
