@@ -133,27 +133,28 @@ export default function Landing({
         <div className="lp-price-grid">
           <div className="lp-price">
             <h3>PDF 소장</h3>
-            <div className="lp-price-num">19,000원~</div>
+            <div className="lp-price-num">9,900원~</div>
             <ul>
-              <li>바로 다운로드</li>
-              <li>인쇄·기기로 감상</li>
-              <li>미리보기 무료</li>
+              <li>24페이지 9,900원</li>
+              <li>36페이지 13,200원</li>
+              <li>이메일로 바로 발송 · 미리보기 무료</li>
             </ul>
             <button className="btn ghost" onClick={onStart}>만들기</button>
           </div>
           <div className="lp-price featured">
             <div className="lp-price-tag">추천</div>
             <h3>하드커버 책</h3>
-            <div className="lp-price-num">39,000원~</div>
+            <div className="lp-price-num">42,900원~</div>
             <ul>
-              <li>양장 하드커버 실물</li>
-              <li>제작 후 배송</li>
-              <li>소장·선물용</li>
+              <li>24페이지 42,900원</li>
+              <li>36페이지 46,200원</li>
+              <li>양장 하드커버 실물 배송</li>
+              <li><b>PDF 파일도 함께 제공</b></li>
             </ul>
             <button className="btn primary" onClick={onStart}>만들기</button>
           </div>
         </div>
-        <p className="muted small center">* 가격은 페이지 수·옵션에 따라 달라져요. 미리보기 이후 결제 단계에서 확인됩니다.</p>
+        <p className="muted small center">* 표시된 금액은 모두 <b>VAT 포함가</b>예요. 미리보기 이후 결제 단계에서 확인됩니다.</p>
       </section>
 
       {/* FAQ */}

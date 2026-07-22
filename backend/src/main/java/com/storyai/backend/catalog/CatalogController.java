@@ -43,12 +43,16 @@ public class CatalogController {
     private Map<String, Object> pricing() {
         return Map.of(
                 "currency", "KRW",
+                "vatIncluded", true,
                 "bookPdf", List.of(
                         Map.of("pages", 24, "priceKrw", Pricing.BOOK_PDF_24P),
                         Map.of("pages", 36, "priceKrw", Pricing.BOOK_PDF_36P)
                 ),
-                "bookHardcopyKrw", Pricing.BOOK_HARDCOPY,
-                "note", "하드카피(인쇄본) 요청 시 페이지 수 무관 정액. 영상 가격은 미정."
+                "bookHardcover", List.of(
+                        Map.of("pages", 24, "priceKrw", Pricing.BOOK_HARDCOVER_24P),
+                        Map.of("pages", 36, "priceKrw", Pricing.BOOK_HARDCOVER_36P)
+                ),
+                "note", "모든 가격 VAT 포함. 하드커버 구매 시 PDF 파일도 함께 제공. 영상 가격은 미정."
         );
     }
 

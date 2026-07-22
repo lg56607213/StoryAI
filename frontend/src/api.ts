@@ -11,8 +11,9 @@ export interface Option {
 
 export interface Pricing {
   currency: string
+  vatIncluded: boolean
   bookPdf: { pages: number; priceKrw: number }[]
-  bookHardcopyKrw: number
+  bookHardcover: { pages: number; priceKrw: number }[]
   note: string
 }
 
