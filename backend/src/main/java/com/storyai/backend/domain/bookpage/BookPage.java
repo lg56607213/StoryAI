@@ -57,4 +57,12 @@ public class BookPage {
     @Setter
     @Column(length = 1000)
     private String imageUrl;
+
+    /**
+     * 멀티보이스 낭독용 세그먼트(서술/대사 + 화자 + 목소리 힌트) JSON 배열.
+     * 영상 낭독 단계에서 목소리를 나눠 읽는 데 사용. 없으면(구버전/폴백) text 전체를 내레이터가 읽는다.
+     */
+    @Setter
+    @Column(columnDefinition = "TEXT")
+    private String narrationJson;
 }

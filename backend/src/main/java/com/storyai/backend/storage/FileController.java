@@ -58,6 +58,9 @@ public class FileController {
         }
         MediaType type = key.endsWith(".png") ? MediaType.IMAGE_PNG
                 : (key.endsWith(".jpg") || key.endsWith(".jpeg")) ? MediaType.IMAGE_JPEG
+                : key.endsWith(".mp4") ? MediaType.valueOf("video/mp4")
+                : key.endsWith(".mp3") ? MediaType.valueOf("audio/mpeg")
+                : key.endsWith(".wav") ? MediaType.valueOf("audio/wav")
                 : MediaType.APPLICATION_OCTET_STREAM;
         return ResponseEntity.ok()
                 .contentType(type)

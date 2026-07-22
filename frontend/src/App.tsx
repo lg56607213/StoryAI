@@ -12,6 +12,7 @@ import {
   getProject,
   loginUrl,
   logout,
+  startNarrationVideo,
   testEmail,
   uploadPhotos,
   type CharacterInput,
@@ -154,6 +155,28 @@ function App() {
       if (pollRef.current) window.clearInterval(pollRef.current)
     }
   }, [job])
+
+  // 낭독 영상 생성 중이면 준비될 때까지 폴링(완료 화면에서만 트리거됨).
+  useEffect(() => {
+    if (!job || job.narrationVideoStatus !== 'generating') return
+    const t = window.setInterval(async () => {
+      try {
+        setJob(await getProject(job.id))
+      } catch {
+        // 일시 오류 무시
+      }
+    }, 2500)
+    return () => window.clearInterval(t)
+  }, [job])
+
+  async function handleMakeNarration() {
+    if (!job) return
+    try {
+      setJob(await startNarrationVideo(job.id))
+    } catch (e) {
+      alert('영상 만들기를 시작하지 못했어요: ' + String((e as Error).message ?? e))
+    }
+  }
 
   const isBook = outputType === 'BOOK'
 
@@ -491,6 +514,46 @@ function App() {
                 <p className="notice">
                   실물 인쇄본으로 요청하셨습니다. 결제 후 인쇄·배송됩니다. (결제 연동 준비 중)
                 </p>
+              )}
+              {job.outputType === 'BOOK' && (
+                <div className="narration-box">
+                  <h3>🎬 읽어주는 동화 영상</h3>
+                  {job.narrationVideoStatus === 'ready' && job.narrationVideoUrl ? (
+                    <>
+                      <video
+                        className="narration-video"
+                        src={apiUrl(job.narrationVideoUrl)}
+                        controls
+                        playsInline
+                      />
+                      <a
+                        className="btn ghost"
+                        href={apiUrl(job.narrationVideoUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        영상 다운로드
+                      </a>
+                    </>
+                  ) : job.narrationVideoStatus === 'generating' ? (
+                    <p className="muted">영상을 만들고 있어요… 목소리를 나눠 녹음하는 중이라 몇 분 걸려요. ⏳</p>
+                  ) : (
+                    <>
+                      <p className="muted">
+                        페이지 그림에 목소리를 입혀 동화를 읽어주는 영상으로 만들어 드려요.
+                        (인물마다 목소리가 달라요)
+                      </p>
+                      {job.narrationVideoStatus === 'failed' && (
+                        <p className="email-status fail">
+                          ⚠️ 지난번 생성이 실패했어요. 다시 시도해 주세요.
+                        </p>
+                      )}
+                      <button className="btn primary" onClick={handleMakeNarration}>
+                        읽어주는 영상 만들기
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
             </>
           )}

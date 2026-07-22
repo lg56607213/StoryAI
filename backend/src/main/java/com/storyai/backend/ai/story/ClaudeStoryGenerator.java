@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -59,16 +58,7 @@ public class ClaudeStoryGenerator implements StoryGenerator {
         try {
             JsonNode json = claude.generateJson(StoryPrompts.SYSTEM,
                     StoryPrompts.pages(theme, characters, ag, outline, pageCount));
-            List<BookPageDraft> pages = new ArrayList<>();
-            for (JsonNode p : json.path("pages")) {
-                String outfit = "everyday".equals(p.path("outfit").asText("costume")) ? "everyday" : "costume";
-                pages.add(new BookPageDraft(p.path("text").asText(""), p.path("scene").asText(""), outfit));
-            }
-            // 개수 보정: 모자라면 마지막으로 채우고, 넘치면 잘라 정확히 pageCount로.
-            while (pages.size() < pageCount) {
-                pages.add(pages.isEmpty() ? new BookPageDraft("", "", "costume") : pages.get(pages.size() - 1));
-            }
-            return pages.subList(0, pageCount);
+            return PageDraftParser.parse(json, pageCount);
         } catch (RuntimeException e) {
             log.warn("Claude 페이지 생성 실패 → Gemini 폴백: {}", e.getMessage());
             return gemini.pages(theme, characters, ageGroup, outline, pageCount);

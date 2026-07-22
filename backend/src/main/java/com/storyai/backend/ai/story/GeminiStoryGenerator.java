@@ -7,7 +7,6 @@ import com.storyai.backend.domain.videojob.StoryTheme;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Component
@@ -39,16 +38,7 @@ public class GeminiStoryGenerator implements StoryGenerator {
         String prompt = StoryPrompts.pages(theme, characters, ag, outline, pageCount);
 
         JsonNode json = generateJsonRetry(prompt);
-        List<BookPageDraft> pages = new ArrayList<>();
-        for (JsonNode p : json.path("pages")) {
-            String outfit = "everyday".equals(p.path("outfit").asText("costume")) ? "everyday" : "costume";
-            pages.add(new BookPageDraft(p.path("text").asText(""), p.path("scene").asText(""), outfit));
-        }
-        // 개수가 모자라면 마지막으로 채우고, 넘치면 잘라 정확히 pageCount로 맞춘다.
-        while (pages.size() < pageCount) {
-            pages.add(pages.isEmpty() ? new BookPageDraft("", "", "costume") : pages.get(pages.size() - 1));
-        }
-        return pages.subList(0, pageCount);
+        return PageDraftParser.parse(json, pageCount);
     }
 
     /** 일시적 실패(네트워크·5xx 등)로 스토리가 더미로 폴백되는 것을 줄이기 위해 최대 3회 재시도. */

@@ -6,6 +6,7 @@ import com.storyai.backend.job.dto.ConfirmVideoJobRequest;
 import com.storyai.backend.job.dto.CreateVideoJobRequest;
 import com.storyai.backend.job.dto.VideoJobResponse;
 import com.storyai.backend.storage.LocalStorage;
+import com.storyai.backend.video.NarrationVideoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +29,7 @@ public class VideoJobController {
 
     private final VideoJobService videoJobService;
     private final LocalStorage localStorage;
+    private final NarrationVideoService narrationVideoService;
 
     @PostMapping
     public ResponseEntity<VideoJobResponse> create(@Valid @RequestBody CreateVideoJobRequest request,
@@ -46,6 +48,18 @@ public class VideoJobController {
     public VideoJobResponse confirm(@PathVariable Long id, @RequestBody ConfirmVideoJobRequest request,
                                     org.springframework.security.core.Authentication auth) {
         return VideoJobResponse.from(videoJobService.confirmFull(id, request, auth));
+    }
+
+    /**
+     * 낭독 영상(mp4) 생성 트리거. 완성된 책의 페이지 삽화 + 세그먼트를 목소리로 읽어 영상으로 만든다.
+     * 비동기로 시작하고 즉시 현재 상태를 반환한다(narrationVideoStatus=generating).
+     * 완료되면 narrationVideoUrl 이 채워지고 status=ready 가 된다.
+     */
+    @PostMapping("/{id}/narration-video")
+    public VideoJobResponse startNarrationVideo(@PathVariable Long id) {
+        VideoJob job = videoJobService.getJob(id);
+        narrationVideoService.generateAsync(id);
+        return VideoJobResponse.from(job);
     }
 
     /** 완성된 책 PDF 다운로드. (영상 다운로드는 Slice 4에서) */

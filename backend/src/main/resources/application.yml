@@ -81,3 +81,9 @@ storyai:
   book:
     preview-pages: ${PREVIEW_PAGES:4}
     illustrate-limit: ${ILLUSTRATE_LIMIT:9999}
+  # 낭독 영상(mp4) 합성. ffmpeg는 배포 이미지(Dockerfile)에 설치돼 있어야 함.
+  video:
+    ffmpeg-path: ${FFMPEG_PATH:ffmpeg}
+    width: ${VIDEO_WIDTH:1280}
+    height: ${VIDEO_HEIGHT:720}
+    gap-ms: ${VIDEO_GAP_MS:350}

@@ -34,6 +34,7 @@ public class GeminiClient {
     private final String apiKey;
     private final String textModel;
     private final String imageModel;
+    private final String ttsModel;
     private final ObjectMapper mapper;
     private final HttpClient http = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(20))
@@ -45,17 +46,19 @@ public class GeminiClient {
     public GeminiClient(@Value("${storyai.ai.gemini.api-key:}") String apiKey,
                         @Value("${storyai.ai.gemini.text-model:gemini-flash-latest}") String textModel,
                         @Value("${storyai.ai.gemini.image-model:gemini-3.1-flash-image}") String imageModel,
+                        @Value("${storyai.ai.gemini.tts-model:gemini-2.5-flash-preview-tts}") String ttsModel,
                         ObjectMapper mapper) {
         this.apiKey = apiKey;
         this.textModel = textModel;
         this.imageModel = imageModel;
+        this.ttsModel = ttsModel;
         this.mapper = mapper;
     }
 
     @PostConstruct
     void logConfig() {
-        log.info("GeminiClient 설정: configured={}, textModel={}, imageModel={}",
-                isConfigured(), textModel, imageModel);
+        log.info("GeminiClient 설정: configured={}, textModel={}, imageModel={}, ttsModel={}",
+                isConfigured(), textModel, imageModel, ttsModel);
     }
 
     public boolean isConfigured() {
@@ -117,6 +120,55 @@ public class GeminiClient {
         }
         throw new IllegalStateException("Gemini 이미지 응답에 이미지 없음: finishReason="
                 + resp.path("candidates").path(0).path("finishReason").asText());
+    }
+
+    /**
+     * 텍스트를 음성으로 합성(Gemini AI Studio TTS, 이미지·텍스트와 같은 키/엔드포인트 사용 → 별도 결제 불필요).
+     * voiceName = Gemini 프리빌트 보이스(Leda, Puck, Sulafat 등), style = 말투 지시(선택, 없으면 평범하게).
+     * 반환: WAV(16-bit PCM mono) 바이트. ffmpeg로 이어붙이기 쉽게 헤더까지 붙여 돌려준다.
+     */
+    public byte[] generateSpeech(String text, String voiceName, String style) {
+        if (text == null || text.isBlank()) {
+            throw new IllegalArgumentException("TTS 텍스트가 비어있음");
+        }
+        // 말투 지시는 자연어로 앞에 붙인다(모델이 지시로 해석해 읽지 않음).
+        String content = (style == null || style.isBlank())
+                ? text
+                : style + ": " + text;
+
+        ObjectNode body = mapper.createObjectNode();
+        body.putArray("contents").addObject().putArray("parts").addObject().put("text", content);
+        ObjectNode genCfg = body.putObject("generationConfig");
+        genCfg.putArray("responseModalities").add("AUDIO");
+        genCfg.putObject("speechConfig").putObject("voiceConfig")
+                .putObject("prebuiltVoiceConfig").put("voiceName", voiceName);
+
+        JsonNode resp = post(ttsModel, body);
+        for (JsonNode p : resp.path("candidates").path(0).path("content").path("parts")) {
+            JsonNode inline = p.path("inlineData");
+            String data = inline.path("data").asText("");
+            if (!data.isEmpty()) {
+                byte[] pcm = Base64.getDecoder().decode(data);
+                int rate = parsePcmRate(inline.path("mimeType").asText(""));
+                return com.storyai.backend.ai.voice.WavAudio.pcm16ToWav(pcm, rate, 1);
+            }
+        }
+        throw new IllegalStateException("Gemini TTS 응답에 오디오 없음: finishReason="
+                + resp.path("candidates").path(0).path("finishReason").asText());
+    }
+
+    /** mimeType 예: "audio/L16;codec=pcm;rate=24000" → 24000. 못 찾으면 24000 기본. */
+    private int parsePcmRate(String mimeType) {
+        if (mimeType != null) {
+            int i = mimeType.indexOf("rate=");
+            if (i >= 0) {
+                String num = mimeType.substring(i + 5).replaceAll("[^0-9].*$", "");
+                if (!num.isEmpty()) {
+                    return Integer.parseInt(num);
+                }
+            }
+        }
+        return 24000;
     }
 
     /**

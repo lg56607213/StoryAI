@@ -68,6 +68,8 @@ export interface JobResponse {
   priceKrw: number | null
   resultUrl: string | null
   resultVideoUrl: string | null
+  narrationVideoUrl: string | null
+  narrationVideoStatus: string | null
   deliveryEmail: string | null
   emailSent: boolean
   errorMessage: string | null
@@ -116,6 +118,14 @@ export function createProject(req: CreateRequest): Promise<JobResponse> {
 
 export function getProject(id: number): Promise<JobResponse> {
   return fetch(apiUrl(`/api/video-jobs/${id}`), withCreds).then((r) => handle<JobResponse>(r))
+}
+
+/** 낭독 영상(mp4) 생성 시작. 비동기로 시작되며 이후 getProject 폴링으로 narrationVideoStatus/Url 확인. */
+export function startNarrationVideo(id: number): Promise<JobResponse> {
+  return fetch(apiUrl(`/api/video-jobs/${id}/narration-video`), {
+    method: 'POST',
+    ...withCreds,
+  }).then((r) => handle<JobResponse>(r))
 }
 
 /** 미리보기 확정 → 전체 생성 시작. 구매 유형(PDF/BOOK)과 받을 이메일(선택)을 넘긴다. */

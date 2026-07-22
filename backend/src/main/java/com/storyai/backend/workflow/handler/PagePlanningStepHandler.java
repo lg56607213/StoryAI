@@ -1,5 +1,6 @@
 package com.storyai.backend.workflow.handler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.storyai.backend.ai.story.BookPageDraft;
 import com.storyai.backend.ai.story.StoryGenerator;
 import com.storyai.backend.ai.story.StoryOutline;
@@ -24,6 +25,7 @@ public class PagePlanningStepHandler implements WorkflowStepHandler {
 
     private final BookPageRepository bookPageRepository;
     private final StoryGenerator storyGenerator;
+    private final ObjectMapper objectMapper;
 
     @Override
     public WorkflowStep getStep() {
@@ -43,8 +45,22 @@ public class PagePlanningStepHandler implements WorkflowStepHandler {
                     .text(d.text())
                     .sceneDescription(d.scene())
                     .outfit(d.outfit())
+                    .narrationJson(serializeSegments(d, i + 1))
                     .build();
             bookPageRepository.save(page);
+        }
+    }
+
+    /** 낭독 세그먼트를 JSON 문자열로 직렬화(없으면 null). 실패해도 페이지 저장은 계속된다. */
+    private String serializeSegments(BookPageDraft d, int pageNumber) {
+        if (d.segments() == null || d.segments().isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(d.segments());
+        } catch (Exception e) {
+            log.warn("페이지 {} 낭독 세그먼트 직렬화 실패: {}", pageNumber, e.getMessage());
+            return null;
         }
     }
 

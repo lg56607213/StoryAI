@@ -943,3 +943,22 @@ textarea.area {
 .email-status { font-size: 14px; margin-top: 12px; line-height: 1.5; }
 .email-status.ok { color: #1e9e6a; }
 .email-status.fail { color: #c1671f; }
+
+.narration-box {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid #f0e2d6;
+  border-radius: 16px;
+  background: #fffaf4;
+  text-align: center;
+}
+.narration-box h3 { margin: 0 0 10px; font-size: 17px; color: #5a4a54; }
+.narration-box .muted { margin-bottom: 14px; }
+.narration-video {
+  width: 100%;
+  max-width: 640px;
+  border-radius: 12px;
+  background: #000;
+  margin: 0 auto 14px;
+  display: block;
+}

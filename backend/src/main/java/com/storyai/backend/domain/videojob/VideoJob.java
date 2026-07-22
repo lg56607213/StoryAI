@@ -154,6 +154,16 @@ public class VideoJob {
     @Column(length = 1000)
     private String resultVideoUrl;
 
+    /** 동화 낭독 영상(mp4) URL — 책(BOOK)에 부가로 생성되는 "읽어주는 영상". 준비되면 채워진다. */
+    @Setter
+    @Column(length = 1000)
+    private String narrationVideoUrl;
+
+    /** 낭독 영상 생성 상태: null/none, generating, ready, failed. */
+    @Setter
+    @Column(length = 20)
+    private String narrationVideoStatus;
+
     /** 최종 산출물 다운로드 URL (책=PDF 다운로드 엔드포인트, 영상=mp4). */
     @Setter
     @Column(length = 1000)
