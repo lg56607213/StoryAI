@@ -905,3 +905,7 @@ textarea.area {
 @media (max-width: 720px) {
   .admin-cards { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* 푸터 사업자 정보 */
+.lp-footer-biz { line-height: 1.7; }
+.lp-footer-biz p { margin: 2px 0; }

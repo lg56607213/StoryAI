@@ -191,9 +191,11 @@ export default function Landing({
           <a href="#" onClick={(e) => e.preventDefault()}>이용약관</a>
           <a href="#" onClick={(e) => e.preventDefault()}>개인정보처리방침</a>
         </div>
-        <p className="lp-footer-biz muted small">
-          상호 · 대표 · 사업자등록번호 · 주소 · 문의 이메일 (사업자 정보 등록 예정)
-        </p>
+        <div className="lp-footer-biz muted small">
+          <p>주식회사 제이디엔드 | 대표 박동천 | 사업자등록번호 766-86-02631</p>
+          <p>사업장 소재지 : 서울특별시 영등포구 여의대방로379, 605호</p>
+          <p>문의 : jdgp@jdgp.co.kr</p>
+        </div>
       </footer>
     </div>
   )
