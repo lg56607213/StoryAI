@@ -57,12 +57,12 @@ public class EmailNotifier {
         sender.send(message);
     }
 
-    /** 완성본 PDF를 이메일로 발송한다. pdfBytes 가 있으면 첨부한다(발송 실패해도 작업은 성공 처리). */
-    public void sendBookReady(String toEmail, String title, byte[] pdfBytes, String downloadUrl) {
+    /** 완성본 PDF를 이메일로 발송한다. 성공하면 true. 실패해도 예외 없이 false 반환(작업은 성공 처리). */
+    public boolean sendBookReady(String toEmail, String title, byte[] pdfBytes, String downloadUrl) {
         String safeTitle = (title == null || title.isBlank()) ? "동화책" : title;
         if (toEmail == null || toEmail.isBlank()) {
             log.info("완성본 준비됨(제목={}), 수신 이메일 없음 → 발송 생략", safeTitle);
-            return;
+            return false;
         }
         String subject = "[투데이히어로] '" + safeTitle + "' 동화책이 완성되었어요 📖";
         String body = safeTitle + " 동화책이 완성되었어요!\n\n"
@@ -74,12 +74,13 @@ public class EmailNotifier {
         try {
             if (resend.isConfigured()) {
                 resend.send(toEmail, subject, body, pdfBytes, fileName);
-                return;
+                log.info("완성본 이메일 발송 완료(Resend): to={}", toEmail);
+                return true;
             }
             JavaMailSender sender = mailSenderProvider.getIfAvailable();
             if (sender == null) {
                 log.info("[발송 수단 미설정 → 생략] to={}, 제목='{}', 다운로드={}", toEmail, safeTitle, downloadUrl);
-                return;
+                return false;
             }
             MimeMessage message = sender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
@@ -94,8 +95,10 @@ public class EmailNotifier {
             }
             sender.send(message);
             log.info("완성본 이메일 발송 완료(SMTP): to={}", toEmail);
+            return true;
         } catch (Exception e) {
             log.warn("이메일 발송 실패: to={}, 원인={}", toEmail, e.getMessage());
+            return false;
         }
     }
 }

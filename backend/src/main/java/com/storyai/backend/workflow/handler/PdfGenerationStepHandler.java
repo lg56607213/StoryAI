@@ -105,10 +105,11 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
 
         job.setResultUrl("/api/video-jobs/%d/download".formatted(job.getId()));
 
-        // 전체 생성이 끝나면 완성본 PDF를 이메일로 발송(SMTP 미설정 시 로그만). 미리보기 단계에선 보내지 않음.
+        // 전체 생성이 끝나면 완성본 PDF를 이메일로 발송(수단 미설정 시 로그만). 미리보기 단계에선 보내지 않음.
         if (!preview) {
-            emailNotifier.sendBookReady(job.getDeliveryEmail(),
+            boolean sent = emailNotifier.sendBookReady(job.getDeliveryEmail(),
                     job.getGeneratedTitle() != null ? job.getGeneratedTitle() : "동화책", pdfBytes, job.getResultUrl());
+            job.setEmailSent(sent);
         }
     }
 

@@ -159,6 +159,10 @@ public class VideoJob {
     @Column(length = 1000)
     private String resultUrl;
 
+    /** 완성본 이메일 발송 성공 여부(결과화면·관리자 표시용). */
+    @Setter
+    private boolean emailSent = false;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default

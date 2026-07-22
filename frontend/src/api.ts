@@ -68,6 +68,8 @@ export interface JobResponse {
   priceKrw: number | null
   resultUrl: string | null
   resultVideoUrl: string | null
+  deliveryEmail: string | null
+  emailSent: boolean
   errorMessage: string | null
   createdAt: string
   updatedAt: string

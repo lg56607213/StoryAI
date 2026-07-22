@@ -35,6 +35,8 @@ public record VideoJobResponse(
         Integer priceKrw,
         String resultUrl,
         String resultVideoUrl,
+        String deliveryEmail,
+        boolean emailSent,
         String errorMessage,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -66,6 +68,8 @@ public record VideoJobResponse(
                 Pricing.priceKrw(job),
                 job.getResultUrl(),
                 job.getResultVideoUrl(),
+                job.getDeliveryEmail(),
+                job.isEmailSent(),
                 job.getErrorMessage(),
                 job.getCreatedAt(),
                 job.getUpdatedAt()

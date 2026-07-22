@@ -938,3 +938,8 @@ textarea.area {
 .ship-box .field-label:first-of-type { margin-top: 4px; }
 .ship-note { margin: 0 0 6px; color: #a85a2a; }
 .ship-addr { margin-top: 8px; }
+
+/* 완성 화면 이메일 상태 */
+.email-status { font-size: 14px; margin-top: 12px; line-height: 1.5; }
+.email-status.ok { color: #1e9e6a; }
+.email-status.fail { color: #c1671f; }

@@ -480,6 +480,13 @@ function App() {
               ) : (
                 <p className="muted">영상 다운로드는 준비 중입니다.</p>
               )}
+              {job.deliveryEmail && (
+                <p className={`email-status ${job.emailSent ? 'ok' : 'fail'}`}>
+                  {job.emailSent
+                    ? `✅ 완성본을 ${job.deliveryEmail} 로 이메일로 보냈어요. (스팸함도 확인해 주세요)`
+                    : `⚠️ 이메일(${job.deliveryEmail}) 발송이 아직 안 됐어요. 위 다운로드 버튼으로 받아주세요.`}
+                </p>
+              )}
               {job.physicalBookRequested && (
                 <p className="notice">
                   실물 인쇄본으로 요청하셨습니다. 결제 후 인쇄·배송됩니다. (결제 연동 준비 중)
