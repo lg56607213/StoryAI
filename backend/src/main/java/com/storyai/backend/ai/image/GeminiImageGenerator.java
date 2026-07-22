@@ -23,8 +23,11 @@ public class GeminiImageGenerator implements ImageGenerator {
     }
 
     private String styleLine(String style) {
-        return "Art style: " + (style == null || style.isBlank() ? DEFAULT_STYLE : style)
-                + " (realistic proportions, NOT chibi).";
+        String s = (style == null || style.isBlank()) ? DEFAULT_STYLE : style;
+        // 참조 이미지의 렌더링이 화풍을 눌러버리지 않도록, 선택한 화풍을 강하게 강제한다.
+        return "IMPORTANT — render the WHOLE image strictly in this exact art style, applied consistently to "
+                + "characters and background: " + s + ". Do not default to a generic look; commit fully to this style "
+                + "(realistic proportions, NOT chibi).";
     }
 
     @Override
