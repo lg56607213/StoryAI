@@ -133,6 +133,7 @@ export function confirmProject(
 export interface Me {
   authenticated: boolean
   loginEnabled?: boolean
+  isAdmin?: boolean
   provider?: string
   name?: string | null
   email?: string | null
@@ -158,6 +159,43 @@ export function testEmail(): Promise<TestEmailResult> {
   return fetch(apiUrl('/api/me/test-email'), { method: 'POST', ...withCreds }).then((r) =>
     handle<TestEmailResult>(r),
   )
+}
+
+// ---- 관리자 대시보드 ----
+export interface AdminDailyRow {
+  date: string
+  previews: number
+  purchases: number
+  pdf: number
+  hardcover: number
+  completed: number
+}
+export interface AdminStats {
+  days: number
+  daily: AdminDailyRow[]
+  totals: { previews: number; purchases: number; pdf: number; hardcover: number; completed: number }
+  estImages: number
+  estCostKrw: number
+  costPerImageKrw: number
+}
+export interface AdminPurchase {
+  id: number
+  confirmedAt: string | null
+  type: string
+  pages: number | null
+  priceKrw: number | null
+  title: string | null
+  deliveryEmail: string | null
+  requesterEmail: string | null
+  requesterProvider: string | null
+  status: string | null
+}
+
+export function getAdminStats(days = 30): Promise<AdminStats> {
+  return fetch(apiUrl(`/api/admin/stats?days=${days}`), withCreds).then((r) => handle<AdminStats>(r))
+}
+export function getAdminPurchases(): Promise<AdminPurchase[]> {
+  return fetch(apiUrl('/api/admin/purchases'), withCreds).then((r) => handle<AdminPurchase[]>(r))
 }
 
 /** 소셜 로그인 시작 주소(브라우저 전체 이동용). */

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import ImageCropper from './ImageCropper'
 import Landing from './Landing'
+import AdminDashboard from './AdminDashboard'
 import {
   apiUrl,
   confirmProject,
@@ -50,7 +51,7 @@ function App() {
   const [options, setOptions] = useState<Options | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [me, setMe] = useState<Me | null>(null)
-  const [view, setView] = useState<'home' | 'create'>('home')
+  const [view, setView] = useState<'home' | 'create' | 'admin'>('home')
 
   const [outputType, setOutputType] = useState('BOOK')
   const [theme, setTheme] = useState('')
@@ -303,7 +304,11 @@ function App() {
 
   // 홈(랜딩) 화면.
   if (view === 'home') {
-    return <Landing me={me} onStart={startCreate} onLogout={onLogout} />
+    return <Landing me={me} onStart={startCreate} onLogout={onLogout} onAdmin={me?.isAdmin ? () => setView('admin') : undefined} />
+  }
+
+  if (view === 'admin') {
+    return <AdminDashboard onHome={goHome} />
   }
 
   // (여기부터는 view === 'create') 로그인 안 했으면 → 로그인 화면.
@@ -432,6 +437,9 @@ function App() {
         <span className="login-bar-spacer" />
         {me?.authenticated ? (
           <>
+            {me.isAdmin && (
+              <button className="btn ghost small" onClick={() => setView('admin')}>📊 관리자</button>
+            )}
             <button className="btn ghost small" onClick={handleTestEmail}>✉️ 메일테스트</button>
             <span className="muted small">{me.name ?? '회원'}님</span>
             <button className="btn ghost small" onClick={onLogout}>로그아웃</button>

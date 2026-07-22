@@ -864,3 +864,44 @@ textarea.area {
 .photo-guide ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
 .photo-guide li { font-size: 13px; line-height: 1.5; color: #6a5f55; }
 .photo-guide li b { color: #4a4038; }
+
+/* ---- 관리자 대시보드 ---- */
+.app.admin { max-width: 960px; }
+.admin-period { display: flex; gap: 8px; justify-content: center; margin-bottom: 4px; }
+.admin-error { color: #d6455f; }
+.admin-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.admin-card {
+  background: #fff; border: 1px solid #efe7dd; border-radius: 16px;
+  padding: 16px; display: flex; flex-direction: column; gap: 4px;
+  box-shadow: 0 4px 14px rgba(120, 90, 60, 0.05);
+}
+.admin-card.highlight { background: #fff1f4; border-color: #ffd4de; }
+.admin-card.cost { background: #f3f0ff; border-color: #ddd4f5; }
+.ac-label { font-size: 13px; color: #8a8290; font-weight: 600; }
+.ac-num { font-size: 26px; font-weight: 800; color: #3a3540; letter-spacing: -0.5px; }
+.ac-sub { font-size: 12px; color: #9a929c; }
+.admin-table-wrap { overflow-x: auto; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.admin-table th, .admin-table td {
+  padding: 9px 10px; text-align: left; white-space: nowrap;
+  border-bottom: 1px solid #f0eae2;
+}
+.admin-table th { color: #8a8290; font-size: 12px; font-weight: 700; background: #faf7f2; }
+.admin-table td { color: #4a444f; }
+.admin-table tr.empty-day td { color: #c9c2cc; }
+.admin-table td .bar {
+  display: inline-block; height: 8px; border-radius: 4px;
+  background: linear-gradient(90deg, #ff8a5b, #ff6f91); margin-right: 6px; vertical-align: middle;
+}
+.admin-table td.buy { color: #d1541f; font-weight: 700; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.tag.pdf { background: #eef4ff; color: #3b6fd1; }
+.tag.book { background: #fff1e8; color: #d1541f; }
+.status { font-size: 12px; font-weight: 700; }
+.status.COMPLETED { color: #1e9e6a; }
+.status.RUNNING { color: #d19a1f; }
+.status.FAILED { color: #d6455f; }
+.status.PENDING { color: #9a929c; }
+@media (max-width: 720px) {
+  .admin-cards { grid-template-columns: repeat(2, 1fr); }
+}

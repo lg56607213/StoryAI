@@ -12,11 +12,14 @@ import com.storyai.backend.domain.videojob.VideoJob;
 import com.storyai.backend.domain.videojob.VideoJobRepository;
 import com.storyai.backend.domain.videojob.WorkflowStep;
 import com.storyai.backend.job.dto.CreateVideoJobRequest;
+import com.storyai.backend.auth.LoginIdentity;
 import com.storyai.backend.workflow.WorkflowEngine;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -34,7 +37,7 @@ public class VideoJobService {
     private final WorkflowEngine workflowEngine;
 
     @Transactional
-    public VideoJob createJob(CreateVideoJobRequest request) {
+    public VideoJob createJob(CreateVideoJobRequest request, Authentication auth) {
         validate(request);
 
         String protagonist = request.characters().stream()
@@ -63,6 +66,9 @@ public class VideoJobService {
                 .targetLengthSeconds(isBook ? null : request.videoDurationSec())
                 .currentStep(WorkflowStep.first())
                 .build();
+        // 로그인 상태면 요청 계정을 기록(관리자 조회용).
+        job.setRequesterEmail(LoginIdentity.emailOf(auth));
+        job.setRequesterProvider(LoginIdentity.providerOf(auth));
         job = videoJobRepository.save(job);
 
         for (CreateVideoJobRequest.CharacterInput c : request.characters()) {
@@ -93,7 +99,7 @@ public class VideoJobService {
 
     /** 미리보기 확정 → 전체 생성 재개. 구매유형·이메일을 저장하고 삽화 단계부터 워크플로우를 다시 태운다. */
     @Transactional
-    public VideoJob confirmFull(Long jobId, ConfirmVideoJobRequest request) {
+    public VideoJob confirmFull(Long jobId, ConfirmVideoJobRequest request, Authentication auth) {
         VideoJob job = videoJobRepository.findById(jobId)
                 .orElseThrow(() -> new VideoJobNotFoundException(jobId));
         if (job.getOutputType() != OutputType.BOOK) {
@@ -103,6 +109,13 @@ public class VideoJobService {
             throw new IllegalArgumentException("이미 전체 생성이 진행/완료된 주문입니다.");
         }
         job.startFullGeneration(blankToNull(request.purchaseType()), blankToNull(request.deliveryEmail()));
+        // 구매요청(확정) 시점과 요청 계정 기록.
+        job.setConfirmedAt(LocalDateTime.now());
+        String email = LoginIdentity.emailOf(auth);
+        if (email != null) {
+            job.setRequesterEmail(email);
+            job.setRequesterProvider(LoginIdentity.providerOf(auth));
+        }
         videoJobRepository.save(job);
         // 커밋 이후 PAGE_ILLUSTRATION부터 재개된다.
         workflowEngine.start(job.getId());

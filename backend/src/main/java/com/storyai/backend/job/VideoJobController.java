@@ -30,8 +30,9 @@ public class VideoJobController {
     private final LocalStorage localStorage;
 
     @PostMapping
-    public ResponseEntity<VideoJobResponse> create(@Valid @RequestBody CreateVideoJobRequest request) {
-        var job = videoJobService.createJob(request);
+    public ResponseEntity<VideoJobResponse> create(@Valid @RequestBody CreateVideoJobRequest request,
+                                                   org.springframework.security.core.Authentication auth) {
+        var job = videoJobService.createJob(request, auth);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(VideoJobResponse.from(job));
     }
 
@@ -42,8 +43,9 @@ public class VideoJobController {
 
     /** 미리보기 확정 → 전체 생성 시작(구매유형·이메일 수집, 결제는 이후). */
     @PostMapping("/{id}/confirm")
-    public VideoJobResponse confirm(@PathVariable Long id, @RequestBody ConfirmVideoJobRequest request) {
-        return VideoJobResponse.from(videoJobService.confirmFull(id, request));
+    public VideoJobResponse confirm(@PathVariable Long id, @RequestBody ConfirmVideoJobRequest request,
+                                    org.springframework.security.core.Authentication auth) {
+        return VideoJobResponse.from(videoJobService.confirmFull(id, request, auth));
     }
 
     /** 완성된 책 PDF 다운로드. (영상 다운로드는 Slice 4에서) */

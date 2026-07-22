@@ -94,6 +94,19 @@ public class VideoJob {
     @Column(length = 320)
     private String deliveryEmail;
 
+    /** 요청한 로그인 계정 이메일(관리자 조회용) — 생성/확정 시 로그인 상태면 기록 */
+    @Setter
+    @Column(length = 320)
+    private String requesterEmail;
+
+    /** 요청 계정 제공자(google/kakao) */
+    @Setter
+    private String requesterProvider;
+
+    /** 미리보기 확정(구매요청) 시각 — 관리자 통계용 */
+    @Setter
+    private LocalDateTime confirmedAt;
+
     /** 스토리 방향 (선택) — 고객이 이야기 틀을 잡아주는 자유 입력 */
     @Column(columnDefinition = "TEXT")
     private String storyDirection;

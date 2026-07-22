@@ -26,12 +26,14 @@ public class AuthController {
 
     private final ObjectProvider<ClientRegistrationRepository> clientRegistrations;
     private final EmailNotifier emailNotifier;
+    private final AdminGuard adminGuard;
 
     @GetMapping("/me")
     public Map<String, Object> me(Authentication authentication) {
         Map<String, Object> res = new HashMap<>();
         // 구글/카카오 키가 설정돼 로그인이 실제로 가능한지 → 프론트가 이때만 로그인 버튼 표시.
         res.put("loginEnabled", clientRegistrations.getIfAvailable() != null);
+        res.put("isAdmin", adminGuard.isAdmin(authentication));
         if (authentication instanceof OAuth2AuthenticationToken token) {
             String provider = token.getAuthorizedClientRegistrationId();
             OAuth2User u = token.getPrincipal();

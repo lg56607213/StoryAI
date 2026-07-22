@@ -10,10 +10,12 @@ export default function Landing({
   me,
   onStart,
   onLogout,
+  onAdmin,
 }: {
   me: Me | null
   onStart: () => void
   onLogout: () => void
+  onAdmin?: () => void
 }) {
   return (
     <div className="landing">
@@ -23,6 +25,9 @@ export default function Landing({
         <span className="lp-nav-spacer" />
         {me?.authenticated ? (
           <>
+            {onAdmin && (
+              <button className="btn ghost small" onClick={onAdmin}>📊 관리자</button>
+            )}
             <span className="muted small">{me.name ?? '회원'}님</span>
             <button className="btn ghost small" onClick={onLogout}>로그아웃</button>
           </>
