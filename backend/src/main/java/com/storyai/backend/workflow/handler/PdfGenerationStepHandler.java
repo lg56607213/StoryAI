@@ -83,6 +83,7 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
             throw new IllegalStateException("폰트 로드 실패: " + e.getMessage(), e);
         }
 
+        byte[] pdfBytes;
         try (PDDocument doc = new PDDocument()) {
             String title = job.getGeneratedTitle() != null ? job.getGeneratedTitle() : "이야기책";
             addPage(doc, composeCover(title, coverImage(job), jua, gaegu));
@@ -96,17 +97,18 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
             }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             doc.save(baos);
-            localStorage.write(localStorage.bookPdfPath(job.getId()), baos.toByteArray());
+            pdfBytes = baos.toByteArray();
+            localStorage.write(localStorage.bookPdfPath(job.getId()), pdfBytes);
         } catch (Exception e) {
             throw new IllegalStateException("PDF 생성 실패: " + e.getMessage(), e);
         }
 
         job.setResultUrl("/api/video-jobs/%d/download".formatted(job.getId()));
 
-        // 전체 생성이 끝나면 완성본 전송 알림(현재 스텁: 로그). 미리보기 단계에선 보내지 않음.
+        // 전체 생성이 끝나면 완성본 PDF를 이메일로 발송(SMTP 미설정 시 로그만). 미리보기 단계에선 보내지 않음.
         if (!preview) {
             emailNotifier.sendBookReady(job.getDeliveryEmail(),
-                    job.getGeneratedTitle() != null ? job.getGeneratedTitle() : "동화책", job.getResultUrl());
+                    job.getGeneratedTitle() != null ? job.getGeneratedTitle() : "동화책", pdfBytes, job.getResultUrl());
         }
     }
 

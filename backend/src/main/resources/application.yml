@@ -21,6 +21,21 @@ spring:
       max-file-size: 20MB
       max-request-size: 100MB
 
+  # 이메일(SMTP) — host/username/password는 환경변수로 주입해야 활성화됨.
+  #   SPRING_MAIL_HOST, SPRING_MAIL_USERNAME, SPRING_MAIL_PASSWORD (예: Gmail 앱 비밀번호)
+  # host가 없으면 JavaMailSender 빈이 만들어지지 않아 발송은 자동 생략(부팅 안전).
+  mail:
+    port: ${SPRING_MAIL_PORT:587}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+
   # 소셜 로그인 클라이언트 등록은 application.yml이 아니라 OAuthClientConfig에서
   # 프로그램으로 만든다(키가 비면 아예 등록 안 함 → 앱 정상 부팅). GOOGLE_CLIENT_ID/SECRET,
   # KAKAO_CLIENT_ID/SECRET 환경변수로 주입.

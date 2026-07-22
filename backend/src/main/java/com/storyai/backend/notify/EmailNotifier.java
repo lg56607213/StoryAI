@@ -1,27 +1,74 @@
 package com.storyai.backend.notify;
 
+import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Component;
 
 /**
- * 완성본 전송 알림.
- * 지금은 실제 발송 대신 로그만 남기는 스텁이다. 실제 이메일 발송을 붙이려면:
- *  1) build.gradle 에 spring-boot-starter-mail 추가
- *  2) application.yml 에 spring.mail.* (SMTP 호스트/계정/비밀번호) 설정
- *  3) 아래 send()에서 JavaMailSender 로 첨부(PDF) 메일 전송으로 교체
- * (카카오 알림톡은 사업자 채널·심사가 필요해 이후 별도 연동.)
+ * 완성본 이메일 발송(PDF 첨부).
+ * - SMTP가 설정되면(JavaMailSender 빈 존재) 실제로 발송한다.
+ * - 설정 전(키 없음)에는 발송을 건너뛰고 로그만 남긴다 → 앱은 정상 부팅.
+ *
+ * 활성화 방법(Railway 환경변수):
+ *   SPRING_MAIL_HOST=smtp.gmail.com
+ *   SPRING_MAIL_USERNAME=보내는주소@gmail.com
+ *   SPRING_MAIL_PASSWORD=<Gmail 앱 비밀번호>
+ * (포트/STARTTLS 기본값은 application.yml 에 설정됨)
  */
 @Slf4j
 @Component
 public class EmailNotifier {
 
-    /** 완성본 다운로드 안내를 보낸다(현재 스텁: 로그만). */
-    public void sendBookReady(String toEmail, String title, String downloadUrl) {
+    private final ObjectProvider<JavaMailSender> mailSenderProvider;
+
+    /** 보내는 사람 주소(기본: SMTP 계정). */
+    @Value("${spring.mail.username:}")
+    private String from;
+
+    public EmailNotifier(ObjectProvider<JavaMailSender> mailSenderProvider) {
+        this.mailSenderProvider = mailSenderProvider;
+    }
+
+    /** 완성본 PDF를 이메일로 발송한다. pdfBytes 가 있으면 첨부한다. */
+    public void sendBookReady(String toEmail, String title, byte[] pdfBytes, String downloadUrl) {
+        String safeTitle = (title == null || title.isBlank()) ? "동화책" : title;
         if (toEmail == null || toEmail.isBlank()) {
-            log.info("완성본 준비됨(제목={}), 수신 이메일 없음 → 발송 생략", title);
+            log.info("완성본 준비됨(제목={}), 수신 이메일 없음 → 발송 생략", safeTitle);
             return;
         }
-        // TODO: 실제 SMTP 발송으로 교체 (계정 설정 후).
-        log.info("[이메일 발송 예정 - 스텁] to={}, 제목='{}', 다운로드={}", toEmail, title, downloadUrl);
+        JavaMailSender sender = mailSenderProvider.getIfAvailable();
+        if (sender == null) {
+            // SMTP 미설정: 발송은 건너뛰되, 완성본은 결과 화면 다운로드로 받을 수 있음.
+            log.info("[이메일 미설정 → 발송 생략] to={}, 제목='{}', 다운로드={}", toEmail, safeTitle, downloadUrl);
+            return;
+        }
+        try {
+            MimeMessage message = sender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(toEmail);
+            if (from != null && !from.isBlank()) {
+                helper.setFrom(from);
+            }
+            helper.setSubject("[투데이히어로] '" + safeTitle + "' 동화책이 완성되었어요 📖");
+            helper.setText(
+                    safeTitle + " 동화책이 완성되었어요!\n\n"
+                            + "첨부된 PDF 파일에서 우리 아이 동화책을 확인하실 수 있어요.\n"
+                            + "소중한 순간을 담아드릴 수 있어 기뻐요. 감사합니다.\n\n"
+                            + "— 투데이히어로 (todayhero.co.kr)",
+                    false);
+            if (pdfBytes != null && pdfBytes.length > 0) {
+                helper.addAttachment(safeTitle + ".pdf", new ByteArrayResource(pdfBytes), "application/pdf");
+            }
+            sender.send(message);
+            log.info("완성본 이메일 발송 완료: to={}, 제목='{}'", toEmail, safeTitle);
+        } catch (Exception e) {
+            // 발송 실패해도 작업 자체는 성공 처리(다운로드로 수령 가능).
+            log.warn("이메일 발송 실패: to={}, 원인={}", toEmail, e.getMessage());
+        }
     }
 }
