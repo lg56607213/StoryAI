@@ -30,8 +30,12 @@ public enum StoryTheme {
     public String costumeFor(CharacterRole role) {
         boolean main = role == CharacterRole.MAIN;
         return switch (this) {
-            case PRINCESS -> main ? "a pretty pastel princess dress with a small tiara and a floral headband"
-                    : "a cute little-prince royal outfit with a small crown";
+            case PRINCESS -> main
+                    ? "royal storybook attire that suits THIS child's apparent gender shown in the reference: "
+                        + "if the child looks like a girl, a pretty pastel princess dress with a small tiara and a floral headband; "
+                        + "if the child looks like a boy, a handsome little-prince royal outfit with a cape and a small crown "
+                        + "(never put a boy in a dress)"
+                    : "a cute royal outfit with a small crown, suited to the child";
             case PRINCE -> "a cute little-prince royal outfit with a cape and a small crown";
             case HERO -> "a brave little hero costume with a small cape";
             case ADVENTURE -> "a cute explorer outfit with an adventure vest, hat and a small backpack";
