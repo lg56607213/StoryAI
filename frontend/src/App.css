@@ -925,3 +925,16 @@ textarea.area {
 .legal-foot { margin-top: 18px; text-align: center; }
 .legal-foot .btn { width: 100%; }
 .tag.preview { background: #f0eef5; color: #7a6fa0; }
+
+/* 배송지 입력 박스 */
+.ship-box {
+  margin-top: 14px;
+  padding: 14px;
+  background: #fff6ee;
+  border: 1px solid #f0dcc8;
+  border-radius: 14px;
+}
+.ship-box .field-label { margin-top: 12px; }
+.ship-box .field-label:first-of-type { margin-top: 4px; }
+.ship-note { margin: 0 0 6px; color: #a85a2a; }
+.ship-addr { margin-top: 8px; }

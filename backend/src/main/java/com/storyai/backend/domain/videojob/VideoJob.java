@@ -94,6 +94,20 @@ public class VideoJob {
     @Column(length = 320)
     private String deliveryEmail;
 
+    // --- 실물(하드커버) 배송 정보 — 책자 구매 시 입력 ---
+    @Setter
+    private String recipientName;
+    @Setter
+    private String recipientPhone;
+    @Setter
+    private String postalCode;
+    @Setter
+    @Column(length = 500)
+    private String shippingAddress;
+    @Setter
+    @Column(length = 500)
+    private String shippingAddressDetail;
+
     /** 요청한 로그인 계정 이메일(관리자 조회용) — 생성/확정 시 로그인 상태면 기록 */
     @Setter
     @Column(length = 320)

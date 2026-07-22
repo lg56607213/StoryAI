@@ -119,7 +119,15 @@ export function getProject(id: number): Promise<JobResponse> {
 /** 미리보기 확정 → 전체 생성 시작. 구매 유형(PDF/BOOK)과 받을 이메일(선택)을 넘긴다. */
 export function confirmProject(
   id: number,
-  req: { purchaseType: string; deliveryEmail?: string },
+  req: {
+    purchaseType: string
+    deliveryEmail?: string
+    recipientName?: string
+    recipientPhone?: string
+    postalCode?: string
+    shippingAddress?: string
+    shippingAddressDetail?: string
+  },
 ): Promise<JobResponse> {
   return fetch(apiUrl(`/api/video-jobs/${id}/confirm`), {
     method: 'POST',
@@ -189,6 +197,10 @@ export interface AdminPurchase {
   requesterEmail: string | null
   requesterProvider: string | null
   status: string | null
+  recipientName: string | null
+  recipientPhone: string | null
+  postalCode: string | null
+  address: string | null
 }
 
 export function getAdminStats(days = 30): Promise<AdminStats> {

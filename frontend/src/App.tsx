@@ -78,6 +78,12 @@ function App() {
   // 미리보기 확정(구매) 관련
   const [purchaseType, setPurchaseType] = useState<'PDF' | 'BOOK'>('PDF')
   const [email, setEmail] = useState('')
+  // 실물(책자) 배송 정보
+  const [recipientName, setRecipientName] = useState('')
+  const [recipientPhone, setRecipientPhone] = useState('')
+  const [postalCode, setPostalCode] = useState('')
+  const [shippingAddress, setShippingAddress] = useState('')
+  const [shippingAddressDetail, setShippingAddressDetail] = useState('')
   const [confirming, setConfirming] = useState(false)
 
   useEffect(() => {
@@ -268,11 +274,29 @@ function App() {
   async function onConfirm() {
     if (!job) return
     setSubmitError(null)
+    // 이메일은 기본, 책자는 배송 정보 필수.
+    if (!email.trim()) {
+      setSubmitError('완성본을 받을 이메일을 입력해 주세요.')
+      return
+    }
+    if (purchaseType === 'BOOK' && (!recipientName.trim() || !recipientPhone.trim() || !shippingAddress.trim())) {
+      setSubmitError('책자 배송을 위해 받는 사람 이름·연락처·주소를 입력해 주세요.')
+      return
+    }
     setConfirming(true)
     try {
       const updated = await confirmProject(job.id, {
         purchaseType,
         deliveryEmail: email.trim() || undefined,
+        ...(purchaseType === 'BOOK'
+          ? {
+              recipientName: recipientName.trim(),
+              recipientPhone: recipientPhone.trim(),
+              postalCode: postalCode.trim() || undefined,
+              shippingAddress: shippingAddress.trim(),
+              shippingAddressDetail: shippingAddressDetail.trim() || undefined,
+            }
+          : {}),
       })
       setJob(updated) // status RUNNING → 폴링이 다시 시작되어 전체 생성 진행
     } catch (e) {
@@ -386,13 +410,55 @@ function App() {
                   실물 책으로 받기
                 </button>
               </div>
+              <label className="field-label">완성본 받을 이메일 (필수)</label>
               <input
                 className="text"
                 type="email"
-                placeholder="완성본 받을 이메일 (선택)"
+                placeholder="이메일 주소"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
+              {purchaseType === 'BOOK' && (
+                <div className="ship-box">
+                  <p className="muted small ship-note">
+                    📦 실물 하드커버로 배송해 드려요. <b>PDF 파일도 이메일로 함께 보내드립니다.</b>
+                  </p>
+                  <label className="field-label">받는 사람 이름</label>
+                  <input
+                    className="text"
+                    placeholder="이름"
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                  />
+                  <label className="field-label">연락처</label>
+                  <input
+                    className="text"
+                    type="tel"
+                    placeholder="010-0000-0000"
+                    value={recipientPhone}
+                    onChange={(e) => setRecipientPhone(e.target.value)}
+                  />
+                  <label className="field-label">배송 주소</label>
+                  <input
+                    className="text"
+                    placeholder="우편번호"
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                  />
+                  <input
+                    className="text ship-addr"
+                    placeholder="주소 (도로명/지번)"
+                    value={shippingAddress}
+                    onChange={(e) => setShippingAddress(e.target.value)}
+                  />
+                  <input
+                    className="text ship-addr"
+                    placeholder="상세주소 (동/호수 등)"
+                    value={shippingAddressDetail}
+                    onChange={(e) => setShippingAddressDetail(e.target.value)}
+                  />
+                </div>
+              )}
               <button className="btn primary" disabled={confirming} onClick={onConfirm}>
                 {confirming ? '주문 확정 중…' : '이걸로 전체 만들기'}
               </button>

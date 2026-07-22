@@ -6,6 +6,12 @@ package com.storyai.backend.job.dto;
  */
 public record ConfirmVideoJobRequest(
         String purchaseType,   // "PDF" 또는 "BOOK"
-        String deliveryEmail
+        String deliveryEmail,
+        // 실물(BOOK) 배송 정보 — 책자 구매 시 입력
+        String recipientName,
+        String recipientPhone,
+        String postalCode,
+        String shippingAddress,
+        String shippingAddressDetail
 ) {
 }

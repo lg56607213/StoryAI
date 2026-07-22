@@ -122,6 +122,15 @@ public class AdminController {
             m.put("requesterEmail", j.getRequesterEmail());
             m.put("requesterProvider", j.getRequesterProvider());
             m.put("status", j.getStatus() != null ? j.getStatus().name() : null);
+            // 실물 배송 정보(하드커버 발주용)
+            m.put("recipientName", j.getRecipientName());
+            m.put("recipientPhone", j.getRecipientPhone());
+            m.put("postalCode", j.getPostalCode());
+            String addr = j.getShippingAddress();
+            if (addr != null && j.getShippingAddressDetail() != null) {
+                addr = addr + " " + j.getShippingAddressDetail();
+            }
+            m.put("address", addr);
             out.add(m);
         }
         return out;

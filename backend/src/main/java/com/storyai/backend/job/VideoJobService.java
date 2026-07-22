@@ -109,6 +109,12 @@ public class VideoJobService {
             throw new IllegalArgumentException("이미 전체 생성이 진행/완료된 주문입니다.");
         }
         job.startFullGeneration(blankToNull(request.purchaseType()), blankToNull(request.deliveryEmail()));
+        // 실물 책 배송 정보(책자 구매 시).
+        job.setRecipientName(blankToNull(request.recipientName()));
+        job.setRecipientPhone(blankToNull(request.recipientPhone()));
+        job.setPostalCode(blankToNull(request.postalCode()));
+        job.setShippingAddress(blankToNull(request.shippingAddress()));
+        job.setShippingAddressDetail(blankToNull(request.shippingAddressDetail()));
         // 구매요청(확정) 시점과 요청 계정 기록.
         job.setConfirmedAt(LocalDateTime.now());
         String email = LoginIdentity.emailOf(auth);

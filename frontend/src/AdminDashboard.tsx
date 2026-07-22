@@ -228,6 +228,7 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
                       <th>가격</th>
                       <th>요청 계정</th>
                       <th>받을 이메일</th>
+                      <th>배송지 (하드커버)</th>
                       <th>상태</th>
                     </tr>
                   </thead>
@@ -245,6 +246,18 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
                           {p.requesterProvider ? <span className="muted small"> ({p.requesterProvider})</span> : null}
                         </td>
                         <td>{p.deliveryEmail ?? '-'}</td>
+                        <td>
+                          {p.address ? (
+                            <span>
+                              {p.recipientName} · {p.recipientPhone}
+                              <br />
+                              {p.postalCode ? `(${p.postalCode}) ` : ''}
+                              {p.address}
+                            </span>
+                          ) : (
+                            <span className="muted">-</span>
+                          )}
+                        </td>
                         <td>
                           <span className={`status ${p.status}`}>{statusKo(p.status)}</span>
                         </td>
