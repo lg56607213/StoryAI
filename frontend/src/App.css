@@ -909,3 +909,18 @@ textarea.area {
 /* 푸터 사업자 정보 */
 .lp-footer-biz { line-height: 1.7; }
 .lp-footer-biz p { margin: 2px 0; }
+
+/* 약관/개인정보 모달 */
+.lp-modal.legal { max-width: 680px; text-align: left; }
+.legal-doc h3 { margin: 0 0 4px; font-size: 20px; }
+.legal-doc h4 { margin: 18px 0 6px; font-size: 15px; color: #3a3540; }
+.legal-doc p { margin: 0 0 6px; font-size: 13.5px; line-height: 1.65; color: #4a444f; }
+.legal-list { margin: 4px 0 8px; padding-left: 18px; }
+.legal-list li { font-size: 13.5px; line-height: 1.6; color: #4a444f; margin-bottom: 3px; }
+.legal-company {
+  margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--lp-border);
+  font-size: 12.5px; color: #8a8290;
+}
+.legal-company p { margin: 2px 0; color: #8a8290; }
+.legal-foot { margin-top: 18px; text-align: center; }
+.legal-foot .btn { width: 100%; }

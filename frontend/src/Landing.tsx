@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiUrl, createReview, getReviews, loginUrl } from './api'
 import type { Me, Review } from './api'
+import LegalModal, { type LegalDoc } from './Legal'
 
 /**
  * 상용 홈페이지(랜딩). 마케팅·기획·CS 관점을 반영한 섹션 구성.
@@ -17,6 +18,7 @@ export default function Landing({
   onLogout: () => void
   onAdmin?: () => void
 }) {
+  const [legal, setLegal] = useState<LegalDoc | null>(null)
   return (
     <div className="landing">
       {/* 상단 바 */}
@@ -188,8 +190,8 @@ export default function Landing({
       <footer className="lp-footer">
         <div className="lp-footer-brand">TodayHero</div>
         <div className="lp-footer-links">
-          <a href="#" onClick={(e) => e.preventDefault()}>이용약관</a>
-          <a href="#" onClick={(e) => e.preventDefault()}>개인정보처리방침</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setLegal('terms') }}>이용약관</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); setLegal('privacy') }}>개인정보처리방침</a>
         </div>
         <div className="lp-footer-biz muted small">
           <p>주식회사 제이디엔드 | 대표 박동천 | 사업자등록번호 766-86-02631</p>
@@ -197,6 +199,8 @@ export default function Landing({
           <p>문의 : jdgp@jdgp.co.kr</p>
         </div>
       </footer>
+
+      {legal && <LegalModal doc={legal} onClose={() => setLegal(null)} />}
     </div>
   )
 }
