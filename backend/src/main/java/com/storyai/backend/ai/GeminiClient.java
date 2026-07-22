@@ -17,6 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Google Gemini(Generative Language) API 클라이언트.
@@ -37,6 +38,9 @@ public class GeminiClient {
     private final HttpClient http = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(20))
             .build();
+
+    /** 성공한 이미지 생성 횟수(비용 추적용). 서버 시작 후 누적. */
+    private static final AtomicLong imageGenCount = new AtomicLong();
 
     public GeminiClient(@Value("${storyai.ai.gemini.api-key:}") String apiKey,
                         @Value("${storyai.ai.gemini.text-model:gemini-flash-latest}") String textModel,
@@ -105,6 +109,9 @@ public class GeminiClient {
         for (JsonNode p : resp.path("candidates").path(0).path("content").path("parts")) {
             String data = p.path("inlineData").path("data").asText("");
             if (!data.isEmpty()) {
+                // 비용 추적: 성공한 이미지 1장 = 과금 1건. 미리보기/전체 생성 시 몇 장 생성되는지 로그로 확인.
+                log.info("💰 Gemini 이미지 생성 1건 (서버 누적 {}건, 모델={})",
+                        imageGenCount.incrementAndGet(), imageModel);
                 return Base64.getDecoder().decode(data);
             }
         }
