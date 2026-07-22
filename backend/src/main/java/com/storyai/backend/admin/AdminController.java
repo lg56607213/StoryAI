@@ -127,6 +127,83 @@ public class AdminController {
         return out;
     }
 
+    /** 전체 생성 내역(미리보기 포함) 상세 — 누가·언제·무엇을·어떤 단계. */
+    @GetMapping("/jobs")
+    public List<Map<String, Object>> jobs(Authentication auth) {
+        adminGuard.require(auth);
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (VideoJob j : videoJobRepository.findTop300ByOrderByCreatedAtDesc()) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", j.getId());
+            m.put("createdAt", j.getCreatedAt() != null ? j.getCreatedAt().format(DT) : null);
+            m.put("requesterEmail", j.getRequesterEmail());
+            m.put("requesterProvider", j.getRequesterProvider());
+            m.put("stage", stage(j)); // 미리보기 / PDF구매 / 하드커버구매
+            m.put("theme", j.getTheme());
+            m.put("style", j.getBookStyle() != null ? j.getBookStyle().getLabel() : null);
+            m.put("age", j.getAgeGroup() != null ? j.getAgeGroup().getLabel() : null);
+            m.put("pages", j.getBookPages());
+            m.put("characters", j.getProtagonistDescription());
+            m.put("title", j.getGeneratedTitle());
+            m.put("priceKrw", j.getConfirmedAt() != null ? Pricing.priceKrw(j) : null);
+            m.put("deliveryEmail", j.getDeliveryEmail());
+            m.put("status", j.getStatus() != null ? j.getStatus().name() : null);
+            out.add(m);
+        }
+        return out;
+    }
+
+    /** 계정별 현황 — 누가 미리보기/구매를 몇 건 했는지 + 예상 원가. */
+    @GetMapping("/users")
+    public List<Map<String, Object>> users(Authentication auth) {
+        adminGuard.require(auth);
+        Map<String, long[]> agg = new java.util.HashMap<>();       // [미리보기, 구매, PDF, 하드커버, 이미지수]
+        Map<String, String> providerOf = new java.util.HashMap<>();
+        Map<String, LocalDateTime> lastAt = new java.util.HashMap<>();
+        for (VideoJob j : videoJobRepository.findAll()) {
+            String email = j.getRequesterEmail() != null ? j.getRequesterEmail() : "(비로그인)";
+            long[] a = agg.computeIfAbsent(email, k -> new long[5]);
+            a[0]++;
+            if (j.getConfirmedAt() != null) {
+                a[1]++;
+                if (j.isPhysicalBookRequested()) a[3]++; else a[2]++;
+            }
+            a[4] += estimateImages(j);
+            if (j.getRequesterProvider() != null) providerOf.put(email, j.getRequesterProvider());
+            if (j.getCreatedAt() != null) {
+                lastAt.merge(email, j.getCreatedAt(), (x, y) -> x.isAfter(y) ? x : y);
+            }
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map.Entry<String, long[]> e : agg.entrySet()) {
+            long[] a = e.getValue();
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("email", e.getKey());
+            m.put("provider", providerOf.get(e.getKey()));
+            m.put("previews", a[0]);
+            m.put("purchases", a[1]);
+            m.put("pdf", a[2]);
+            m.put("hardcover", a[3]);
+            m.put("estCostKrw", a[4] * COST_PER_IMAGE_KRW);
+            m.put("lastAt", lastAt.get(e.getKey()) != null ? lastAt.get(e.getKey()).format(DT) : null);
+            out.add(m);
+        }
+        // 구매 많은 순 → 미리보기 많은 순
+        out.sort((x, y) -> {
+            int c = Long.compare((long) y.get("purchases"), (long) x.get("purchases"));
+            return c != 0 ? c : Long.compare((long) y.get("previews"), (long) x.get("previews"));
+        });
+        return out;
+    }
+
+    /** 주문 단계 라벨: 확정 전=미리보기, 확정 후=구매유형. */
+    private String stage(VideoJob j) {
+        if (j.getConfirmedAt() == null) {
+            return "미리보기";
+        }
+        return j.isPhysicalBookRequested() ? "하드커버구매" : "PDF구매";
+    }
+
     /** 주문 1건의 예상 이미지 생성 수(원가 추정). 미리보기=6, 확정(전체)=2시트+페이지. */
     private int estimateImages(VideoJob j) {
         if (j.getOutputType() != OutputType.BOOK) {

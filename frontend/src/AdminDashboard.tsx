@@ -2,8 +2,12 @@ import { useEffect, useState } from 'react'
 import {
   getAdminStats,
   getAdminPurchases,
+  getAdminUsers,
+  getAdminJobs,
   type AdminStats,
   type AdminPurchase,
+  type AdminUser,
+  type AdminJob,
 } from './api'
 
 /** 관리자 대시보드: 일자별 생성/구매 통계 + 구매요청 목록 + 예상 원가. */
@@ -11,15 +15,19 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
   const [days, setDays] = useState(30)
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [purchases, setPurchases] = useState<AdminPurchase[]>([])
+  const [users, setUsers] = useState<AdminUser[]>([])
+  const [jobs, setJobs] = useState<AdminJob[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([getAdminStats(days), getAdminPurchases()])
-      .then(([s, p]) => {
+    Promise.all([getAdminStats(days), getAdminPurchases(), getAdminUsers(), getAdminJobs()])
+      .then(([s, p, u, j]) => {
         setStats(s)
         setPurchases(p)
+        setUsers(u)
+        setJobs(j)
         setError(null)
       })
       .catch((e) => setError(e?.message ?? '불러오기 실패'))
@@ -124,6 +132,86 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
             </div>
           </section>
 
+          {/* 회원별 현황 */}
+          <section className="card">
+            <h3 className="step">회원별 현황 ({users.length}명)</h3>
+            {users.length === 0 ? (
+              <p className="muted small">아직 데이터가 없어요.</p>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>계정</th>
+                      <th>미리보기</th>
+                      <th>구매</th>
+                      <th>PDF</th>
+                      <th>하드커버</th>
+                      <th>예상원가</th>
+                      <th>최근활동</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u.email}>
+                        <td>
+                          {u.email}
+                          {u.provider ? <span className="muted small"> ({u.provider})</span> : null}
+                        </td>
+                        <td>{u.previews}</td>
+                        <td className={u.purchases ? 'buy' : ''}>{u.purchases || '-'}</td>
+                        <td>{u.pdf || '-'}</td>
+                        <td>{u.hardcover || '-'}</td>
+                        <td>{won(u.estCostKrw)}</td>
+                        <td>{u.lastAt ?? '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          {/* 전체 생성 내역 (상세) */}
+          <section className="card">
+            <h3 className="step">전체 생성 내역 ({jobs.length}건)</h3>
+            <p className="muted small">누가 · 무엇을 · 어느 단계까지 했는지 상세 내역이에요.</p>
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>일시</th>
+                    <th>단계</th>
+                    <th>계정</th>
+                    <th>주제</th>
+                    <th>그림체</th>
+                    <th>연령</th>
+                    <th>페이지</th>
+                    <th>주인공</th>
+                    <th>제목</th>
+                    <th>상태</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jobs.map((j) => (
+                    <tr key={j.id}>
+                      <td>{j.createdAt ?? '-'}</td>
+                      <td><span className={stageClass(j.stage)}>{j.stage}</span></td>
+                      <td>{j.requesterEmail ?? <span className="muted">비로그인</span>}</td>
+                      <td>{j.theme ?? '-'}</td>
+                      <td>{j.style ?? '-'}</td>
+                      <td>{j.age ?? '-'}</td>
+                      <td>{j.pages ? j.pages + 'p' : '-'}</td>
+                      <td>{j.characters ?? '-'}</td>
+                      <td>{j.title ?? '-'}</td>
+                      <td><span className={`status ${j.status}`}>{statusKo(j.status)}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
           {/* 구매요청 목록 */}
           <section className="card">
             <h3 className="step">구매요청 목록 ({purchases.length}건)</h3>
@@ -171,6 +259,12 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
       )}
     </main>
   )
+}
+
+function stageClass(stage: string) {
+  if (stage === '하드커버구매') return 'tag book'
+  if (stage === 'PDF구매') return 'tag pdf'
+  return 'tag preview'
 }
 
 function statusKo(s: string | null) {

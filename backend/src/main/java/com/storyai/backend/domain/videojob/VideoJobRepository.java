@@ -12,4 +12,7 @@ public interface VideoJobRepository extends JpaRepository<VideoJob, Long> {
 
     /** 관리자 목록: 구매요청(확정)된 주문을 확정시각 내림차순으로. */
     List<VideoJob> findTop200ByConfirmedAtIsNotNullOrderByConfirmedAtDesc();
+
+    /** 관리자 상세: 최근 생성 내역(미리보기 포함) 전체를 최신순으로. */
+    List<VideoJob> findTop300ByOrderByCreatedAtDesc();
 }

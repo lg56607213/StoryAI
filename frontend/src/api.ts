@@ -198,6 +198,39 @@ export function getAdminPurchases(): Promise<AdminPurchase[]> {
   return fetch(apiUrl('/api/admin/purchases'), withCreds).then((r) => handle<AdminPurchase[]>(r))
 }
 
+export interface AdminUser {
+  email: string
+  provider: string | null
+  previews: number
+  purchases: number
+  pdf: number
+  hardcover: number
+  estCostKrw: number
+  lastAt: string | null
+}
+export interface AdminJob {
+  id: number
+  createdAt: string | null
+  requesterEmail: string | null
+  requesterProvider: string | null
+  stage: string
+  theme: string | null
+  style: string | null
+  age: string | null
+  pages: number | null
+  characters: string | null
+  title: string | null
+  priceKrw: number | null
+  deliveryEmail: string | null
+  status: string | null
+}
+export function getAdminUsers(): Promise<AdminUser[]> {
+  return fetch(apiUrl('/api/admin/users'), withCreds).then((r) => handle<AdminUser[]>(r))
+}
+export function getAdminJobs(): Promise<AdminJob[]> {
+  return fetch(apiUrl('/api/admin/jobs'), withCreds).then((r) => handle<AdminJob[]>(r))
+}
+
 /** 소셜 로그인 시작 주소(브라우저 전체 이동용). */
 export function loginUrl(provider: 'google' | 'kakao'): string {
   return apiUrl(`/oauth2/authorization/${provider}`)
