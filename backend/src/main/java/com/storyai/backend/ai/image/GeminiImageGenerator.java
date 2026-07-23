@@ -61,6 +61,24 @@ public class GeminiImageGenerator implements ImageGenerator {
 
     @Override
     public byte[] illustrate(String scene, List<byte[]> characterSheets, String style) {
+        return illustrateWithCompanion(scene, characterSheets, null, null, style);
+    }
+
+    @Override
+    public byte[] mascotSheet(String appearance, String style) {
+        String prompt = styleLine(style)
+                + " Create ONE full-body character reference illustration of an original children's-book "
+                + "animal mascot: " + appearance + ". "
+                + "Friendly, cute and huggable, gentle happy expression, standing/floating and facing forward, "
+                + "centered on a plain warm cream background. "
+                + "Keep the design simple and iconic so it can be redrawn identically many times. "
+                + "No text, no words, no letters, no watermark.";
+        return gemini.generateImage(prompt, List.of());
+    }
+
+    @Override
+    public byte[] illustrateWithCompanion(String scene, List<byte[]> characterSheets,
+                                          byte[] companionSheet, String companionDesc, String style) {
         int n = characterSheets.size();
         StringBuilder refInfo = new StringBuilder();
         for (int i = 0; i < n; i++) {
@@ -68,10 +86,24 @@ public class GeminiImageGenerator implements ImageGenerator {
                     .append(" is a main character - keep this character IDENTICAL (same face, likeness, hairstyle, "
                             + "and the exact outfit shown in the reference). ");
         }
+
+        // 동물 동반자(마스코트)는 사람 수에 포함하지 않는다 — 사람 추가 금지 규칙은 그대로 유지.
+        List<byte[]> refs = characterSheets;
+        if (companionSheet != null) {
+            refs = new java.util.ArrayList<>(characterSheets);
+            refs.add(companionSheet);
+            refInfo.append("Reference image ").append(n + 1)
+                    .append(" is ").append(companionDesc == null ? "an animal friend" : companionDesc)
+                    .append(" - an ANIMAL companion, not a person. Keep this creature IDENTICAL to its reference "
+                            + "(same species, colors, markings, proportions and accessories). ");
+        }
+
         String peopleRule = "This whole story has EXACTLY " + n + " human character" + (n == 1 ? "" : "s")
-                + ". Draw ONLY the " + n + " reference character" + (n == 1 ? "" : "s") + " above. "
+                + ". Draw ONLY the " + n + " human reference character" + (n == 1 ? "" : "s") + " above"
+                + (companionSheet != null ? " plus the animal companion" : "") + ". "
                 + "Do NOT add, invent, duplicate, or draw ANY other person, child, friend, sibling, or bystander "
                 + "that is not one of the references - even if the scene text seems to mention someone else. ";
+
         String prompt = styleLine(style) + " Create ONE wide children's storybook illustration for this scene: "
                 + scene + ". " + refInfo + peopleRule
                 + "Keep each character's clothing EXACTLY the same as in their reference image — do not change, swap, "
@@ -80,6 +112,6 @@ public class GeminiImageGenerator implements ImageGenerator {
                 + "Fill the entire wide frame edge-to-edge with the scene (full background, no empty margins). "
                 + "IMPORTANT: no text, no words, no letters, no watermark in the image.";
         // 가로형 책에 맞춰 landscape(3:2)로 생성 → 페이지를 여백 없이 꽉 채움.
-        return gemini.generateImage(prompt, characterSheets, "3:2");
+        return gemini.generateImage(prompt, refs, "3:2");
     }
 }

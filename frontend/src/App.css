@@ -727,6 +727,54 @@ textarea.area {
   margin-right: 6px;
 }
 
+/* 히어로 친구들 (마스코트) */
+.lp-friends-sub { margin: -6px auto 22px; max-width: 620px; }
+.lp-friend-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.lp-friend {
+  margin: 0;
+  background: var(--lp-card);
+  border: 1.5px solid var(--lp-border);
+  border-radius: 20px;
+  padding: 14px 12px 18px;
+  text-align: center;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.lp-friend:hover { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(90, 74, 84, 0.10); }
+.lp-friend img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: 14px;
+  background: #fffaf3;
+}
+.lp-friend-name { display: block; font-size: 18px; color: #5a4a54; margin-top: 10px; }
+.lp-friend-species { display: block; font-size: 12px; color: #e1749b; font-weight: 700; margin-top: 2px; }
+.lp-friend figcaption p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #7b6d74;
+  margin: 8px 0 10px;
+  min-height: 58px;
+}
+.lp-friend-themes {
+  display: inline-block;
+  font-size: 11px;
+  color: #8a7f86;
+  background: #f6efe7;
+  border-radius: 999px;
+  padding: 4px 10px;
+}
+@media (max-width: 900px) {
+  .lp-friend-grid { grid-template-columns: repeat(2, 1fr); }
+  .lp-friend figcaption p { min-height: 0; }
+}
+
 .lp-price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 1020px; margin: 0 auto 12px; }
 .lp-price {
   position: relative;

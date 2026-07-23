@@ -1,5 +1,6 @@
 package com.storyai.backend.ai.story;
 
+import com.storyai.backend.domain.mascot.Mascot;
 import com.storyai.backend.domain.videojob.AgeGroup;
 import com.storyai.backend.domain.videojob.StoryTheme;
 
@@ -19,12 +20,18 @@ public final class StoryPrompts {
     public static String outline(StoryTheme theme, String characters, AgeGroup ag, String storyDirection) {
         String direction = (storyDirection == null || storyDirection.isBlank())
                 ? "특별한 요청 없음 (주제에 맞게 자유롭게)" : storyDirection;
+        Mascot m = Mascot.forTheme(theme);
         return """
                 너는 그림동화 작가야. 아래 조건으로 따뜻하고 안전한 한국어 동화의 "탄탄한 줄거리"를 만들어줘.
                 - 주제: %s
                 - 주인공(들): %s
                 - 대상 연령: %s (%s)
                 - 스토리 방향(고객 요청): %s
+                - 단짝 친구(반드시 등장): %s (%s) — %s
+
+                단짝 친구 규칙(매우 중요): 이 동화에는 "%s"(이)라는 %s 친구가 **반드시** 등장한다.
+                이야기 초반에 자연스럽게 만나(또는 처음부터 함께 있고), 끝까지 주인공 곁에서 함께한다.
+                이 친구 외에 비슷한 역할의 새로운 조력자 동물을 또 만들지 마라(친구는 이 하나로 충분하다).
 
                 반드시 "하나의 일관된 이야기"가 되도록 구성해:
                 - 시작: 주인공의 상황과 '하나의 분명한 목표(또는 해결할 문제)'를 세운다.
@@ -37,17 +44,28 @@ public final class StoryPrompts {
                 (목록에 없는 다른 사람 금지, 주제에 맞는 동물·상상 조력자는 이유가 있으면 허용).
                 반드시 아래 JSON 형식으로만 답해:
                 {"title": "동화 제목", "synopsis": "위 시작-중간-끝 흐름이 분명히 드러나는 6~8문장 줄거리(하나의 목표로 시작해 해결까지 일관되게)"}
-                """.formatted(theme.getLabel(), safe(characters), ag.getLabel(), ag.getGuide(), direction);
+                """.formatted(theme.getLabel(), safe(characters), ag.getLabel(), ag.getGuide(), direction,
+                m.getKoreanName(), m.getSpecies(), m.getPersonality(),
+                m.getKoreanName(), m.getSpecies());
     }
 
     public static String pages(StoryTheme theme, String characters, AgeGroup ag,
                                StoryOutline outline, int pageCount) {
+        Mascot m = Mascot.forTheme(theme);
         return """
                 아래 동화를 그림책 %d페이지로 나눠줘.
                 - 제목: %s
                 - 줄거리: %s
                 - 주제: %s / 등장인물: %s
                 - 대상 연령: %s / 텍스트 작성 지침(반드시 지킬 것): %s
+                - 단짝 친구(반드시 등장): %s (%s) — %s
+
+                단짝 친구 규칙(매우 중요): "%s"(은)는 이 동화의 고정 친구다.
+                초반에 자연스럽게 등장시키고 끝까지 함께하며, 여러 페이지에서 주인공과 직접 대화하게 하라.
+                이 친구의 대사 세그먼트는 voice 코드로 반드시 "%s" 를 쓰고, speaker 는 "%s" 로 적어라.
+                이 친구가 나오는 페이지의 영문 "scene"에는 반드시 이 친구를 묘사해 넣어라
+                (이렇게 묘사할 것: %s).
+                이 친구 말고 비슷한 역할의 새로운 조력자 동물을 추가로 만들지 마라.
 
                 중요(옷 연출): 주인공이 "본인"이라는 느낌이 강하게 들도록,
                 - 처음 2~3페이지는 아이가 "평상복(everyday, 자기 실제 옷)"을 입고 집/방 등 일상에서 시작.
@@ -94,7 +112,10 @@ public final class StoryPrompts {
                 처음-중간-끝의 흐름을 갖추고 마지막은 따뜻하게 마무리. 정확히 %d개.
                 반드시 JSON만: {"pages": [{"segments": [{"role":"narration","text":"..."}, {"role":"dialogue","speaker":"토끼","voice":"small_animal","text":"\\"안녕!\\""}], "scene": "...", "outfit": "everyday"}, ...]}
                 """.formatted(pageCount, safe(outline.title()), safe(outline.synopsis()),
-                theme.getLabel(), safe(characters), ag.getLabel(), ag.getGuide(), theme.getLabel(), pageCount);
+                theme.getLabel(), safe(characters), ag.getLabel(), ag.getGuide(),
+                m.getKoreanName(), m.getSpecies(), m.getPersonality(),
+                m.getKoreanName(), m.getVoice(), m.getKoreanName(), m.getAppearance(),
+                theme.getLabel(), pageCount);
     }
 
     private static String safe(String s) {

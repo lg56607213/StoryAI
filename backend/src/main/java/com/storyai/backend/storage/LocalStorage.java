@@ -39,6 +39,24 @@ public class LocalStorage {
         return URL_PREFIX + key;
     }
 
+    // --- 공용 에셋 (잡에 종속되지 않음: 마스코트 "히어로 친구들" 시트 등) ---
+
+    /** 공용 에셋 저장. 한 번 만들면 모든 주문에서 재사용한다. */
+    public String storeShared(String name, byte[] bytes) {
+        writeKey("shared/" + name, bytes);
+        return URL_PREFIX + "shared/" + name;
+    }
+
+    /** 공용 에셋 읽기. 없으면 null. */
+    public byte[] readShared(String name) {
+        return readKey("shared/" + name);
+    }
+
+    /** 공용 에셋 URL(존재 여부와 무관하게 규칙상의 URL). */
+    public String sharedUrl(String name) {
+        return URL_PREFIX + "shared/" + name;
+    }
+
     /** 우리 저장소("/api/files/...") URL로부터 바이트를 읽는다. 외부 URL/placeholder/미존재는 null. */
     public byte[] loadByUrl(String url) {
         if (url == null || !url.startsWith(URL_PREFIX)) {

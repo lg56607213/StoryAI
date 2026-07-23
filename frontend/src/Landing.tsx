@@ -4,6 +4,48 @@ import type { Me, Review } from './api'
 import LegalModal, { type LegalDoc } from './Legal'
 
 /**
+ * "히어로 친구들" — 투데이히어로 고유 마스코트.
+ * 주제에 맞는 친구가 아이의 단짝으로 동화 내내 함께 등장한다(백엔드 Mascot 과 동일 구성).
+ */
+const HERO_FRIENDS = [
+  {
+    code: 'byeol',
+    name: '별이',
+    species: '유니콘',
+    desc: '다정한 길잡이. 아이가 망설일 때 용기를 북돋아 줘요.',
+    themes: '공주 · 왕자 · 우주',
+  },
+  {
+    code: 'buri',
+    name: '부리',
+    species: '아기 드래곤',
+    desc: '겁은 조금 많지만, 결정적인 순간에 가장 용감해져요.',
+    themes: '용사 · 모험 · 공룡',
+  },
+  {
+    code: 'kkamnyang',
+    name: '깜냥',
+    species: '아기 부엉이',
+    desc: '아는 게 많은 조언자. 수수께끼로 길을 알려줘요.',
+    themes: '숲속 · 동물친구',
+  },
+  {
+    code: 'pado',
+    name: '파도',
+    species: '아기 돌고래',
+    desc: '명랑하게 앞장서서 길을 안내해 줘요.',
+    themes: '바닷속 · 해적',
+  },
+  {
+    code: 'choco',
+    name: '초코',
+    species: '아기 원숭이',
+    desc: '장난기 많은 단짝. 숨은 길과 먹을 것을 잘 찾아요.',
+    themes: '정글 · 모험',
+  },
+]
+
+/**
  * 상용 홈페이지(랜딩). 마케팅·기획·CS 관점을 반영한 섹션 구성.
  * onStart: "아이책 만들기" CTA → 로그인/생성 흐름으로 이동.
  */
@@ -129,6 +171,30 @@ export default function Landing({
       </section>
 
       {/* 후기 */}
+      {/* 히어로 친구들 — 투데이히어로 고유 마스코트 */}
+      <section className="lp-section lp-friends">
+        <div className="lp-section-head">
+          <p className="lp-eyebrow">히어로 친구들</p>
+          <h2>우리 아이의 단짝이 되어줄 친구들</h2>
+        </div>
+        <p className="muted small center lp-friends-sub">
+          주제에 맞는 친구가 <b>이야기 내내 아이 곁에서</b> 함께해요. 읽어주는 영상에서는 친구마다 목소리도 달라요.
+        </p>
+        <div className="lp-friend-grid">
+          {HERO_FRIENDS.map((f) => (
+            <figure className="lp-friend" key={f.code}>
+              <img src={`/mascots/${f.code}.jpg`} alt={`${f.name} — ${f.species}`} loading="lazy" />
+              <figcaption>
+                <b className="lp-friend-name">{f.name}</b>
+                <span className="lp-friend-species">{f.species}</span>
+                <p>{f.desc}</p>
+                <span className="lp-friend-themes">{f.themes}</span>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
+
       <ReviewsSection me={me} />
 
       {/* 상품·가격 */}

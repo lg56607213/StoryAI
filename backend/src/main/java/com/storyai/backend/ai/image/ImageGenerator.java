@@ -18,4 +18,17 @@ public interface ImageGenerator {
 
     /** 장면 설명 + 캐릭터 시트(들) → 페이지 삽화 PNG 바이트. */
     byte[] illustrate(String scene, List<byte[]> characterSheets, String style);
+
+    /**
+     * 마스코트("히어로 친구들") 캐릭터 시트 PNG. 사진 참조 없이 외형 스펙만으로 생성한다.
+     * (캐릭터×화풍 조합당 1회만 생성해 캐시 → 모든 책에서 동일한 모습)
+     */
+    byte[] mascotSheet(String appearance, String style);
+
+    /**
+     * 마스코트를 동반자로 함께 그리는 삽화.
+     * characterSheets = 사람 주인공 시트(사람 수 규칙에 사용), companionSheet = 동물 친구 시트(사람으로 세지 않음).
+     */
+    byte[] illustrateWithCompanion(String scene, List<byte[]> characterSheets,
+                                   byte[] companionSheet, String companionDesc, String style);
 }

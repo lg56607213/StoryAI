@@ -3,6 +3,8 @@ package com.storyai.backend.workflow.handler;
 import com.storyai.backend.ai.image.ImageGenerator;
 import com.storyai.backend.domain.bookpage.BookPage;
 import com.storyai.backend.domain.bookpage.BookPageRepository;
+import com.storyai.backend.domain.mascot.Mascot;
+import com.storyai.backend.domain.mascot.MascotSheetService;
 import com.storyai.backend.domain.storycharacter.StoryCharacter;
 import com.storyai.backend.domain.storycharacter.StoryCharacterRepository;
 import com.storyai.backend.domain.videojob.BookPhase;
@@ -32,6 +34,7 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
     private final StoryCharacterRepository storyCharacterRepository;
     private final ImageGenerator imageGenerator;
     private final LocalStorage localStorage;
+    private final MascotSheetService mascotSheetService;
 
     /** 개발/테스트 비용 제어: 실제 삽화를 생성할 최대 페이지 수 (초과분은 placeholder). 기본 무제한. */
     @Value("${storyai.book.illustrate-limit:9999}")
@@ -66,6 +69,12 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
         int upTo = preview ? Math.min(previewPages, pages.size()) : pages.size();
         String sheetFallbackUrl = firstSheetUrl(characters);
 
+        // "히어로 친구들" 단짝 마스코트 시트 — (캐릭터×화풍) 1회 생성 후 영구 재사용.
+        // 병렬 생성 전에 미리 준비해 스레드들이 같은 시트를 공유하게 한다.
+        Mascot mascot = Mascot.forTheme(job.getStoryTheme());
+        byte[] mascotSheet = canGenerate ? mascotSheetService.sheetFor(mascot, job.getBookStyle()) : null;
+        String mascotDesc = mascot != null ? mascot.describeForIllustration() : null;
+
         // 1) 생성 대상 선별: phase 범위 내 & 아직 실제 삽화 없는 페이지(비용 한도까지).
         List<Integer> targets = new ArrayList<>();
         if (canGenerate) {
@@ -96,7 +105,11 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
                             return;
                         }
                         try {
-                            byte[] img = imageGenerator.illustrate(page.getSceneDescription(), sheets, style);
+                            // 장면에 단짝 친구가 등장하면 동물 동반자로 함께 참조(사람 수 규칙은 그대로).
+                            byte[] companion = (mascot != null && mascot.mentionedIn(page.getSceneDescription()))
+                                    ? mascotSheet : null;
+                            byte[] img = imageGenerator.illustrateWithCompanion(
+                                    page.getSceneDescription(), sheets, companion, mascotDesc, style);
                             String url = localStorage.storeGenerated(
                                     job.getId(), "page-" + page.getPageNumber() + ".png", img);
                             generatedUrls.put(i, url);
