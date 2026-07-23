@@ -53,6 +53,11 @@ public class NarrationVideoService {
     private final LocalStorage storage;
     private final ObjectMapper objectMapper;
     private final com.storyai.backend.ai.voice.ElevenLabsClient elevenLabs;
+    private final com.storyai.backend.notify.EmailNotifier emailNotifier;
+
+    /** 이메일에 넣을 절대 URL의 기준(백엔드 공개 주소). 저장 파일은 /api/files/... 로 서빙된다. */
+    @Value("${storyai.api-base-url:https://api.todayhero.co.kr}")
+    private String apiBaseUrl;
 
     @Value("${storyai.video.ffmpeg-path:ffmpeg}")
     private String ffmpeg;
@@ -90,6 +95,11 @@ public class NarrationVideoService {
             job.setNarrationVideoStatus("ready");
             videoJobRepository.save(job);
             log.info("낭독 영상 생성 완료 job={} url={}", jobId, url);
+
+            // 영상은 용량이 커서 첨부 대신 링크로 안내 메일을 보낸다.
+            boolean parentVoice = job.getParentVoiceId() != null && !job.getParentVoiceId().isBlank();
+            emailNotifier.sendVideoReady(job.getDeliveryEmail(), job.getGeneratedTitle(),
+                    publicUrl(url), parentVoice);
         } catch (Exception e) {
             log.error("낭독 영상 생성 실패 job={}: {}", jobId, e.getMessage(), e);
             VideoJob fresh = videoJobRepository.findById(jobId).orElse(job);
@@ -276,6 +286,15 @@ public class NarrationVideoService {
             g.dispose();
         }
         ImageIO.write(img, "png", png.toFile());
+    }
+
+    /** 저장소 상대 URL("/api/files/...")을 이메일에 넣을 절대 URL로 바꾼다. */
+    private String publicUrl(String url) {
+        if (url == null || url.isBlank() || url.startsWith("http")) {
+            return url;
+        }
+        String base = apiBaseUrl == null ? "" : apiBaseUrl.replaceAll("/+$", "");
+        return base + url;
     }
 
     private byte[] silence(int rate, int ms) {

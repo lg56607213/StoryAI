@@ -37,7 +37,7 @@ export default function ParentVoiceRecorder({
   const [open, setOpen] = useState(false)
 
   const recorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<BlobPart[]>([])
+  const chunksRef = useRef<Blob[]>([])
   const timerRef = useRef<number | null>(null)
 
   // 언마운트 시 타이머·미리듣기 URL·마이크 정리
@@ -59,7 +59,10 @@ export default function ParentVoiceRecorder({
         if (e.data.size > 0) chunksRef.current.push(e.data)
       }
       rec.onstop = () => {
-        const b = new Blob(chunksRef.current, { type: 'audio/webm' })
+        // 실제 녹음 형식을 그대로 쓴다. 아이폰(Safari)은 webm이 아니라 mp4로 녹음하므로
+        // 형식을 webm으로 고정하면 서버/음성 API가 파일을 해석하지 못한다.
+        const type = rec.mimeType || chunksRef.current[0]?.type || 'audio/webm'
+        const b = new Blob(chunksRef.current, { type })
         setBlob(b)
         setPreviewUrl((prev) => {
           if (prev) URL.revokeObjectURL(prev)

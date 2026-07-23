@@ -57,6 +57,34 @@ public class EmailNotifier {
         sender.send(message);
     }
 
+    /**
+     * 낭독 영상이 준비되면 "보러 가기" 링크를 이메일로 보낸다.
+     * 영상(mp4)은 수십 MB라 첨부하지 않고 링크로 안내한다. 성공하면 true.
+     */
+    public boolean sendVideoReady(String toEmail, String title, String videoUrl, boolean parentVoice) {
+        String safeTitle = (title == null || title.isBlank()) ? "동화책" : title;
+        if (toEmail == null || toEmail.isBlank() || videoUrl == null || videoUrl.isBlank()) {
+            log.info("낭독 영상 준비됨(제목={}), 수신 이메일/URL 없음 → 발송 생략", safeTitle);
+            return false;
+        }
+        String subject = "[투데이히어로] '" + safeTitle + "' 읽어주는 영상이 완성되었어요 🎬";
+        String body = safeTitle + " 읽어주는 동화 영상이 완성되었어요!\n\n"
+                + (parentVoice
+                    ? "이야기는 직접 녹음해 주신 목소리로, 등장인물 대사는 캐릭터별 목소리로 들려드려요.\n\n"
+                    : "등장인물마다 다른 목소리로 동화를 읽어드려요.\n\n")
+                + "▶ 영상 보기 / 내려받기\n" + videoUrl + "\n\n"
+                + "아이와 함께 즐거운 시간 되세요.\n\n"
+                + "— 투데이히어로 (todayhero.co.kr)";
+        try {
+            sendSimple(toEmail, subject, body);
+            log.info("낭독 영상 안내 메일 발송 완료: to={}", toEmail);
+            return true;
+        } catch (Exception e) {
+            log.warn("낭독 영상 안내 메일 실패: to={}, 원인={}", toEmail, e.getMessage());
+            return false;
+        }
+    }
+
     /** 완성본 PDF를 이메일로 발송한다. 성공하면 true. 실패해도 예외 없이 false 반환(작업은 성공 처리). */
     public boolean sendBookReady(String toEmail, String title, byte[] pdfBytes, String downloadUrl) {
         String safeTitle = (title == null || title.isBlank()) ? "동화책" : title;
