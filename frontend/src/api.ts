@@ -291,6 +291,12 @@ export async function hideMyBook(id: number): Promise<void> {
   if (!res.ok) throw new Error(`삭제 실패 (HTTP ${res.status})`)
 }
 
+/** 멈춘 작업을 현재 단계부터 재시도(관리자). */
+export function retryAdminJob(id: number): Promise<{ id: number; resumedFrom: string; status: string }> {
+  return fetch(apiUrl(`/api/admin/jobs/${id}/retry`), { method: 'POST', ...withCreds })
+    .then((r) => handle<{ id: number; resumedFrom: string; status: string }>(r))
+}
+
 /** 연동 상태 진단(무엇이 켜져 있는가). 값은 중첩 맵이라 unknown으로 받는다. */
 export function getAdminDiagnostics(): Promise<Record<string, Record<string, unknown>>> {
   return fetch(apiUrl('/api/admin/diagnostics'), withCreds)

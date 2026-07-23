@@ -46,6 +46,29 @@ public class AdminController {
     private final com.storyai.backend.notify.EmailNotifier emailNotifier;
     private final com.storyai.backend.video.NarrationVideoService narrationVideoService;
     private final com.storyai.backend.ai.image.ImageGenerator imageGenerator;
+    private final com.storyai.backend.workflow.WorkflowEngine workflowEngine;
+
+    /**
+     * 멈춘 작업 재시도 — 현재 단계부터 다시 진행시킨다.
+     * 서버 재시작 등으로 끊긴 건을 재배포 없이 즉시 살릴 때 사용한다.
+     */
+    @org.springframework.web.bind.annotation.PostMapping("/jobs/{id}/retry")
+    public Map<String, Object> retry(@org.springframework.web.bind.annotation.PathVariable Long id,
+                                     Authentication auth) {
+        adminGuard.require(auth);
+        VideoJob job = videoJobRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다: " + id));
+        if (job.getStatus() == JobStatus.COMPLETED) {
+            throw new IllegalArgumentException("이미 완료된 주문입니다.");
+        }
+        if (job.getCurrentStep() == null) {
+            job.moveToStep(com.storyai.backend.domain.videojob.WorkflowStep.first());
+        }
+        job.markRunning();
+        videoJobRepository.save(job);
+        workflowEngine.start(id);
+        return Map.of("id", id, "resumedFrom", String.valueOf(job.getCurrentStep()), "status", "RUNNING");
+    }
 
     /**
      * 연동 상태 진단 — "지금 무엇이 켜져 있는가"를 한눈에 본다.

@@ -5,6 +5,7 @@ import {
   getAdminUsers,
   getAdminJobs,
   getAdminDiagnostics,
+  retryAdminJob,
   type AdminStats,
   type AdminPurchase,
   type AdminUser,
@@ -21,6 +22,21 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [diag, setDiag] = useState<Record<string, Record<string, unknown>> | null>(null)
+  const [retrying, setRetrying] = useState<number | null>(null)
+
+  /** 멈춘 작업을 현재 단계부터 다시 진행시킨다(서버 재시작 등으로 끊긴 건 복구용). */
+  async function onRetry(id: number) {
+    setRetrying(id)
+    try {
+      const r = await retryAdminJob(id)
+      alert(`재시도를 시작했어요.\n주문 ${r.id} · ${r.resumedFrom} 단계부터 진행합니다.\n\n잠시 후 새로고침해 주세요.`)
+      setJobs(await getAdminJobs())
+    } catch (e) {
+      alert('재시도 실패: ' + String((e as Error).message ?? e))
+    } finally {
+      setRetrying(null)
+    }
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -222,6 +238,7 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
                     <th>주인공</th>
                     <th>제목</th>
                     <th>상태</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -237,6 +254,17 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
                       <td>{j.characters ?? '-'}</td>
                       <td>{j.title ?? '-'}</td>
                       <td><span className={`status ${j.status}`}>{statusKo(j.status)}</span></td>
+                      <td>
+                        {j.status !== 'COMPLETED' && (
+                          <button
+                            className="btn ghost small"
+                            disabled={retrying === j.id}
+                            onClick={() => onRetry(j.id)}
+                          >
+                            {retrying === j.id ? '재시도 중…' : '↻ 재시도'}
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
