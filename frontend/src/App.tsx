@@ -41,6 +41,25 @@ const STEP_LABELS: Record<string, string> = {
   VIDEO_COMPOSITION: '영상 합성 중',
 }
 
+// 진행 상황 표시용 단계 순서(짧은 라벨). 백엔드 WorkflowPlan과 순서를 맞춘다.
+const BOOK_STEPS_UI = [
+  { code: 'STORY_GENERATION', label: '이야기 짓기' },
+  { code: 'PAGE_PLANNING', label: '페이지 나누기' },
+  { code: 'CHARACTER_ANALYSIS', label: '우리 아이 분석' },
+  { code: 'PAGE_ILLUSTRATION', label: '삽화 그리기' },
+  { code: 'PDF_GENERATION', label: '책 완성' },
+]
+const VIDEO_STEPS_UI = [
+  { code: 'STORY_GENERATION', label: '이야기 짓기' },
+  { code: 'SCENE_SPLIT', label: '장면 나누기' },
+  { code: 'CHARACTER_ANALYSIS', label: '우리 아이 분석' },
+  { code: 'IMAGE_GENERATION', label: '그림 그리기' },
+  { code: 'VIDEO_GENERATION', label: '영상 만들기' },
+  { code: 'VOICE_GENERATION', label: '목소리 입히기' },
+  { code: 'SUBTITLE_GENERATION', label: '자막 넣기' },
+  { code: 'VIDEO_COMPOSITION', label: '영상 완성' },
+]
+
 interface CharacterDraft {
   name: string
   role: string
@@ -75,6 +94,8 @@ function App() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const pollRef = useRef<number | null>(null)
+  // 낭독 영상 자동 트리거 중복 방지(같은 job에 한 번만).
+  const narrationTriggeredRef = useRef<number | null>(null)
 
   // 미리보기 확정(구매) 관련
   const [purchaseType, setPurchaseType] = useState<'PDF' | 'PDF_VIDEO' | 'PDF_VIDEO_BOOK'>('PDF')
@@ -169,10 +190,28 @@ function App() {
     return () => window.clearInterval(t)
   }, [job])
 
+  // 영상 포함 주문이 완성되면 낭독 영상 생성을 자동 시작한다(수동 버튼도 유지).
+  useEffect(() => {
+    if (
+      job &&
+      job.status === 'COMPLETED' &&
+      job.outputType === 'BOOK' &&
+      job.videoIncluded &&
+      (!job.narrationVideoStatus || job.narrationVideoStatus === 'none') &&
+      narrationTriggeredRef.current !== job.id
+    ) {
+      narrationTriggeredRef.current = job.id
+      setJob({ ...job, narrationVideoStatus: 'generating' })
+      startNarrationVideo(job.id).catch(() => {})
+    }
+  }, [job])
+
   async function handleMakeNarration() {
     if (!job) return
     try {
-      setJob(await startNarrationVideo(job.id))
+      narrationTriggeredRef.current = job.id
+      await startNarrationVideo(job.id)
+      setJob({ ...job, narrationVideoStatus: 'generating' })
     } catch (e) {
       alert('영상 만들기를 시작하지 못했어요: ' + String((e as Error).message ?? e))
     }
@@ -398,13 +437,38 @@ function App() {
           <p>우리 아이가 주인공인 동화</p>
         </header>
         <div className="card result">
-          {!done && !failed && (
-            <>
-              <div className="spinner" />
-              <h2>{STEP_LABELS[job.currentStep] ?? job.currentStep}</h2>
-              <p className="muted">잠시만 기다려 주세요…</p>
-            </>
-          )}
+          {!done && !failed && (() => {
+            const order = job.outputType === 'BOOK' ? BOOK_STEPS_UI : VIDEO_STEPS_UI
+            const curIdx = Math.max(0, order.findIndex((s) => s.code === job.currentStep))
+            const pct = Math.round(((curIdx + 0.5) / order.length) * 100)
+            const hint =
+              job.currentStep === 'PAGE_ILLUSTRATION'
+                ? '삽화는 페이지마다 한 장씩 정성껏 그려서 가장 오래 걸려요. 조금만 기다려 주세요 🎨'
+                : job.bookPhase === 'PREVIEW'
+                  ? '표지와 앞부분을 먼저 보여드릴게요. 보통 1~3분 걸려요.'
+                  : '완성본을 만드는 중이에요. 페이지가 많아 몇 분 걸릴 수 있어요.'
+            return (
+              <>
+                <div className="spinner" />
+                <h2>{STEP_LABELS[job.currentStep] ?? '만드는 중'}</h2>
+                <div className="gen-bar">
+                  <div className="gen-bar-fill" style={{ width: `${pct}%` }} />
+                </div>
+                <ol className="gen-steps">
+                  {order.map((s, i) => (
+                    <li
+                      key={s.code}
+                      className={i < curIdx ? 'done' : i === curIdx ? 'active' : ''}
+                    >
+                      <span className="gen-dot">{i < curIdx ? '✓' : i + 1}</span>
+                      {s.label}
+                    </li>
+                  ))}
+                </ol>
+                <p className="muted small">{hint}</p>
+              </>
+            )
+          })()}
           {failed && (
             <>
               <h2>생성에 실패했어요</h2>

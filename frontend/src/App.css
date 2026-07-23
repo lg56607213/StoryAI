@@ -945,6 +945,57 @@ textarea.area {
 .email-status.ok { color: #1e9e6a; }
 .email-status.fail { color: #c1671f; }
 
+.gen-bar {
+  width: 100%;
+  max-width: 340px;
+  height: 8px;
+  margin: 16px auto 4px;
+  background: #f0e6dc;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.gen-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f0a5c2, #e1749b);
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+.gen-steps {
+  list-style: none;
+  padding: 0;
+  margin: 18px auto 6px;
+  max-width: 260px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.gen-steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #b3a7ad;
+  transition: color 0.3s;
+}
+.gen-steps li.active { color: #5a4a54; font-weight: 700; }
+.gen-steps li.done { color: #8a9a86; }
+.gen-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #f0e6dc;
+  color: #b3a7ad;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.gen-steps li.active .gen-dot { background: #e1749b; color: #fff; }
+.gen-steps li.done .gen-dot { background: #cfe0c8; color: #4e7a46; }
+
 .tier-list {
   display: flex;
   flex-direction: column;
