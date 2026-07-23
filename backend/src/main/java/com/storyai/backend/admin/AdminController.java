@@ -40,6 +40,48 @@ public class AdminController {
 
     private final VideoJobRepository videoJobRepository;
     private final AdminGuard adminGuard;
+    private final com.storyai.backend.ai.ClaudeClient claudeClient;
+    private final com.storyai.backend.ai.GeminiClient geminiClient;
+    private final com.storyai.backend.ai.voice.ElevenLabsClient elevenLabsClient;
+    private final com.storyai.backend.notify.EmailNotifier emailNotifier;
+    private final com.storyai.backend.video.NarrationVideoService narrationVideoService;
+    private final com.storyai.backend.ai.image.ImageGenerator imageGenerator;
+
+    /**
+     * 연동 상태 진단 — "지금 무엇이 켜져 있는가"를 한눈에 본다.
+     * 비밀키는 노출하지 않고 설정 여부(boolean)와 모델명만 반환한다.
+     */
+    @GetMapping("/diagnostics")
+    public Map<String, Object> diagnostics(Authentication auth) {
+        adminGuard.require(auth);
+        Map<String, Object> m = new LinkedHashMap<>();
+
+        Map<String, Object> story = new LinkedHashMap<>();
+        boolean claude = claudeClient.isConfigured();
+        story.put("engine", claude ? "Claude" : "Gemini (폴백)");
+        story.put("claudeConfigured", claude);
+        m.put("스토리(글)", story);
+
+        Map<String, Object> image = new LinkedHashMap<>();
+        image.put("engine", imageGenerator.getClass().getSimpleName());
+        image.put("available", imageGenerator.isAvailable());
+        m.put("삽화(이미지)", image);
+
+        Map<String, Object> voice = new LinkedHashMap<>();
+        voice.put("캐릭터목소리(Gemini TTS)", geminiClient.isConfigured());
+        voice.put("부모목소리(ElevenLabs)", elevenLabsClient.isConfigured());
+        m.put("목소리", voice);
+
+        Map<String, Object> video = new LinkedHashMap<>();
+        video.put("ffmpeg", narrationVideoService.isFfmpegAvailable());
+        m.put("영상합성", video);
+
+        Map<String, Object> mail = new LinkedHashMap<>();
+        mail.put("발송가능", emailNotifier.isConfigured());
+        m.put("이메일", mail);
+
+        return m;
+    }
 
     @GetMapping("/stats")
     public Map<String, Object> stats(@RequestParam(defaultValue = "30") int days, Authentication auth) {

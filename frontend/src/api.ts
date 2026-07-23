@@ -249,6 +249,12 @@ export interface AdminPurchase {
   address: string | null
 }
 
+/** 연동 상태 진단(무엇이 켜져 있는가). 값은 중첩 맵이라 unknown으로 받는다. */
+export function getAdminDiagnostics(): Promise<Record<string, Record<string, unknown>>> {
+  return fetch(apiUrl('/api/admin/diagnostics'), withCreds)
+    .then((r) => handle<Record<string, Record<string, unknown>>>(r))
+}
+
 export function getAdminStats(days = 30): Promise<AdminStats> {
   return fetch(apiUrl(`/api/admin/stats?days=${days}`), withCreds).then((r) => handle<AdminStats>(r))
 }

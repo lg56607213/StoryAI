@@ -943,6 +943,39 @@ textarea.area {
 }
 .admin-table td.buy { color: #d1541f; font-weight: 700; }
 .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+/* 관리자 · 연동 상태 진단 */
+.diag-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 10px 0 12px;
+}
+.diag-group {
+  border: 1px solid #f0e2d6;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #fffdfa;
+}
+.diag-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #5a4a54;
+  margin-bottom: 8px;
+}
+.diag-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  padding: 4px 0;
+  border-top: 1px solid #f6efe7;
+}
+.diag-row:first-of-type { border-top: 0; }
+.diag-key { color: #7b6d74; }
+.diag-val { font-weight: 700; white-space: nowrap; }
+.diag-val.on { color: #1e9e6a; }
+.diag-val.off { color: #c1671f; }
+
 .tag.pdf { background: #eef4ff; color: #3b6fd1; }
 .tag.video { background: #f3ecff; color: #7b48c4; }
 .tag.book { background: #fff1e8; color: #d1541f; }

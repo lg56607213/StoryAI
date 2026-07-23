@@ -4,6 +4,7 @@ import {
   getAdminPurchases,
   getAdminUsers,
   getAdminJobs,
+  getAdminDiagnostics,
   type AdminStats,
   type AdminPurchase,
   type AdminUser,
@@ -19,6 +20,7 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
   const [jobs, setJobs] = useState<AdminJob[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [diag, setDiag] = useState<Record<string, Record<string, unknown>> | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -33,6 +35,11 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
       .catch((e) => setError(e?.message ?? '불러오기 실패'))
       .finally(() => setLoading(false))
   }, [days])
+
+  // 연동 상태는 기간과 무관하므로 최초 1회만.
+  useEffect(() => {
+    getAdminDiagnostics().then(setDiag).catch(() => setDiag(null))
+  }, [])
 
   const won = (n: number | null | undefined) =>
     n == null ? '-' : n.toLocaleString('ko-KR') + '원'
@@ -97,6 +104,31 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
           <p className="muted small center">
             * 구매요청 = 미리보기 확정 건. 원가는 이미지 생성 수 기반 추정치예요.
           </p>
+
+          {/* 연동 상태 — 지금 무엇이 켜져 있는가 */}
+          {diag && (
+            <section className="card">
+              <h3 className="step">🔌 연동 상태</h3>
+              <div className="diag-grid">
+                {Object.entries(diag).map(([group, items]) => (
+                  <div className="diag-group" key={group}>
+                    <div className="diag-title">{group}</div>
+                    {Object.entries(items).map(([k, v]) => (
+                      <div className="diag-row" key={k}>
+                        <span className="diag-key">{k}</span>
+                        <span className={`diag-val ${v === true ? 'on' : v === false ? 'off' : ''}`}>
+                          {v === true ? '✅ 켜짐' : v === false ? '❌ 꺼짐' : String(v)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <p className="muted small">
+                꺼진 항목은 Railway 환경변수를 넣으면 켜져요. 값(키)은 표시하지 않습니다.
+              </p>
+            </section>
+          )}
 
           {/* 일자별 표 */}
           <section className="card">
