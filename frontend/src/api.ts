@@ -84,6 +84,7 @@ export interface JobResponse {
   resultVideoUrl: string | null
   narrationVideoUrl: string | null
   narrationVideoStatus: string | null
+  hasParentVoice: boolean
   deliveryEmail: string | null
   emailSent: boolean
   errorMessage: string | null
@@ -132,6 +133,18 @@ export function createProject(req: CreateRequest): Promise<JobResponse> {
 
 export function getProject(id: number): Promise<JobResponse> {
   return fetch(apiUrl(`/api/video-jobs/${id}`), withCreds).then((r) => handle<JobResponse>(r))
+}
+
+/** 부모 목소리 등록 — 녹음 파일을 올려 음성을 복제한다(동의 필수). */
+export function uploadParentVoice(id: number, audio: Blob, consent: boolean): Promise<JobResponse> {
+  const form = new FormData()
+  form.append('file', audio, 'parent-voice.webm')
+  form.append('consent', String(consent))
+  return fetch(apiUrl(`/api/video-jobs/${id}/parent-voice`), {
+    method: 'POST',
+    body: form,
+    ...withCreds,
+  }).then((r) => handle<JobResponse>(r))
 }
 
 /** 낭독 영상(mp4) 생성 시작. 비동기로 시작되며 이후 getProject 폴링으로 narrationVideoStatus/Url 확인. */

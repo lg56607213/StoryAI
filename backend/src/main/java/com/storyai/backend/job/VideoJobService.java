@@ -35,6 +35,7 @@ public class VideoJobService {
     private final StoryCharacterRepository storyCharacterRepository;
     private final MediaAssetRepository mediaAssetRepository;
     private final WorkflowEngine workflowEngine;
+    private final com.storyai.backend.ai.voice.ElevenLabsClient elevenLabs;
 
     @Transactional
     public VideoJob createJob(CreateVideoJobRequest request, Authentication auth) {
@@ -132,6 +133,33 @@ public class VideoJobService {
         // 커밋 이후 PAGE_ILLUSTRATION부터 재개된다.
         workflowEngine.start(job.getId());
         return job;
+    }
+
+    /**
+     * 부모 목소리 등록: 녹음 샘플로 음성을 복제해 jobId에 연결한다.
+     * 음성은 생체정보에 준하므로 명시적 동의(consent)가 없으면 거부한다.
+     */
+    @Transactional
+    public VideoJob registerParentVoice(Long jobId, byte[] audio, String filename, boolean consent) {
+        VideoJob job = videoJobRepository.findById(jobId)
+                .orElseThrow(() -> new VideoJobNotFoundException(jobId));
+        if (!consent) {
+            throw new IllegalArgumentException("목소리 복제·이용에 대한 동의가 필요합니다.");
+        }
+        if (!elevenLabs.isConfigured()) {
+            throw new IllegalStateException("부모 목소리 기능이 아직 활성화되지 않았습니다.");
+        }
+        if (audio == null || audio.length < 20_000) {
+            throw new IllegalArgumentException("녹음이 너무 짧아요. 30초 이상 또렷하게 읽어 주세요.");
+        }
+        // 기존 복제본이 있으면 정리(중복 슬롯 방지).
+        if (job.getParentVoiceId() != null && !job.getParentVoiceId().isBlank()) {
+            elevenLabs.deleteVoice(job.getParentVoiceId());
+        }
+        String voiceId = elevenLabs.cloneVoice("todayhero-job-" + jobId, audio, filename);
+        job.setParentVoiceId(voiceId);
+        job.setParentVoiceConsent(true);
+        return videoJobRepository.save(job);
     }
 
     @Transactional(readOnly = true)

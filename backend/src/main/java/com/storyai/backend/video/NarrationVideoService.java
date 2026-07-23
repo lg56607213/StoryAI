@@ -52,6 +52,7 @@ public class NarrationVideoService {
     private final VoiceCasting casting;
     private final LocalStorage storage;
     private final ObjectMapper objectMapper;
+    private final com.storyai.backend.ai.voice.ElevenLabsClient elevenLabs;
 
     @Value("${storyai.video.ffmpeg-path:ffmpeg}")
     private String ffmpeg;
@@ -134,7 +135,7 @@ public class NarrationVideoService {
 
     /** 한 페이지: 삽화(16:9 패딩) + 낭독 오디오 → mp4 클립. 실패/오디오 없으면 null. */
     private Path buildPageClip(Path dir, VideoJob job, BookPage page) throws Exception {
-        byte[] audioWav = buildPageAudio(page, job.getProtagonistDescription());
+        byte[] audioWav = buildPageAudio(page, job);
         if (audioWav == null) {
             return null;
         }
@@ -161,18 +162,43 @@ public class NarrationVideoService {
         return mp4;
     }
 
-    /** 페이지의 세그먼트를 각각 TTS로 합성해 하나의 WAV로 이어붙인다(세그먼트 사이 쉼 포함). */
-    private byte[] buildPageAudio(BookPage page, String protagonist) {
+    /**
+     * 페이지의 세그먼트를 각각 TTS로 합성해 하나의 WAV로 이어붙인다(세그먼트 사이 쉼 포함).
+     * 서술(narrator)은 부모 목소리가 준비돼 있으면 ElevenLabs로, 아니면 Gemini 기본 내레이터로 읽는다.
+     * 등장인물 대사는 항상 캐릭터별 Gemini 목소리를 쓴다.
+     */
+    private byte[] buildPageAudio(BookPage page, VideoJob job) {
         List<NarrationSegment> segments = segmentsOf(page);
         if (segments.isEmpty()) {
             return null;
         }
+        String protagonist = job.getProtagonistDescription();
+        String parentVoiceId = job.getParentVoiceId();
+        boolean useParent = parentVoiceId != null && !parentVoiceId.isBlank() && elevenLabs.isConfigured();
+
         ByteArrayOutputStream pcm = new ByteArrayOutputStream();
         int rate = 24000;
         for (NarrationSegment seg : segments) {
             if (seg.text() == null || seg.text().isBlank()) {
                 continue;
             }
+            boolean narrator = "narration".equals(seg.role()) || "narrator".equalsIgnoreCase(seg.voice());
+
+            // 1) 서술 + 부모 목소리 사용 가능 → ElevenLabs
+            if (narrator && useParent) {
+                try {
+                    byte[] raw = elevenLabs.textToSpeechPcm(seg.text(), parentVoiceId);
+                    rate = com.storyai.backend.ai.voice.ElevenLabsClient.SAMPLE_RATE;
+                    pcm.write(raw);
+                    pcm.write(silence(rate, gapMs));
+                    continue;
+                } catch (Exception e) {
+                    log.warn("부모 목소리 낭독 실패(page {}) → 기본 내레이터로 폴백: {}",
+                            page.getPageNumber(), e.getMessage());
+                }
+            }
+
+            // 2) 기본 경로: 캐스팅된 Gemini 목소리
             VoiceStyle vs = casting.resolve(seg.voice(), protagonist);
             try {
                 byte[] wav = gemini.generateSpeech(seg.text(), vs.voiceName(), vs.style());

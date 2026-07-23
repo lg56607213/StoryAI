@@ -3,6 +3,7 @@ import './App.css'
 import ImageCropper from './ImageCropper'
 import Landing from './Landing'
 import AdminDashboard from './AdminDashboard'
+import ParentVoiceRecorder from './ParentVoiceRecorder'
 import {
   apiUrl,
   confirmProject,
@@ -205,6 +206,17 @@ function App() {
       startNarrationVideo(job.id).catch(() => {})
     }
   }, [job])
+
+  /** 부모 목소리가 등록되면 그 목소리로 낭독 영상을 다시 만든다. */
+  async function handleParentVoiceRegistered(updated: JobResponse) {
+    narrationTriggeredRef.current = updated.id
+    setJob({ ...updated, narrationVideoStatus: 'generating' })
+    try {
+      await startNarrationVideo(updated.id)
+    } catch (e) {
+      alert('영상 재생성을 시작하지 못했어요: ' + String((e as Error).message ?? e))
+    }
+  }
 
   async function handleMakeNarration() {
     if (!job) return
@@ -637,6 +649,11 @@ function App() {
                       </button>
                     </>
                   )}
+                  <ParentVoiceRecorder
+                    jobId={job.id}
+                    hasParentVoice={job.hasParentVoice}
+                    onRegistered={handleParentVoiceRegistered}
+                  />
                 </div>
               )}
             </>

@@ -1072,6 +1072,57 @@ textarea.area {
 .tier-label { color: #5a4a54; font-weight: 600; }
 .tier-price { color: #e1749b; font-weight: 700; white-space: nowrap; }
 
+/* 부모 목소리 녹음 */
+.pv-cta { margin-top: 16px; padding-top: 16px; border-top: 1px dashed #f0e2d6; }
+.pv-cta .muted { margin-top: 8px; }
+.pv-done {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #f1f8f2;
+  color: #3f7a4d;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.pv-done .btn { margin-top: 10px; }
+.pv-box {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid #f0e2d6;
+  border-radius: 14px;
+  background: #fffdfa;
+  text-align: left;
+}
+.pv-box h4 { margin: 0 0 8px; font-size: 16px; color: #5a4a54; }
+.pv-script {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #5a4a54;
+  background: #fff;
+  border: 1px solid #f0e6dc;
+  border-radius: 10px;
+  padding: 14px;
+  margin: 10px 0 14px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.pv-consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #7b6d74;
+  margin-bottom: 14px;
+}
+.pv-consent input { margin-top: 3px; flex-shrink: 0; }
+.pv-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pv-rec { color: #d1541f; font-weight: 700; font-size: 14px; }
+.pv-preview { margin-top: 14px; }
+.pv-preview audio { width: 100%; margin-bottom: 8px; }
+
 .narration-box {
   margin-top: 22px;
   padding: 20px;

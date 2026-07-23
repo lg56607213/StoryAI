@@ -170,6 +170,19 @@ public class VideoJob {
     @Column(length = 20)
     private String narrationVideoStatus;
 
+    /**
+     * 부모 목소리 복제 ID(ElevenLabs). 있으면 낭독 영상의 "서술" 부분을 이 목소리로 읽는다.
+     * (등장인물 대사는 캐릭터별 AI 목소리 유지)
+     */
+    @Setter
+    @Column(length = 100)
+    private String parentVoiceId;
+
+    /** 목소리 복제·이용 동의 여부(음성은 생체정보에 준해 명시적 동의 필요). */
+    @Setter
+    @Builder.Default
+    private boolean parentVoiceConsent = false;
+
     /** 최종 산출물 다운로드 URL (책=PDF 다운로드 엔드포인트, 영상=mp4). */
     @Setter
     @Column(length = 1000)
