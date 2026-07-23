@@ -341,6 +341,10 @@ function App() {
       setSubmitError('완성본을 받을 이메일을 입력해 주세요.')
       return
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setSubmitError('이메일 주소 형식을 확인해 주세요. (예: parent@example.com)')
+      return
+    }
     if (
       purchaseType === 'PDF_VIDEO_BOOK' &&
       (!recipientName.trim() || !recipientPhone.trim() || !shippingAddress.trim())
@@ -364,6 +368,8 @@ function App() {
           : {}),
       })
       setJob(updated) // status RUNNING → 폴링이 다시 시작되어 전체 생성 진행
+      // 확정되면 진행 화면으로 바뀌므로 맨 위로 올려 전환이 분명히 보이게 한다.
+      window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (e) {
       setSubmitError(String((e as Error).message ?? e))
     } finally {
@@ -493,7 +499,10 @@ function App() {
                     <button
                       key={b.code}
                       className={`tier ${purchaseType === b.code ? 'on' : ''}`}
-                      onClick={() => setPurchaseType(b.code as typeof purchaseType)}
+                      onClick={() => {
+                        setPurchaseType(b.code as typeof purchaseType)
+                        setSubmitError(null)
+                      }}
                     >
                       <span className="tier-label">{b.label}</span>
                       <span className="tier-price">
@@ -510,7 +519,10 @@ function App() {
                 type="email"
                 placeholder="이메일 주소"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  setSubmitError(null)
+                }}
               />
               {purchaseType === 'PDF_VIDEO_BOOK' && (
                 <div className="ship-box">
@@ -553,6 +565,7 @@ function App() {
                   />
                 </div>
               )}
+              {submitError && <p className="error-text center">{submitError}</p>}
               <button className="btn primary" disabled={confirming} onClick={onConfirm}>
                 {confirming ? '주문 확정 중…' : '이걸로 전체 만들기'}
               </button>
