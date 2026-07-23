@@ -72,9 +72,11 @@ public class VideoJobController {
      * consent=true(목소리 복제·이용 동의) 필수.
      */
     @PostMapping("/{id}/parent-voice")
-    public VideoJobResponse registerParentVoice(@PathVariable Long id,
-                                                @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
-                                                @RequestParam(value = "consent", defaultValue = "false") boolean consent) {
+    public VideoJobResponse registerParentVoice(
+            @PathVariable Long id,
+            // required=false: 파일이 없으면 Spring 예외(500) 대신 아래에서 명확한 400으로 처리한다.
+            @RequestParam(value = "file", required = false) org.springframework.web.multipart.MultipartFile file,
+            @RequestParam(value = "consent", defaultValue = "false") boolean consent) {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("녹음 파일이 비어 있습니다.");
         }

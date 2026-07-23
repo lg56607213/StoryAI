@@ -22,6 +22,15 @@ public class VideoJobExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
     }
 
+    /**
+     * 외부 연동 미설정·일시적 사용 불가(예: ELEVENLABS_API_KEY 미설정, ffmpeg 없음).
+     * 500 대신 503으로 내려 프론트가 안내 문구를 그대로 보여줄 수 있게 한다.
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, String>> handleUnavailable(IllegalStateException e) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of("error", e.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
