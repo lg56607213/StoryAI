@@ -39,7 +39,13 @@ public class FileController {
             try {
                 urls.add(localStorage.storeUpload(file.getBytes(), ext));
             } catch (Exception e) {
-                throw new IllegalStateException("업로드 실패: " + file.getOriginalFilename(), e);
+                // 원인을 문구에 포함한다(감춰지면 "업로드 실패"만 보여 원인 파악이 불가능했다).
+                Throwable root = e;
+                while (root.getCause() != null) {
+                    root = root.getCause();
+                }
+                throw new IllegalStateException("업로드 실패: " + file.getOriginalFilename()
+                        + " (" + root.getClass().getSimpleName() + ": " + root.getMessage() + ")", e);
             }
         }
         if (urls.isEmpty()) {

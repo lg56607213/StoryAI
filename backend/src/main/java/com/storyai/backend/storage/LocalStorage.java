@@ -121,4 +121,34 @@ public class LocalStorage {
     public boolean exists(Path path) {
         return Files.exists(path);
     }
+
+    // --- 진단용(관리자 화면) ---
+
+    /** 저장 루트 경로. */
+    public String rootPath() {
+        return root.toString();
+    }
+
+    /** 저장 가능한 남은 용량(바이트). 확인 불가하면 -1. */
+    public long usableSpaceBytes() {
+        try {
+            Files.createDirectories(root);
+            return root.toFile().getUsableSpace();
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    /** 실제로 파일을 쓸 수 있는지(권한·용량 포함) 확인한다. */
+    public boolean writable() {
+        try {
+            Files.createDirectories(root);
+            Path probe = root.resolve(".write-probe");
+            Files.write(probe, new byte[]{1});
+            Files.deleteIfExists(probe);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

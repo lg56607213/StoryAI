@@ -22,6 +22,22 @@ public class VideoJobExceptionHandler {
         return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", reason));
     }
 
+    /** 잘못된 요청 본문(JSON 문법 오류, 알 수 없는 enum 값 등)은 400으로 돌려준다. */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleUnreadable(
+            org.springframework.http.converter.HttpMessageNotReadableException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "요청 형식이 올바르지 않습니다."));
+    }
+
+    /** 업로드 용량 초과는 413으로 명확히 안내한다. */
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, String>> handleTooLarge(
+            org.springframework.web.multipart.MaxUploadSizeExceededException e) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(Map.of("error", "사진 용량이 너무 큽니다. 더 작은 사진으로 다시 시도해 주세요."));
+    }
+
     /**
      * 처리되지 않은 예외 — 원인을 알 수 있게 로그를 남기고 메시지를 함께 반환한다.
      * (기본 설정에서는 메시지가 숨겨져 화면에 "Internal Server Error"만 떠서 원인 파악이 불가능했다)

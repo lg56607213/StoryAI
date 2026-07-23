@@ -47,6 +47,7 @@ public class AdminController {
     private final com.storyai.backend.video.NarrationVideoService narrationVideoService;
     private final com.storyai.backend.ai.image.ImageGenerator imageGenerator;
     private final com.storyai.backend.workflow.WorkflowEngine workflowEngine;
+    private final com.storyai.backend.storage.LocalStorage localStorage;
 
     /**
      * 멈춘 작업 재시도 — 현재 단계부터 다시 진행시킨다.
@@ -102,6 +103,14 @@ public class AdminController {
         Map<String, Object> mail = new LinkedHashMap<>();
         mail.put("발송가능", emailNotifier.isConfigured());
         m.put("이메일", mail);
+
+        // 사진 업로드·생성물 저장이 실제로 가능한지(용량 부족이 업로드 실패의 흔한 원인).
+        Map<String, Object> storage = new LinkedHashMap<>();
+        storage.put("쓰기가능", localStorage.writable());
+        long free = localStorage.usableSpaceBytes();
+        storage.put("남은용량", free < 0 ? "확인불가" : (free / (1024 * 1024)) + " MB");
+        storage.put("경로", localStorage.rootPath());
+        m.put("저장소", storage);
 
         return m;
     }
