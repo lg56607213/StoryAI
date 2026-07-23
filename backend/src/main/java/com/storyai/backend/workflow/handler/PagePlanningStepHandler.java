@@ -35,6 +35,15 @@ public class PagePlanningStepHandler implements WorkflowStepHandler {
     @Override
     public void execute(VideoJob job) {
         int pages = job.getBookPages() != null ? job.getBookPages() : DEFAULT_PAGES;
+
+        // 재시작 복구 등으로 이 단계가 다시 실행될 수 있다. 기존 페이지를 지워 중복 생성을 막는다.
+        List<BookPage> existing = bookPageRepository.findByVideoJobIdOrderByPageNumberAsc(job.getId());
+        if (!existing.isEmpty()) {
+            log.info("페이지 재구성: 기존 {}페이지 삭제 후 다시 생성 (job {})", existing.size(), job.getId());
+            bookPageRepository.deleteByVideoJobId(job.getId());
+            bookPageRepository.flush();
+        }
+
         List<BookPageDraft> drafts = generateDrafts(job, pages);
 
         for (int i = 0; i < pages; i++) {

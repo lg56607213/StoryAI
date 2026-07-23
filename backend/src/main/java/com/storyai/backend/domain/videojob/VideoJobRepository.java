@@ -21,4 +21,7 @@ public interface VideoJobRepository extends JpaRepository<VideoJob, Long> {
 
     /** 마이페이지: 이 계정의 동화책 목록(최신순). */
     List<VideoJob> findByRequesterEmailOrderByCreatedAtDesc(String requesterEmail);
+
+    /** 재시작 복구: 진행 중이던(또는 시작도 못 한) 작업 찾기. */
+    List<VideoJob> findByStatusIn(List<JobStatus> statuses);
 }
