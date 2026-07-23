@@ -6,6 +6,7 @@ import com.storyai.backend.domain.media.MediaType;
 import com.storyai.backend.domain.storycharacter.StoryCharacter;
 import com.storyai.backend.domain.storycharacter.StoryCharacterRepository;
 import com.storyai.backend.domain.videojob.BookPhase;
+import com.storyai.backend.domain.videojob.JobStatus;
 import com.storyai.backend.domain.videojob.OutputType;
 import com.storyai.backend.domain.videojob.StoryTheme;
 import com.storyai.backend.job.dto.ConfirmVideoJobRequest;
@@ -38,6 +39,7 @@ public class VideoJobService {
     private final MediaAssetRepository mediaAssetRepository;
     private final WorkflowEngine workflowEngine;
     private final com.storyai.backend.ai.voice.ElevenLabsClient elevenLabs;
+    private final com.storyai.backend.auth.AdminGuard adminGuard;
 
     /** 로그인 계정당 하루 미리보기(생성) 제한. 0이면 무제한. */
     @org.springframework.beans.factory.annotation.Value("${storyai.rate-limit.previews-per-user-per-day:3}")
@@ -49,7 +51,7 @@ public class VideoJobService {
 
         // 카카오는 이메일 동의항목이 없으면 이메일을 주지 않으므로 식별 키를 사용한다.
         String requesterEmail = LoginIdentity.identityOf(auth);
-        enforceDailyLimit(requesterEmail);
+        enforceDailyLimit(requesterEmail, adminGuard.isAdmin(auth));
 
         // 관계를 함께 적어 이야기가 "엄마/아빠/동생"을 알맞게 다루도록 한다. 예: "소영(주인공), 지연(엄마)"
         String protagonist = request.characters().stream()
@@ -195,17 +197,21 @@ public class VideoJobService {
 
     /**
      * 로그인 계정당 하루 생성 횟수를 제한한다(비용 보호).
-     * 비로그인은 IP 기반 RateLimitFilter가 담당하므로 여기서는 통과시킨다.
+     * - 비로그인은 IP 기반 RateLimitFilter가 담당하므로 여기서는 통과.
+     * - 관리자는 운영·테스트를 위해 제한 없음.
+     * - 실패한 건은 사용자 탓이 아니므로 한도에서 제외한다.
      */
-    private void enforceDailyLimit(String requesterEmail) {
-        if (previewsPerUserPerDay <= 0 || requesterEmail == null || requesterEmail.isBlank()) {
+    private void enforceDailyLimit(String requesterEmail, boolean admin) {
+        if (admin || previewsPerUserPerDay <= 0 || requesterEmail == null || requesterEmail.isBlank()) {
             return;
         }
         LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-        long todayCount = videoJobRepository.countByRequesterEmailAndCreatedAtAfter(requesterEmail, todayStart);
+        long todayCount = videoJobRepository.countByRequesterEmailAndCreatedAtAfterAndStatusNot(
+                requesterEmail, todayStart, JobStatus.FAILED);
         if (todayCount >= previewsPerUserPerDay) {
             throw new IllegalArgumentException(
-                    "하루에 만들 수 있는 동화는 " + previewsPerUserPerDay + "권까지예요. 내일 다시 시도해 주세요.");
+                    "오늘은 동화를 " + todayCount + "권 만드셨어요. 하루 " + previewsPerUserPerDay
+                            + "권까지 만들 수 있어요. 내일 다시 시도해 주세요.");
         }
     }
 

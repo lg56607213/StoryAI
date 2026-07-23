@@ -36,6 +36,7 @@ public class MyPageController {
 
     private final VideoJobRepository videoJobRepository;
     private final BookPageRepository bookPageRepository;
+    private final com.storyai.backend.auth.AdminGuard adminGuard;
 
     @Value("${storyai.rate-limit.previews-per-user-per-day:3}")
     private int previewsPerUserPerDay;
@@ -50,17 +51,19 @@ public class MyPageController {
                 .toList();
     }
 
-    /** 오늘 남은 생성 횟수. */
+    /** 오늘 남은 생성 횟수. 실패한 건은 제외하며, 관리자는 무제한(-1). */
     @GetMapping("/quota")
     public Map<String, Object> quota(Authentication auth) {
         String email = requireEmail(auth);
-        long used = previewsPerUserPerDay <= 0 ? 0
-                : videoJobRepository.countByRequesterEmailAndCreatedAtAfter(email, LocalDate.now().atStartOfDay());
+        boolean unlimited = adminGuard.isAdmin(auth) || previewsPerUserPerDay <= 0;
+        long used = unlimited ? 0
+                : videoJobRepository.countByRequesterEmailAndCreatedAtAfterAndStatusNot(
+                        email, LocalDate.now().atStartOfDay(), JobStatus.FAILED);
         int limit = Math.max(0, previewsPerUserPerDay);
         return Map.of(
                 "limit", limit,
                 "usedToday", used,
-                "remaining", limit == 0 ? -1 : Math.max(0, limit - used)); // -1 = 무제한
+                "remaining", unlimited ? -1 : Math.max(0, limit - used)); // -1 = 무제한
     }
 
     /** 내 목록에서 숨기기(기록은 보존). */
