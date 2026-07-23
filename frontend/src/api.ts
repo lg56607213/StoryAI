@@ -45,12 +45,17 @@ export interface Options {
 export interface CharacterInput {
   name: string
   role: string
+  /** role === 'CUSTOM' 일 때 직접 입력한 관계 */
+  customRole?: string
   photoUrls: string[]
 }
 
 export interface CreateRequest {
   outputType: string
-  theme: string
+  /** 직접입력 주제를 쓰면 생략 가능 */
+  theme?: string | null
+  /** 목록에 없는 주제를 직접 입력할 때 */
+  customTheme?: string
   ageGroup: string
   dedication?: string
   dedicationPhotoUrl?: string

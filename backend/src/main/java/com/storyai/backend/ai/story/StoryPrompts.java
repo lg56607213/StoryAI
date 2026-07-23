@@ -17,7 +17,8 @@ public final class StoryPrompts {
             "너는 따뜻하고 안전한 한국어 그림동화 작가야. 반드시 유효한 JSON만 출력해 — "
                     + "마크다운, 코드펜스(```), 부연 설명을 절대 붙이지 마.";
 
-    public static String outline(StoryTheme theme, String characters, AgeGroup ag, String storyDirection) {
+    public static String outline(StoryTheme theme, String themeLabel, String characters,
+                                 AgeGroup ag, String storyDirection) {
         String direction = (storyDirection == null || storyDirection.isBlank())
                 ? "특별한 요청 없음 (주제에 맞게 자유롭게)" : storyDirection;
         Mascot m = Mascot.forTheme(theme);
@@ -44,12 +45,12 @@ public final class StoryPrompts {
                 (목록에 없는 다른 사람 금지, 주제에 맞는 동물·상상 조력자는 이유가 있으면 허용).
                 반드시 아래 JSON 형식으로만 답해:
                 {"title": "동화 제목", "synopsis": "위 시작-중간-끝 흐름이 분명히 드러나는 6~8문장 줄거리(하나의 목표로 시작해 해결까지 일관되게)"}
-                """.formatted(theme.getLabel(), safe(characters), ag.getLabel(), ag.getGuide(), direction,
+                """.formatted(safe(themeLabel), safe(characters), ag.getLabel(), ag.getGuide(), direction,
                 m.getKoreanName(), m.getSpecies(), m.getPersonality(),
                 m.getKoreanName(), m.getSpecies());
     }
 
-    public static String pages(StoryTheme theme, String characters, AgeGroup ag,
+    public static String pages(StoryTheme theme, String themeLabel, String characters, AgeGroup ag,
                                StoryOutline outline, int pageCount) {
         Mascot m = Mascot.forTheme(theme);
         return """
@@ -112,10 +113,10 @@ public final class StoryPrompts {
                 처음-중간-끝의 흐름을 갖추고 마지막은 따뜻하게 마무리. 정확히 %d개.
                 반드시 JSON만: {"pages": [{"segments": [{"role":"narration","text":"..."}, {"role":"dialogue","speaker":"토끼","voice":"small_animal","text":"\\"안녕!\\""}], "scene": "...", "outfit": "everyday"}, ...]}
                 """.formatted(pageCount, safe(outline.title()), safe(outline.synopsis()),
-                theme.getLabel(), safe(characters), ag.getLabel(), ag.getGuide(),
+                safe(themeLabel), safe(characters), ag.getLabel(), ag.getGuide(),
                 m.getKoreanName(), m.getSpecies(), m.getPersonality(),
                 m.getKoreanName(), m.getVoice(), m.getKoreanName(), m.getAppearance(),
-                theme.getLabel(), pageCount);
+                safe(themeLabel), pageCount);
     }
 
     private static String safe(String s) {

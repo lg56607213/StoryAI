@@ -51,6 +51,17 @@ public class StoryCharacter {
     @Column(nullable = false)
     private CharacterRole role;
 
+    /** role=CUSTOM일 때 고객이 직접 입력한 관계(예: "이모", "할머니"). */
+    private String customRole;
+
+    /** 화면·프롬프트에 쓸 관계 표기. 직접입력이면 그 값을, 아니면 기본 라벨을 쓴다. */
+    public String roleLabel() {
+        if (role == CharacterRole.CUSTOM && customRole != null && !customRole.isBlank()) {
+            return customRole.trim();
+        }
+        return role.getLabel();
+    }
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "story_character_photo", joinColumns = @JoinColumn(name = "story_character_id"))
     @Column(name = "photo_url")

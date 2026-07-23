@@ -53,9 +53,13 @@ public class VideoJob {
     @Enumerated(EnumType.STRING)
     private StoryTheme storyTheme;
 
-    /** 주제 라벨 (프롬프트/표시용, storyTheme.label과 동일) */
+    /** 주제 라벨 (프롬프트/표시용). 직접입력이면 그 문구, 아니면 storyTheme.label */
     @Column(nullable = false)
     private String theme;
+
+    /** 고객이 직접 입력한 주제(선택). 있으면 이야기·의상이 이 문구를 따른다. */
+    @Column(length = 200)
+    private String customTheme;
 
     /** 등장인물 요약 (예: "지우, 서준") — 캐릭터 목록에서 파생 */
     @Column(nullable = false)

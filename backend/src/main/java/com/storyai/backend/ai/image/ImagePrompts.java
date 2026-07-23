@@ -27,24 +27,33 @@ public final class ImagePrompts {
                 + "(realistic proportions, NOT chibi).";
     }
 
-    /** 아이 사진(들) → 실제 옷을 그대로 살린 평상복 캐릭터 시트. */
-    public static String everydaySheet(String name, String style) {
-        return "You are given photos of the SAME real young child"
+    /**
+     * 사진(들) → 실제 옷을 그대로 살린 평상복 캐릭터 시트.
+     * adult=true면 어른(엄마·아빠 등)으로 그린다 — 아이로 그리지 않도록 구분한다.
+     */
+    public static String everydaySheet(String name, String style, boolean adult) {
+        String subject = adult ? "adult person" : "young child";
+        return "You are given photos of the SAME real " + subject
                 + (name != null && !name.isBlank() ? " (name: " + name + ")" : "")
                 + ". Create ONE full-body character reference portrait that looks STRONGLY and recognizably like the "
-                + "SAME specific child - keep the exact face shape, round cheeks, eyes, eyebrows, nose, mouth and smile, "
+                + "SAME specific person - keep the exact face shape, cheeks, eyes, eyebrows, nose, mouth and smile, "
                 + "skin tone, and hairstyle (including any hairband or hair accessory). "
-                + "CRUCIAL: keep the child's REAL everyday outfit exactly as worn in the photos - the same top, its colors, "
-                + "pattern and sleeves - do NOT change, simplify, or invent clothing, and do NOT put the child in a costume. "
+                + (adult
+                    ? "Draw them clearly as a GROWN-UP adult with adult body proportions - never as a child. "
+                    : "Draw them clearly as a young child with age-appropriate child proportions. ")
+                + "CRUCIAL: keep the REAL everyday outfit exactly as worn in the photos - the same top, its colors, "
+                + "pattern and sleeves - do NOT change, simplify, or invent clothing, and do NOT put them in a costume. "
                 + styleLine(style) + ANATOMY
                 + " Standing, facing forward, gentle happy smile, plain warm cream background, centered. No text, no watermark.";
     }
 
     /** 평상복 시트(얼굴 고정) → 주제 의상 시트. */
-    public static String costumeSheet(String costume, String style) {
-        return "This reference image is a young child storybook character. Keep the EXACT same face, "
+    public static String costumeSheet(String costume, String style, boolean adult) {
+        return "This reference image is " + (adult ? "an adult" : "a young child")
+                + " storybook character. Keep the EXACT same face, "
                 + "likeness, cheeks, eyes, smile and hairstyle identical, but change the clothing to " + costume + ". "
-                + "Keep the outfit appropriate and natural for THIS specific child as shown in the reference. "
+                + "Keep the outfit appropriate and natural for THIS specific person as shown in the reference, "
+                + "and keep their age unchanged (" + (adult ? "still a grown-up adult" : "still a young child") + "). "
                 + styleLine(style) + ANATOMY
                 + " Full body, standing, plain warm cream background, centered. No text, no watermark.";
     }

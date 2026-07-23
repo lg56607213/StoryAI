@@ -26,13 +26,13 @@ public class GeminiImageGenerator implements ImageGenerator {
     }
 
     @Override
-    public byte[] everydaySheet(List<byte[]> photos, String name, String style) {
-        return gemini.generateImage(ImagePrompts.everydaySheet(name, style), photos);
+    public byte[] everydaySheet(List<byte[]> photos, String name, String style, boolean adult) {
+        return gemini.generateImage(ImagePrompts.everydaySheet(name, style, adult), photos);
     }
 
     @Override
-    public byte[] costumeSheet(byte[] everydaySheet, String costume, String style) {
-        return gemini.generateImage(ImagePrompts.costumeSheet(costume, style), List.of(everydaySheet));
+    public byte[] costumeSheet(byte[] everydaySheet, String costume, String style, boolean adult) {
+        return gemini.generateImage(ImagePrompts.costumeSheet(costume, style, adult), List.of(everydaySheet));
     }
 
     @Override

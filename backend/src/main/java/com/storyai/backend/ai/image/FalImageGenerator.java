@@ -72,13 +72,13 @@ public class FalImageGenerator implements ImageGenerator {
     private static final int PAGE_W = 1216, PAGE_H = 816;
 
     @Override
-    public byte[] everydaySheet(List<byte[]> photos, String name, String style) {
-        return edit(ImagePrompts.everydaySheet(name, style), photos, SHEET_W, SHEET_H);
+    public byte[] everydaySheet(List<byte[]> photos, String name, String style, boolean adult) {
+        return edit(ImagePrompts.everydaySheet(name, style, adult), photos, SHEET_W, SHEET_H);
     }
 
     @Override
-    public byte[] costumeSheet(byte[] everydaySheet, String costume, String style) {
-        return edit(ImagePrompts.costumeSheet(costume, style), List.of(everydaySheet), SHEET_W, SHEET_H);
+    public byte[] costumeSheet(byte[] everydaySheet, String costume, String style, boolean adult) {
+        return edit(ImagePrompts.costumeSheet(costume, style, adult), List.of(everydaySheet), SHEET_W, SHEET_H);
     }
 
     @Override

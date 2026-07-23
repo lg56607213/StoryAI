@@ -69,7 +69,8 @@ public class PagePlanningStepHandler implements WorkflowStepHandler {
             try {
                 StoryOutline outline = new StoryOutline(job.getGeneratedTitle(), job.getSynopsis());
                 return storyGenerator.pages(
-                        job.getStoryTheme(), job.getProtagonistDescription(), job.getAgeGroup(), outline, pages);
+                        job.getStoryTheme(), job.getTheme(), job.getProtagonistDescription(),
+                        job.getAgeGroup(), outline, pages);
             } catch (Exception e) {
                 log.warn("페이지 생성 실패, 더미로 폴백: {}", e.getMessage());
             }

@@ -21,9 +21,10 @@ public class GeminiStoryGenerator implements StoryGenerator {
     }
 
     @Override
-    public StoryOutline outline(StoryTheme theme, String characters, AgeGroup ageGroup, String storyDirection) {
+    public StoryOutline outline(StoryTheme theme, String themeLabel, String characters,
+                                AgeGroup ageGroup, String storyDirection) {
         AgeGroup ag = ageGroup != null ? ageGroup : AgeGroup.AGE_5_6;
-        String prompt = StoryPrompts.outline(theme, characters, ag, storyDirection);
+        String prompt = StoryPrompts.outline(theme, themeLabel, characters, ag, storyDirection);
 
         JsonNode json = generateJsonRetry(prompt);
         return new StoryOutline(
@@ -32,10 +33,10 @@ public class GeminiStoryGenerator implements StoryGenerator {
     }
 
     @Override
-    public List<BookPageDraft> pages(StoryTheme theme, String characters, AgeGroup ageGroup,
+    public List<BookPageDraft> pages(StoryTheme theme, String themeLabel, String characters, AgeGroup ageGroup,
                                      StoryOutline outline, int pageCount) {
         AgeGroup ag = ageGroup != null ? ageGroup : AgeGroup.AGE_5_6;
-        String prompt = StoryPrompts.pages(theme, characters, ag, outline, pageCount);
+        String prompt = StoryPrompts.pages(theme, themeLabel, characters, ag, outline, pageCount);
 
         JsonNode json = generateJsonRetry(prompt);
         return PageDraftParser.parse(json, pageCount);

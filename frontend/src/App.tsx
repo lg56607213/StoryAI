@@ -43,6 +43,9 @@ const STEP_LABELS: Record<string, string> = {
   VIDEO_COMPOSITION: '영상 합성 중',
 }
 
+/** 주제 "직접입력"을 나타내는 내부 값(백엔드 enum이 아니므로 전송 시 customTheme으로 변환). */
+const CUSTOM_THEME = '__CUSTOM__'
+
 // 진행 상황 표시용 단계 순서(짧은 라벨). 백엔드 WorkflowPlan과 순서를 맞춘다.
 const BOOK_STEPS_UI = [
   { code: 'STORY_GENERATION', label: '이야기 짓기' },
@@ -65,6 +68,8 @@ const VIDEO_STEPS_UI = [
 interface CharacterDraft {
   name: string
   role: string
+  /** role === 'CUSTOM' 일 때 직접 입력한 관계 */
+  customRole?: string
   photos: File[]
   previews: string[]
 }
@@ -77,6 +82,7 @@ function App() {
 
   const [outputType, setOutputType] = useState('BOOK')
   const [theme, setTheme] = useState('')
+  const [customTheme, setCustomTheme] = useState('')
   const [ageGroup, setAgeGroup] = useState('')
   const [dedication, setDedication] = useState('')
   const [dedicationPhoto, setDedicationPhoto] = useState<File | null>(null)
@@ -242,11 +248,18 @@ function App() {
 
   const isBook = outputType === 'BOOK'
 
+  // 주제: 목록 선택 또는 직접입력(문구 필수). 인물: 이름·사진 필수, 직접입력 관계면 문구도 필수.
+  const themeReady = theme === CUSTOM_THEME ? !!customTheme.trim() : !!theme
   const canSubmit =
-    !!theme &&
+    themeReady &&
     !!ageGroup &&
     (isBook ? !!bookStyle && !!bookPages : !!videoStyle && !!videoDuration) &&
-    characters.every((c) => c.name.trim() && c.photos.length > 0) &&
+    characters.every(
+      (c) =>
+        c.name.trim() &&
+        c.photos.length > 0 &&
+        (c.role !== 'CUSTOM' || !!c.customRole?.trim()),
+    ) &&
     !submitting
 
   function updateCharacter(idx: number, patch: Partial<CharacterDraft>) {
@@ -256,7 +269,7 @@ function App() {
   function addCharacter() {
     setCharacters((prev) => [
       ...prev,
-      { name: '', role: 'SIBLING', photos: [], previews: [] },
+      { name: '', role: 'YOUNGER_SIBLING', photos: [], previews: [] },
     ])
   }
 
@@ -321,7 +334,12 @@ function App() {
       const chars: CharacterInput[] = []
       for (const c of characters) {
         const urls = await uploadPhotos(c.photos)
-        chars.push({ name: c.name.trim(), role: c.role, photoUrls: urls })
+        chars.push({
+          name: c.name.trim(),
+          role: c.role,
+          customRole: c.role === 'CUSTOM' ? c.customRole?.trim() || undefined : undefined,
+          photoUrls: urls,
+        })
       }
       // 헌정 페이지용 가족 사진(선택) — 변환 없이 원본 그대로 삽입.
       let dedicationPhotoUrl: string | undefined
@@ -329,9 +347,12 @@ function App() {
         const [url] = await uploadPhotos([dedicationPhoto])
         dedicationPhotoUrl = url
       }
+      const isCustomTheme = theme === CUSTOM_THEME
       const created = await createProject({
         outputType,
-        theme,
+        // 직접입력이면 enum 대신 customTheme으로 보낸다(백엔드가 기본 분류를 채운다).
+        theme: isCustomTheme ? null : theme,
+        customTheme: isCustomTheme ? customTheme.trim() : undefined,
         ageGroup,
         dedication: dedication.trim() || undefined,
         dedicationPhotoUrl,
@@ -748,7 +769,22 @@ function App() {
               {o.label}
             </button>
           ))}
+          <button
+            className={`chip ${theme === CUSTOM_THEME ? 'on' : ''}`}
+            onClick={() => setTheme(CUSTOM_THEME)}
+          >
+            ✏️ 직접입력
+          </button>
         </div>
+        {theme === CUSTOM_THEME && (
+          <input
+            className="text"
+            placeholder="원하는 주제를 적어주세요 (예: 발레리나가 되는 날, 첫 등원)"
+            value={customTheme}
+            maxLength={60}
+            onChange={(e) => setCustomTheme(e.target.value)}
+          />
+        )}
         <label className="field-label">대상 연령 (글의 분량·표현이 맞춰집니다)</label>
         <div className="chips">
           {options.ageGroups.map((o) => (
@@ -871,6 +907,15 @@ function App() {
                 </button>
               )}
             </div>
+            {idx > 0 && c.role === 'CUSTOM' && (
+              <input
+                className="text"
+                placeholder="관계를 적어주세요 (예: 할머니, 이모, 사촌)"
+                value={c.customRole ?? ''}
+                maxLength={20}
+                onChange={(e) => updateCharacter(idx, { customRole: e.target.value })}
+              />
+            )}
             <div className="photos">
               {c.previews.map((src, p) => (
                 <div className="thumb" key={p}>

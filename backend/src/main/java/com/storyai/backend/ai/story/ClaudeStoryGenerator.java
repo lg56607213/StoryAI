@@ -31,37 +31,38 @@ public class ClaudeStoryGenerator implements StoryGenerator {
     }
 
     @Override
-    public StoryOutline outline(StoryTheme theme, String characters, AgeGroup ageGroup, String storyDirection) {
+    public StoryOutline outline(StoryTheme theme, String themeLabel, String characters,
+                                AgeGroup ageGroup, String storyDirection) {
         if (!claude.isConfigured()) {
-            return gemini.outline(theme, characters, ageGroup, storyDirection);
+            return gemini.outline(theme, themeLabel, characters, ageGroup, storyDirection);
         }
         AgeGroup ag = ageGroup != null ? ageGroup : AgeGroup.AGE_5_6;
         try {
             JsonNode json = claude.generateJson(StoryPrompts.SYSTEM,
-                    StoryPrompts.outline(theme, characters, ag, storyDirection));
+                    StoryPrompts.outline(theme, themeLabel, characters, ag, storyDirection));
             return new StoryOutline(
-                    json.path("title").asText("%s 이야기".formatted(theme.getLabel())),
+                    json.path("title").asText("%s 이야기".formatted(themeLabel)),
                     json.path("synopsis").asText(""));
         } catch (RuntimeException e) {
             log.warn("Claude 개요 생성 실패 → Gemini 폴백: {}", e.getMessage());
-            return gemini.outline(theme, characters, ageGroup, storyDirection);
+            return gemini.outline(theme, themeLabel, characters, ageGroup, storyDirection);
         }
     }
 
     @Override
-    public List<BookPageDraft> pages(StoryTheme theme, String characters, AgeGroup ageGroup,
+    public List<BookPageDraft> pages(StoryTheme theme, String themeLabel, String characters, AgeGroup ageGroup,
                                      StoryOutline outline, int pageCount) {
         if (!claude.isConfigured()) {
-            return gemini.pages(theme, characters, ageGroup, outline, pageCount);
+            return gemini.pages(theme, themeLabel, characters, ageGroup, outline, pageCount);
         }
         AgeGroup ag = ageGroup != null ? ageGroup : AgeGroup.AGE_5_6;
         try {
             JsonNode json = claude.generateJson(StoryPrompts.SYSTEM,
-                    StoryPrompts.pages(theme, characters, ag, outline, pageCount));
+                    StoryPrompts.pages(theme, themeLabel, characters, ag, outline, pageCount));
             return PageDraftParser.parse(json, pageCount);
         } catch (RuntimeException e) {
             log.warn("Claude 페이지 생성 실패 → Gemini 폴백: {}", e.getMessage());
-            return gemini.pages(theme, characters, ageGroup, outline, pageCount);
+            return gemini.pages(theme, themeLabel, characters, ageGroup, outline, pageCount);
         }
     }
 }

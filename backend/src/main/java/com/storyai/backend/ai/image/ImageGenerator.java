@@ -10,11 +10,14 @@ public interface ImageGenerator {
 
     boolean isAvailable();
 
-    /** 아이 사진 여러 장 → 실제 옷을 그대로 살린 "평상복" 캐릭터 시트 PNG (본인 인식용). */
-    byte[] everydaySheet(List<byte[]> photos, String name, String style);
+    /**
+     * 사진 여러 장 → 실제 옷을 그대로 살린 "평상복" 캐릭터 시트 PNG (본인 인식용).
+     * adult=true면 어른(엄마·아빠 등)으로 그린다.
+     */
+    byte[] everydaySheet(List<byte[]> photos, String name, String style, boolean adult);
 
     /** 평상복 시트(얼굴 고정) → 주제 의상으로 갈아입힌 "주제 의상" 시트 PNG. */
-    byte[] costumeSheet(byte[] everydaySheet, String costume, String style);
+    byte[] costumeSheet(byte[] everydaySheet, String costume, String style, boolean adult);
 
     /** 장면 설명 + 캐릭터 시트(들) → 페이지 삽화 PNG 바이트. */
     byte[] illustrate(String scene, List<byte[]> characterSheets, String style);

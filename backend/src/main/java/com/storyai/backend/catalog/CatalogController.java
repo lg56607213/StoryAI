@@ -34,7 +34,12 @@ public class CatalogController {
                 "bookPageOptions", List.of(24, 36),
                 "videoStyles", enumOptions(VideoStyle.values(), VideoStyle::name, VideoStyle::getLabel),
                 "videoDurationOptions", List.of(120, 300),
-                "characterRoles", enumOptions(CharacterRole.values(), CharacterRole::name, CharacterRole::getLabel),
+                // 구버전 선택지(SIBLING)는 신규 생성 목록에서 제외한다(기존 데이터 표시는 그대로 동작).
+                "characterRoles", enumOptions(
+                        java.util.Arrays.stream(CharacterRole.values())
+                                .filter(r -> r != CharacterRole.SIBLING)
+                                .toArray(CharacterRole[]::new),
+                        CharacterRole::name, CharacterRole::getLabel),
                 "ageGroups", enumOptions(AgeGroup.values(), AgeGroup::name, AgeGroup::getLabel),
                 "pricing", pricing()
         );

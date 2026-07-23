@@ -19,7 +19,10 @@ import java.util.List;
  */
 public record CreateVideoJobRequest(
         @NotNull OutputType outputType,
-        @NotNull StoryTheme theme,
+        // theme 또는 customTheme 중 하나는 필수(조건부 검증은 VideoJobService에서).
+        StoryTheme theme,
+        /** 직접입력 주제(선택). 있으면 이야기·의상이 이 문구를 따른다. */
+        String customTheme,
         @NotNull AgeGroup ageGroup,
         String mood,
 
@@ -44,6 +47,8 @@ public record CreateVideoJobRequest(
     public record CharacterInput(
             @NotBlank String name,
             @NotNull CharacterRole role,
+            /** role=CUSTOM일 때 직접 입력한 관계(예: "이모", "할머니"). */
+            String customRole,
             @NotEmpty List<@NotBlank String> photoUrls
     ) {
     }

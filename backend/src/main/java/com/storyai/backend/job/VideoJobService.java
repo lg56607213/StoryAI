@@ -7,6 +7,7 @@ import com.storyai.backend.domain.storycharacter.StoryCharacter;
 import com.storyai.backend.domain.storycharacter.StoryCharacterRepository;
 import com.storyai.backend.domain.videojob.BookPhase;
 import com.storyai.backend.domain.videojob.OutputType;
+import com.storyai.backend.domain.videojob.StoryTheme;
 import com.storyai.backend.job.dto.ConfirmVideoJobRequest;
 import com.storyai.backend.domain.videojob.VideoJob;
 import com.storyai.backend.domain.videojob.VideoJobRepository;
@@ -50,18 +51,30 @@ public class VideoJobService {
         String requesterEmail = LoginIdentity.identityOf(auth);
         enforceDailyLimit(requesterEmail);
 
+        // 관계를 함께 적어 이야기가 "엄마/아빠/동생"을 알맞게 다루도록 한다. 예: "소영(주인공), 지연(엄마)"
         String protagonist = request.characters().stream()
-                .map(CreateVideoJobRequest.CharacterInput::name)
+                .map(c -> {
+                    String custom = blankToNull(c.customRole());
+                    String role = (c.role() == com.storyai.backend.domain.storycharacter.CharacterRole.CUSTOM
+                            && custom != null) ? custom : c.role().getLabel();
+                    return c.name() + "(" + role + ")";
+                })
                 .collect(Collectors.joining(", "));
 
         boolean isBook = request.outputType() == OutputType.BOOK;
+
+        // 주제: 직접입력이 있으면 그 문구를 쓰고, 의상·마스코트 기준이 될 enum은 선택값(없으면 모험)으로 둔다.
+        String customTheme = blankToNull(request.customTheme());
+        StoryTheme themeEnum = request.theme() != null ? request.theme() : StoryTheme.ADVENTURE;
+        String themeLabel = customTheme != null ? customTheme : themeEnum.getLabel();
 
         VideoJob job = VideoJob.builder()
                 .outputType(request.outputType())
                 // 책은 미리보기부터, 영상은 바로 전체 생성.
                 .bookPhase(isBook ? BookPhase.PREVIEW : BookPhase.FULL)
-                .storyTheme(request.theme())
-                .theme(request.theme().getLabel())
+                .storyTheme(themeEnum)
+                .customTheme(customTheme)
+                .theme(themeLabel)
                 .protagonistDescription(protagonist)
                 .mood(request.mood())
                 .ageGroup(request.ageGroup())
@@ -86,6 +99,7 @@ public class VideoJobService {
                     .videoJob(job)
                     .name(c.name())
                     .role(c.role())
+                    .customRole(blankToNull(c.customRole()))
                     .photoUrls(List.copyOf(c.photoUrls()))
                     .build();
             storyCharacterRepository.save(character);
@@ -201,6 +215,10 @@ public class VideoJobService {
 
     /** outputType에 따른 조건부 필수/범위 검증. 위반 시 IllegalArgumentException(→ 400). */
     private void validate(CreateVideoJobRequest request) {
+        // 주제는 목록 선택 또는 직접입력 중 하나가 반드시 있어야 한다.
+        if (request.theme() == null && blankToNull(request.customTheme()) == null) {
+            throw new IllegalArgumentException("주제를 선택하거나 직접 입력해 주세요.");
+        }
         if (request.outputType() == OutputType.BOOK) {
             if (request.bookStyle() == null) {
                 throw new IllegalArgumentException("책(BOOK)은 bookStyle이 필요합니다.");

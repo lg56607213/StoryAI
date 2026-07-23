@@ -32,7 +32,7 @@ public class StoryGenerationStepHandler implements WorkflowStepHandler {
         if (storyGenerator.isAvailable()) {
             try {
                 return storyGenerator.outline(
-                        job.getStoryTheme(), job.getProtagonistDescription(),
+                        job.getStoryTheme(), job.getTheme(), job.getProtagonistDescription(),
                         job.getAgeGroup(), job.getStoryDirection());
             } catch (Exception e) {
                 log.warn("스토리 생성 실패, 더미로 폴백: {}", e.getMessage());
