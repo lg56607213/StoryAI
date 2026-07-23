@@ -46,7 +46,8 @@ public class VideoJobService {
     public VideoJob createJob(CreateVideoJobRequest request, Authentication auth) {
         validate(request);
 
-        String requesterEmail = LoginIdentity.emailOf(auth);
+        // 카카오는 이메일 동의항목이 없으면 이메일을 주지 않으므로 식별 키를 사용한다.
+        String requesterEmail = LoginIdentity.identityOf(auth);
         enforceDailyLimit(requesterEmail);
 
         String protagonist = request.characters().stream()
@@ -132,9 +133,9 @@ public class VideoJobService {
         job.setShippingAddressDetail(blankToNull(request.shippingAddressDetail()));
         // 구매요청(확정) 시점과 요청 계정 기록.
         job.setConfirmedAt(LocalDateTime.now());
-        String email = LoginIdentity.emailOf(auth);
-        if (email != null) {
-            job.setRequesterEmail(email);
+        String identity = LoginIdentity.identityOf(auth);
+        if (identity != null) {
+            job.setRequesterEmail(identity);
             job.setRequesterProvider(LoginIdentity.providerOf(auth));
         }
         videoJobRepository.save(job);

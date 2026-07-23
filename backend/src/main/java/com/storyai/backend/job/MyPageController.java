@@ -120,12 +120,13 @@ public class MyPageController {
         return null;
     }
 
+    /** 카카오처럼 이메일이 없는 로그인도 식별되도록 식별 키를 쓴다. */
     private String requireEmail(Authentication auth) {
-        String email = LoginIdentity.emailOf(auth);
-        if (email == null || email.isBlank()) {
+        String identity = LoginIdentity.identityOf(auth);
+        if (identity == null || identity.isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
         }
-        return email;
+        return identity;
     }
 
     /** 마이페이지 목록 항목. */

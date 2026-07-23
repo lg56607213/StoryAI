@@ -32,6 +32,24 @@ public final class LoginIdentity {
         return str(attrs.get("email"));
     }
 
+    /**
+     * 사용자 식별 키 — 마이페이지·하루 생성 제한·관리자 집계에서 "같은 사람"을 판별할 때 쓴다.
+     * 이메일이 있으면 이메일, 없으면 제공자+계정ID로 대체한다.
+     * (카카오는 이메일 동의항목이 없으면 이메일을 주지 않으므로 이메일만 쓰면 식별이 불가능해진다)
+     */
+    public static String identityOf(Authentication auth) {
+        String email = emailOf(auth);
+        if (email != null && !email.isBlank()) {
+            return email;
+        }
+        if (!(auth instanceof OAuth2AuthenticationToken t)) {
+            return null;
+        }
+        Map<String, Object> attrs = t.getPrincipal().getAttributes();
+        Object id = attrs.get("id") != null ? attrs.get("id") : attrs.get("sub");
+        return id != null ? t.getAuthorizedClientRegistrationId() + ":" + id : null;
+    }
+
     public static String nameOf(Authentication auth) {
         if (!(auth instanceof OAuth2AuthenticationToken t)) {
             return null;
