@@ -249,6 +249,43 @@ export interface AdminPurchase {
   address: string | null
 }
 
+// ---- 마이페이지(고객) ----
+export interface MyBook {
+  id: number
+  title: string | null
+  theme: string
+  bookPages: number | null
+  stage: string
+  thumbnailUrl: string | null
+  priceKrw: number | null
+  purchaseType: string | null
+  videoIncluded: boolean
+  physicalBookRequested: boolean
+  resultUrl: string | null
+  narrationVideoUrl: string | null
+  narrationVideoStatus: string | null
+  emailSent: boolean
+  createdAt: string
+  confirmedAt: string | null
+}
+export interface MyQuota {
+  limit: number
+  usedToday: number
+  /** -1이면 무제한 */
+  remaining: number
+}
+
+export function getMyBooks(): Promise<MyBook[]> {
+  return fetch(apiUrl('/api/me/books'), withCreds).then((r) => handle<MyBook[]>(r))
+}
+export function getMyQuota(): Promise<MyQuota> {
+  return fetch(apiUrl('/api/me/quota'), withCreds).then((r) => handle<MyQuota>(r))
+}
+export async function hideMyBook(id: number): Promise<void> {
+  const res = await fetch(apiUrl(`/api/me/books/${id}`), { method: 'DELETE', ...withCreds })
+  if (!res.ok) throw new Error(`삭제 실패 (HTTP ${res.status})`)
+}
+
 /** 연동 상태 진단(무엇이 켜져 있는가). 값은 중첩 맵이라 unknown으로 받는다. */
 export function getAdminDiagnostics(): Promise<Record<string, Record<string, unknown>>> {
   return fetch(apiUrl('/api/admin/diagnostics'), withCreds)

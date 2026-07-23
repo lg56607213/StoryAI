@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -37,9 +38,16 @@ public class VideoJobService {
     private final WorkflowEngine workflowEngine;
     private final com.storyai.backend.ai.voice.ElevenLabsClient elevenLabs;
 
+    /** 로그인 계정당 하루 미리보기(생성) 제한. 0이면 무제한. */
+    @org.springframework.beans.factory.annotation.Value("${storyai.rate-limit.previews-per-user-per-day:3}")
+    private int previewsPerUserPerDay;
+
     @Transactional
     public VideoJob createJob(CreateVideoJobRequest request, Authentication auth) {
         validate(request);
+
+        String requesterEmail = LoginIdentity.emailOf(auth);
+        enforceDailyLimit(requesterEmail);
 
         String protagonist = request.characters().stream()
                 .map(CreateVideoJobRequest.CharacterInput::name)
@@ -67,8 +75,8 @@ public class VideoJobService {
                 .targetLengthSeconds(isBook ? null : request.videoDurationSec())
                 .currentStep(WorkflowStep.first())
                 .build();
-        // 로그인 상태면 요청 계정을 기록(관리자 조회용).
-        job.setRequesterEmail(LoginIdentity.emailOf(auth));
+        // 로그인 상태면 요청 계정을 기록(관리자 조회·마이페이지용).
+        job.setRequesterEmail(requesterEmail);
         job.setRequesterProvider(LoginIdentity.providerOf(auth));
         job = videoJobRepository.save(job);
 
@@ -168,6 +176,22 @@ public class VideoJobService {
                 .orElseThrow(() -> new VideoJobNotFoundException(jobId));
         job.getStoryCharacters().size(); // 응답 매핑 전 lazy 컬렉션 초기화
         return job;
+    }
+
+    /**
+     * 로그인 계정당 하루 생성 횟수를 제한한다(비용 보호).
+     * 비로그인은 IP 기반 RateLimitFilter가 담당하므로 여기서는 통과시킨다.
+     */
+    private void enforceDailyLimit(String requesterEmail) {
+        if (previewsPerUserPerDay <= 0 || requesterEmail == null || requesterEmail.isBlank()) {
+            return;
+        }
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+        long todayCount = videoJobRepository.countByRequesterEmailAndCreatedAtAfter(requesterEmail, todayStart);
+        if (todayCount >= previewsPerUserPerDay) {
+            throw new IllegalArgumentException(
+                    "하루에 만들 수 있는 동화는 " + previewsPerUserPerDay + "권까지예요. 내일 다시 시도해 주세요.");
+        }
     }
 
     private String blankToNull(String s) {

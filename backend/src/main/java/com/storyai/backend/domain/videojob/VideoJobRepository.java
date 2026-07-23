@@ -15,4 +15,10 @@ public interface VideoJobRepository extends JpaRepository<VideoJob, Long> {
 
     /** 관리자 상세: 최근 생성 내역(미리보기 포함) 전체를 최신순으로. */
     List<VideoJob> findTop300ByOrderByCreatedAtDesc();
+
+    /** 하루 생성 제한: 이 계정이 특정 시점(오늘 0시) 이후 만든 건수. */
+    long countByRequesterEmailAndCreatedAtAfter(String requesterEmail, LocalDateTime since);
+
+    /** 마이페이지: 이 계정의 동화책 목록(최신순). */
+    List<VideoJob> findByRequesterEmailOrderByCreatedAtDesc(String requesterEmail);
 }

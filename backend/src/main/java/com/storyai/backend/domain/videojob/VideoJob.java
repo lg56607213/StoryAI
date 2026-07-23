@@ -117,6 +117,11 @@ public class VideoJob {
     @Setter
     private String requesterProvider;
 
+    /** 고객이 마이페이지 목록에서 숨김 처리했는지(관리자 통계는 그대로 유지하기 위한 소프트 삭제). */
+    @Setter
+    @Builder.Default
+    private boolean hiddenByUser = false;
+
     /** 미리보기 확정(구매요청) 시각 — 관리자 통계용 */
     @Setter
     private LocalDateTime confirmedAt;

@@ -943,6 +943,85 @@ textarea.area {
 }
 .admin-table td.buy { color: #d1541f; font-weight: 700; }
 .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+/* 마이페이지 (고객) */
+.mypage { max-width: 1080px; }
+.mp-layout { display: grid; grid-template-columns: 230px 1fr; gap: 26px; align-items: start; }
+@media (max-width: 780px) { .mp-layout { grid-template-columns: 1fr; } }
+
+.mp-side {
+  background: #fff;
+  border: 1px solid #f0e2d6;
+  border-radius: 18px;
+  padding: 22px 16px;
+  position: sticky;
+  top: 16px;
+}
+.mp-profile { text-align: center; padding-bottom: 18px; border-bottom: 1px solid #f6efe7; }
+.mp-avatar {
+  width: 64px; height: 64px; margin: 0 auto 10px;
+  border-radius: 999px; background: linear-gradient(135deg, #f0a5c2, #e1749b);
+  color: #fff; font-size: 26px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+}
+.mp-name { font-weight: 800; color: #5a4a54; }
+.mp-email { font-size: 12px; color: #a99ca3; margin-top: 3px; word-break: break-all; }
+.mp-nav { display: flex; flex-direction: column; gap: 2px; padding: 14px 0; }
+.mp-nav button, .mp-nav-foot button {
+  text-align: left; background: none; border: 0; cursor: pointer;
+  padding: 11px 14px; border-radius: 10px; font-size: 14.5px; color: #7b6d74;
+}
+.mp-nav button:hover, .mp-nav-foot button:hover { background: #fdf6f0; }
+.mp-nav button.on { background: #fdeef4; color: #d4547f; font-weight: 700; }
+.mp-nav-foot { border-top: 1px solid #f6efe7; padding-top: 10px; }
+
+.mp-main { min-width: 0; }
+.mp-quota {
+  background: #fdf6ec; border: 1px solid #f3e3cd; color: #8a6a30;
+  border-radius: 12px; padding: 12px 16px; font-size: 14px; margin-bottom: 16px;
+}
+.mp-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.mp-empty { text-align: center; padding: 48px 20px; }
+.mp-empty .btn { margin-top: 12px; }
+
+.mp-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 12px; }
+.mp-item {
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid #f0e2d6; border-radius: 16px; padding: 14px 16px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.mp-item:hover { border-color: #e1749b; box-shadow: 0 4px 14px rgba(90,74,84,.07); }
+.mp-item-main {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px;
+  background: none; border: 0; cursor: pointer; text-align: left; padding: 0;
+}
+.mp-thumb {
+  width: 56px; height: 56px; border-radius: 12px; overflow: hidden; flex-shrink: 0;
+  background: #fdf6f0; display: flex; align-items: center; justify-content: center;
+}
+.mp-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.mp-thumb-ph { font-size: 22px; }
+.mp-info { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.mp-title {
+  font-weight: 700; color: #5a4a54; font-size: 15.5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mp-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.mp-badge {
+  font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+  background: #f0eef5; color: #7a6fa0;
+}
+.mp-badge.running { background: #fdf3e6; color: #b4762a; }
+.mp-badge.preview { background: #f0eef5; color: #7a6fa0; }
+.mp-badge.done { background: #eaf6ec; color: #3f7a4d; }
+.mp-badge.fail { background: #fbeaea; color: #b34141; }
+.mp-badge.video { background: #f3ecff; color: #7b48c4; }
+.mp-badge.book { background: #fff1e8; color: #d1541f; }
+.mp-del {
+  background: none; border: 0; cursor: pointer; font-size: 16px;
+  color: #b9aab1; padding: 8px; border-radius: 8px; flex-shrink: 0;
+}
+.mp-del:hover { background: #fbeaea; color: #b34141; }
+
 /* 관리자 · 연동 상태 진단 */
 .diag-grid {
   display: grid;

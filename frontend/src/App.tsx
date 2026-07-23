@@ -3,6 +3,7 @@ import './App.css'
 import ImageCropper from './ImageCropper'
 import Landing from './Landing'
 import AdminDashboard from './AdminDashboard'
+import MyPage from './MyPage'
 import ParentVoiceRecorder from './ParentVoiceRecorder'
 import {
   apiUrl,
@@ -72,7 +73,7 @@ function App() {
   const [options, setOptions] = useState<Options | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [me, setMe] = useState<Me | null>(null)
-  const [view, setView] = useState<'home' | 'create' | 'admin'>('home')
+  const [view, setView] = useState<'home' | 'create' | 'admin' | 'mypage'>('home')
 
   const [outputType, setOutputType] = useState('BOOK')
   const [theme, setTheme] = useState('')
@@ -128,11 +129,21 @@ function App() {
   }
 
   function startCreate() {
+    setJob(null)
     setView('create')
   }
   function goHome() {
     setJob(null)
     setView('home')
+  }
+  /** 마이페이지에서 고른 동화책을 열어 결과 화면으로 이동한다. */
+  async function openBook(id: number) {
+    try {
+      setJob(await getProject(id))
+      setView('create')
+    } catch (e) {
+      alert('동화책을 불러오지 못했어요: ' + String((e as Error).message ?? e))
+    }
   }
   // 발송 설정 확인용: 본인 이메일로 테스트 메일 발송.
   function handleTestEmail() {
@@ -411,11 +422,31 @@ function App() {
 
   // 홈(랜딩) 화면.
   if (view === 'home') {
-    return <Landing me={me} onStart={startCreate} onLogout={onLogout} onAdmin={me?.isAdmin ? () => setView('admin') : undefined} />
+    return (
+      <Landing
+        me={me}
+        onStart={startCreate}
+        onLogout={onLogout}
+        onAdmin={me?.isAdmin ? () => setView('admin') : undefined}
+        onMyPage={me?.authenticated ? () => setView('mypage') : undefined}
+      />
+    )
   }
 
   if (view === 'admin') {
     return <AdminDashboard onHome={goHome} />
+  }
+
+  if (view === 'mypage') {
+    return (
+      <MyPage
+        me={me}
+        onHome={goHome}
+        onStart={startCreate}
+        onLogout={onLogout}
+        onOpenBook={openBook}
+      />
+    )
   }
 
   // (여기부터는 view === 'create') 로그인 안 했으면 → 로그인 화면.

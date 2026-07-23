@@ -54,11 +54,13 @@ export default function Landing({
   onStart,
   onLogout,
   onAdmin,
+  onMyPage,
 }: {
   me: Me | null
   onStart: () => void
   onLogout: () => void
   onAdmin?: () => void
+  onMyPage?: () => void
 }) {
   const [legal, setLegal] = useState<LegalDoc | null>(null)
   return (
@@ -71,6 +73,9 @@ export default function Landing({
           <>
             {onAdmin && (
               <button className="btn ghost small" onClick={onAdmin}>📊 관리자</button>
+            )}
+            {onMyPage && (
+              <button className="btn ghost small" onClick={onMyPage}>내 동화책</button>
             )}
             <span className="muted small">{me.name ?? '회원'}님</span>
             <button className="btn ghost small" onClick={onLogout}>로그아웃</button>
