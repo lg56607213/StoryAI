@@ -77,7 +77,7 @@ function App() {
   const pollRef = useRef<number | null>(null)
 
   // 미리보기 확정(구매) 관련
-  const [purchaseType, setPurchaseType] = useState<'PDF' | 'BOOK'>('PDF')
+  const [purchaseType, setPurchaseType] = useState<'PDF' | 'PDF_VIDEO' | 'PDF_VIDEO_BOOK'>('PDF')
   const [email, setEmail] = useState('')
   // 실물(책자) 배송 정보
   const [recipientName, setRecipientName] = useState('')
@@ -302,7 +302,10 @@ function App() {
       setSubmitError('완성본을 받을 이메일을 입력해 주세요.')
       return
     }
-    if (purchaseType === 'BOOK' && (!recipientName.trim() || !recipientPhone.trim() || !shippingAddress.trim())) {
+    if (
+      purchaseType === 'PDF_VIDEO_BOOK' &&
+      (!recipientName.trim() || !recipientPhone.trim() || !shippingAddress.trim())
+    ) {
       setSubmitError('책자 배송을 위해 받는 사람 이름·연락처·주소를 입력해 주세요.')
       return
     }
@@ -311,7 +314,7 @@ function App() {
       const updated = await confirmProject(job.id, {
         purchaseType,
         deliveryEmail: email.trim() || undefined,
-        ...(purchaseType === 'BOOK'
+        ...(purchaseType === 'PDF_VIDEO_BOOK'
           ? {
               recipientName: recipientName.trim(),
               recipientPhone: recipientPhone.trim(),
@@ -419,20 +422,24 @@ function App() {
                 </a>
               )}
               <label className="field-label">받는 방법</label>
-              <div className="chips">
-                <button
-                  className={`chip ${purchaseType === 'PDF' ? 'on' : ''}`}
-                  onClick={() => setPurchaseType('PDF')}
-                >
-                  PDF로 받기
-                </button>
-                <button
-                  className={`chip ${purchaseType === 'BOOK' ? 'on' : ''}`}
-                  onClick={() => setPurchaseType('BOOK')}
-                >
-                  실물 책으로 받기
-                </button>
+              <div className="tier-list">
+                {(options?.pricing.bundles ?? []).map((b) => {
+                  const price = b.prices.find((p) => p.pages === job.bookPages)?.priceKrw
+                  return (
+                    <button
+                      key={b.code}
+                      className={`tier ${purchaseType === b.code ? 'on' : ''}`}
+                      onClick={() => setPurchaseType(b.code as typeof purchaseType)}
+                    >
+                      <span className="tier-label">{b.label}</span>
+                      <span className="tier-price">
+                        {price != null ? `${price.toLocaleString()}원` : ''}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
+              <p className="muted small center">모든 금액 VAT 포함 · 영상은 "읽어주는 동화 영상"으로 함께 제공</p>
               <label className="field-label">완성본 받을 이메일 (필수)</label>
               <input
                 className="text"
@@ -441,10 +448,10 @@ function App() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
-              {purchaseType === 'BOOK' && (
+              {purchaseType === 'PDF_VIDEO_BOOK' && (
                 <div className="ship-box">
                   <p className="muted small ship-note">
-                    📦 실물 하드커버로 배송해 드려요. <b>PDF 파일도 이메일로 함께 보내드립니다.</b>
+                    📦 실물 하드커버로 배송해 드려요. <b>PDF·영상도 이메일로 함께 보내드립니다.</b>
                   </p>
                   <label className="field-label">받는 사람 이름</label>
                   <input
@@ -515,7 +522,7 @@ function App() {
                   실물 인쇄본으로 요청하셨습니다. 결제 후 인쇄·배송됩니다. (결제 연동 준비 중)
                 </p>
               )}
-              {job.outputType === 'BOOK' && (
+              {job.outputType === 'BOOK' && job.videoIncluded && (
                 <div className="narration-box">
                   <h3>🎬 읽어주는 동화 영상</h3>
                   {job.narrationVideoStatus === 'ready' && job.narrationVideoUrl ? (

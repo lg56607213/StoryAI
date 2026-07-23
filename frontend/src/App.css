@@ -727,7 +727,7 @@ textarea.area {
   margin-right: 6px;
 }
 
-.lp-price-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; max-width: 720px; margin: 0 auto 12px; }
+.lp-price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; max-width: 1020px; margin: 0 auto 12px; }
 .lp-price {
   position: relative;
   background: var(--lp-card);
@@ -896,6 +896,7 @@ textarea.area {
 .admin-table td.buy { color: #d1541f; font-weight: 700; }
 .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
 .tag.pdf { background: #eef4ff; color: #3b6fd1; }
+.tag.video { background: #f3ecff; color: #7b48c4; }
 .tag.book { background: #fff1e8; color: #d1541f; }
 .status { font-size: 12px; font-weight: 700; }
 .status.COMPLETED { color: #1e9e6a; }
@@ -943,6 +944,34 @@ textarea.area {
 .email-status { font-size: 14px; margin-top: 12px; line-height: 1.5; }
 .email-status.ok { color: #1e9e6a; }
 .email-status.fail { color: #c1671f; }
+
+.tier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0 6px;
+}
+.tier {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1.5px solid #eaddd0;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.tier:hover { border-color: #e1749b; }
+.tier.on {
+  border-color: #e1749b;
+  background: #fff4f8;
+  box-shadow: 0 0 0 3px rgba(225, 116, 155, 0.14);
+}
+.tier-label { color: #5a4a54; font-weight: 600; }
+.tier-price { color: #e1749b; font-weight: 700; white-space: nowrap; }
 
 .narration-box {
   margin-top: 22px;

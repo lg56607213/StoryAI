@@ -108,7 +108,13 @@ public class VideoJobService {
         if (job.getBookPhase() == BookPhase.FULL) {
             throw new IllegalArgumentException("이미 전체 생성이 진행/완료된 주문입니다.");
         }
-        job.startFullGeneration(blankToNull(request.purchaseType()), blankToNull(request.deliveryEmail()));
+        String purchaseType = blankToNull(request.purchaseType());
+        job.startFullGeneration(purchaseType, blankToNull(request.deliveryEmail()));
+        // 구매 티어(PDF / PDF_VIDEO / PDF_VIDEO_BOOK) → 실물·영상 포함 여부 세팅. ("BOOK"=구버전 실물)
+        boolean physical = "PDF_VIDEO_BOOK".equals(purchaseType) || "BOOK".equals(purchaseType);
+        boolean video = purchaseType != null && purchaseType.contains("VIDEO");
+        job.setPhysicalBookRequested(physical);
+        job.setVideoIncluded(video);
         // 실물 책 배송 정보(책자 구매 시).
         job.setRecipientName(blankToNull(request.recipientName()));
         job.setRecipientPhone(blankToNull(request.recipientPhone()));

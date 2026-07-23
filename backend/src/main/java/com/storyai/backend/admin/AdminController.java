@@ -205,12 +205,15 @@ public class AdminController {
         return out;
     }
 
-    /** 주문 단계 라벨: 확정 전=미리보기, 확정 후=구매유형. */
+    /** 주문 단계 라벨: 확정 전=미리보기, 확정 후=구매티어. */
     private String stage(VideoJob j) {
         if (j.getConfirmedAt() == null) {
             return "미리보기";
         }
-        return j.isPhysicalBookRequested() ? "하드커버구매" : "PDF구매";
+        if (j.isPhysicalBookRequested()) {
+            return "하드커버구매";
+        }
+        return j.isVideoIncluded() ? "PDF+영상구매" : "PDF구매";
     }
 
     /** 주문 1건의 예상 이미지 생성 수(원가 추정). 미리보기=6, 확정(전체)=2시트+페이지. */

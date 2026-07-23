@@ -9,11 +9,24 @@ export interface Option {
   label: string
 }
 
+export interface PriceRow {
+  pages: number
+  priceKrw: number
+}
+export interface Bundle {
+  code: string
+  label: string
+  video: boolean
+  physical: boolean
+  prices: PriceRow[]
+}
 export interface Pricing {
   currency: string
   vatIncluded: boolean
-  bookPdf: { pages: number; priceKrw: number }[]
-  bookHardcover: { pages: number; priceKrw: number }[]
+  bookPdf: PriceRow[]
+  bookHardcover: PriceRow[]
+  bookVideoAddon: PriceRow[]
+  bundles: Bundle[]
   note: string
 }
 
@@ -59,6 +72,7 @@ export interface JobResponse {
   bookPages: number | null
   bookPhase: 'PREVIEW' | 'FULL'
   physicalBookRequested: boolean
+  videoIncluded: boolean
   videoStyle: string | null
   videoDurationSec: number | null
   characters: { name: string; role: string }[]

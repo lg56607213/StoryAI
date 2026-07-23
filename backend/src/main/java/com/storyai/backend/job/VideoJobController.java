@@ -58,6 +58,9 @@ public class VideoJobController {
     @PostMapping("/{id}/narration-video")
     public VideoJobResponse startNarrationVideo(@PathVariable Long id) {
         VideoJob job = videoJobService.getJob(id);
+        if (!job.isVideoIncluded()) {
+            throw new IllegalArgumentException("영상이 포함된 구매(PDF+영상)에서만 만들 수 있어요.");
+        }
         narrationVideoService.generateAsync(id);
         return VideoJobResponse.from(job);
     }

@@ -150,15 +150,26 @@ export default function Landing({
           </div>
           <div className="lp-price featured">
             <div className="lp-price-tag">추천</div>
-            <h3>하드커버 책</h3>
-            <div className="lp-price-num">42,900원~</div>
+            <h3>PDF + 읽어주는 영상</h3>
+            <div className="lp-price-num">15,400원~</div>
             <ul>
-              <li>24페이지 42,900원</li>
-              <li>36페이지 46,200원</li>
-              <li>양장 하드커버 실물 배송</li>
-              <li><b>PDF 파일도 함께 제공</b></li>
+              <li>24페이지 15,400원</li>
+              <li>36페이지 20,900원</li>
+              <li>인물마다 목소리가 다른 <b>낭독 영상</b></li>
+              <li>PDF 파일도 함께 제공</li>
             </ul>
             <button className="btn primary" onClick={onStart}>만들기</button>
+          </div>
+          <div className="lp-price">
+            <h3>실물책 (PDF+영상 포함)</h3>
+            <div className="lp-price-num">48,400원~</div>
+            <ul>
+              <li>24페이지 48,400원</li>
+              <li>36페이지 53,900원</li>
+              <li>양장 하드커버 실물 배송</li>
+              <li><b>PDF·영상도 함께 제공</b></li>
+            </ul>
+            <button className="btn ghost" onClick={onStart}>만들기</button>
           </div>
         </div>
         <p className="muted small center">* 표시된 금액은 모두 <b>VAT 포함가</b>예요. 미리보기 이후 결제 단계에서 확인됩니다.</p>

@@ -276,6 +276,7 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
 
 function stageClass(stage: string) {
   if (stage === '하드커버구매') return 'tag book'
+  if (stage === 'PDF+영상구매') return 'tag video'
   if (stage === 'PDF구매') return 'tag pdf'
   return 'tag preview'
 }

@@ -52,7 +52,31 @@ public class CatalogController {
                         Map.of("pages", 24, "priceKrw", Pricing.BOOK_HARDCOVER_24P),
                         Map.of("pages", 36, "priceKrw", Pricing.BOOK_HARDCOVER_36P)
                 ),
-                "note", "모든 가격 VAT 포함. 하드커버 구매 시 PDF 파일도 함께 제공. 영상 가격은 미정."
+                "bookVideoAddon", List.of(
+                        Map.of("pages", 24, "priceKrw", Pricing.BOOK_VIDEO_24P),
+                        Map.of("pages", 36, "priceKrw", Pricing.BOOK_VIDEO_36P)
+                ),
+                // 구매 3티어(총액). 프론트 확정화면이 이 목록으로 선택지를 그린다.
+                "bundles", List.of(
+                        bundle("PDF", "PDF", false, false),
+                        bundle("PDF_VIDEO", "PDF + 읽어주는 영상", true, false),
+                        bundle("PDF_VIDEO_BOOK", "PDF + 영상 + 실물책", true, true)
+                ),
+                "note", "모든 가격 VAT 포함. 실물책 구매 시 PDF 파일도 함께 제공."
+        );
+    }
+
+    /** 한 구매 티어의 24/36p 총액을 담은 맵. */
+    private Map<String, Object> bundle(String code, String label, boolean video, boolean physical) {
+        return Map.of(
+                "code", code,
+                "label", label,
+                "video", video,
+                "physical", physical,
+                "prices", List.of(
+                        Map.of("pages", 24, "priceKrw", Pricing.bundlePriceKrw(24, video, physical)),
+                        Map.of("pages", 36, "priceKrw", Pricing.bundlePriceKrw(36, video, physical))
+                )
         );
     }
 

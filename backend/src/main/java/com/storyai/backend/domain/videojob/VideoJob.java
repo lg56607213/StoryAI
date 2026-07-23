@@ -132,9 +132,15 @@ public class VideoJob {
     /** 책 페이지 수 (24 또는 36) */
     private Integer bookPages;
 
-    /** 실물 책 배송 요청 여부 (요청 정보만 수집, 운영자가 수기 발주) */
+    /** 실물 책 배송 요청 여부 (요청 정보만 수집, 운영자가 수기 발주). 확정 시 구매티어로 세팅. */
+    @Setter
     @Builder.Default
     private boolean physicalBookRequested = false;
+
+    /** 읽어주는 영상 포함 구매 여부(PDF+영상 / PDF+영상+실물책). 확정 시 구매티어로 세팅. */
+    @Setter
+    @Builder.Default
+    private boolean videoIncluded = false;
 
     // --- 영상(VIDEO) 선택 옵션 ---
     @Enumerated(EnumType.STRING)
