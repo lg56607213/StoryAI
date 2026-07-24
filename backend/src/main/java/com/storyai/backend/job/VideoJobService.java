@@ -72,8 +72,8 @@ public class VideoJobService {
 
         VideoJob job = VideoJob.builder()
                 .outputType(request.outputType())
-                // 책은 미리보기부터, 영상은 바로 전체 생성.
-                .bookPhase(isBook ? BookPhase.PREVIEW : BookPhase.FULL)
+                // 책은 줄거리 확인(OUTLINE)부터, 영상은 바로 전체 생성.
+                .bookPhase(isBook ? BookPhase.OUTLINE : BookPhase.FULL)
                 .storyTheme(themeEnum)
                 .customTheme(customTheme)
                 .theme(themeLabel)
@@ -185,6 +185,53 @@ public class VideoJobService {
         job.setParentVoiceId(voiceId);
         job.setParentVoiceConsent(true);
         return videoJobRepository.save(job);
+    }
+
+    /**
+     * 줄거리 확인 단계에서 고객 수정 요청을 반영해 줄거리를 다시 생성한다(그림 생성 전, 비용 없음).
+     * 비동기로 STORY_GENERATION만 다시 실행하고 OUTLINE 단계에서 다시 멈춘다.
+     */
+    @Transactional
+    public VideoJob reviseOutline(Long jobId, String feedback) {
+        VideoJob job = requireOutlineStage(jobId);
+        job.setOutlineFeedback(blankToNull(feedback));
+        job.moveToStep(WorkflowStep.STORY_GENERATION);
+        job.markRunning();
+        videoJobRepository.save(job);
+        workflowEngine.start(jobId);
+        return job;
+    }
+
+    /**
+     * 줄거리를 확정하고 미리보기 생성으로 넘어간다. editedSynopsis가 있으면 고객이 직접 고친 줄거리를 그대로 쓴다.
+     */
+    @Transactional
+    public VideoJob approveOutline(Long jobId, String editedTitle, String editedSynopsis) {
+        VideoJob job = requireOutlineStage(jobId);
+        String synopsis = blankToNull(editedSynopsis);
+        if (synopsis != null) {
+            job.setSynopsis(synopsis);
+        }
+        String title = blankToNull(editedTitle);
+        if (title != null) {
+            job.setGeneratedTitle(title);
+        }
+        // 미리보기 단계로 전환: 줄거리는 이미 있으니 PAGE_PLANNING부터 이어간다.
+        job.moveToPreviewPhase();
+        job.moveToStep(WorkflowStep.PAGE_PLANNING);
+        job.markRunning();
+        videoJobRepository.save(job);
+        workflowEngine.start(jobId);
+        return job;
+    }
+
+    private VideoJob requireOutlineStage(Long jobId) {
+        VideoJob job = videoJobRepository.findById(jobId)
+                .orElseThrow(() -> new VideoJobNotFoundException(jobId));
+        if (job.getOutputType() != OutputType.BOOK || job.getBookPhase() != BookPhase.OUTLINE) {
+            throw new IllegalArgumentException("줄거리 확인 단계의 주문만 처리할 수 있습니다.");
+        }
+        return job;
     }
 
     @Transactional(readOnly = true)

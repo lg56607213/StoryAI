@@ -81,7 +81,7 @@ export interface JobResponse {
   theme: string
   bookStyle: string | null
   bookPages: number | null
-  bookPhase: 'PREVIEW' | 'FULL'
+  bookPhase: 'OUTLINE' | 'PREVIEW' | 'FULL'
   physicalBookRequested: boolean
   videoIncluded: boolean
   videoStyle: string | null
@@ -90,6 +90,8 @@ export interface JobResponse {
   status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED'
   currentStep: string
   generatedTitle: string | null
+  synopsis: string | null
+  outlineFeedback: string | null
   priceKrw: number | null
   resultUrl: string | null
   resultVideoUrl: string | null
@@ -144,6 +146,26 @@ export function createProject(req: CreateRequest): Promise<JobResponse> {
 
 export function getProject(id: number): Promise<JobResponse> {
   return fetch(apiUrl(`/api/video-jobs/${id}`), withCreds).then((r) => handle<JobResponse>(r))
+}
+
+/** 줄거리 확인: 고객 수정 요청을 반영해 줄거리를 다시 생성(그림 전, 무료). */
+export function reviseOutline(id: number, feedback: string): Promise<JobResponse> {
+  return fetch(apiUrl(`/api/video-jobs/${id}/outline/revise`), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ feedback }),
+    ...withCreds,
+  }).then((r) => handle<JobResponse>(r))
+}
+
+/** 줄거리 확정 → 미리보기 생성으로 진행(직접 고친 제목·줄거리가 있으면 반영). */
+export function approveOutline(id: number, title: string, synopsis: string): Promise<JobResponse> {
+  return fetch(apiUrl(`/api/video-jobs/${id}/outline/approve`), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, synopsis }),
+    ...withCreds,
+  }).then((r) => handle<JobResponse>(r))
 }
 
 /** 부모 목소리 등록 — 녹음 파일을 올려 음성을 복제한다(동의 필수). */

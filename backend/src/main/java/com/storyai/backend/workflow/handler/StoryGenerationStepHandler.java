@@ -33,7 +33,7 @@ public class StoryGenerationStepHandler implements WorkflowStepHandler {
             try {
                 return storyGenerator.outline(
                         job.getStoryTheme(), job.getTheme(), job.getProtagonistDescription(),
-                        job.getAgeGroup(), job.getStoryDirection());
+                        job.getAgeGroup(), effectiveDirection(job));
             } catch (Exception e) {
                 log.warn("스토리 생성 실패, 더미로 폴백: {}", e.getMessage());
             }
@@ -42,5 +42,16 @@ public class StoryGenerationStepHandler implements WorkflowStepHandler {
         return new StoryOutline(
                 "%s 이야기".formatted(job.getTheme()),
                 "%s(이)가 %s을(를) 겪는 이야기".formatted(job.getProtagonistDescription(), job.getTheme()));
+    }
+
+    /** 원래 스토리 방향 + 줄거리 확인 단계에서 받은 고객 수정 요청을 합쳐 전달한다. */
+    private String effectiveDirection(VideoJob job) {
+        String base = job.getStoryDirection();
+        String feedback = job.getOutlineFeedback();
+        if (feedback == null || feedback.isBlank()) {
+            return base;
+        }
+        String prefix = (base == null || base.isBlank()) ? "" : base + "\n";
+        return prefix + "고객 수정 요청(반드시 반영): " + feedback;
     }
 }

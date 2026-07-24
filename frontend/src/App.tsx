@@ -4,6 +4,7 @@ import ImageCropper from './ImageCropper'
 import Landing from './Landing'
 import AdminDashboard from './AdminDashboard'
 import MyPage from './MyPage'
+import OutlineReview from './OutlineReview'
 import ParentVoiceRecorder from './ParentVoiceRecorder'
 import {
   apiUrl,
@@ -503,9 +504,11 @@ function App() {
   if (job) {
     const done = job.status === 'COMPLETED'
     const failed = job.status === 'FAILED'
+    // 줄거리 확인 단계(그림 생성 전)
+    const isOutline = done && job.outputType === 'BOOK' && job.bookPhase === 'OUTLINE'
     // 책 미리보기 완료 = 확정(구매) 단계
     const isPreview = done && job.outputType === 'BOOK' && job.bookPhase === 'PREVIEW'
-    const isFinal = done && !isPreview
+    const isFinal = done && !isOutline && !isPreview
     return (
       <main className="app">
         <header className="hero">
@@ -518,11 +521,13 @@ function App() {
             const curIdx = Math.max(0, order.findIndex((s) => s.code === job.currentStep))
             const pct = Math.round(((curIdx + 0.5) / order.length) * 100)
             const hint =
-              job.currentStep === 'PAGE_ILLUSTRATION'
-                ? '삽화는 페이지마다 한 장씩 정성껏 그려서 가장 오래 걸려요. 조금만 기다려 주세요 🎨'
-                : job.bookPhase === 'PREVIEW'
-                  ? '표지와 앞부분을 먼저 보여드릴게요. 보통 1~3분 걸려요.'
-                  : '완성본을 만드는 중이에요. 페이지가 많아 몇 분 걸릴 수 있어요.'
+              job.bookPhase === 'OUTLINE'
+                ? '먼저 이야기의 줄거리를 지어 보여드릴게요. 잠깐이면 돼요 ✍️'
+                : job.currentStep === 'PAGE_ILLUSTRATION'
+                  ? '삽화는 페이지마다 한 장씩 정성껏 그려서 가장 오래 걸려요. 조금만 기다려 주세요 🎨'
+                  : job.bookPhase === 'PREVIEW'
+                    ? '표지와 앞부분을 먼저 보여드릴게요. 보통 1~3분 걸려요.'
+                    : '완성본을 만드는 중이에요. 페이지가 많아 몇 분 걸릴 수 있어요.'
             return (
               <>
                 <div className="spinner" />
@@ -550,6 +555,15 @@ function App() {
               <h2>생성에 실패했어요</h2>
               <p className="error-text">{job.errorMessage}</p>
             </>
+          )}
+          {isOutline && (
+            <OutlineReview
+              job={job}
+              onUpdated={(j) => {
+                setJob(j)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
+            />
           )}
           {isPreview && (
             <>

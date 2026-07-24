@@ -943,6 +943,20 @@ textarea.area {
 }
 .admin-table td.buy { color: #d1541f; font-weight: 700; }
 .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+/* 줄거리 확인 화면 */
+.outline { text-align: left; }
+.outline .check, .outline > h2, .outline > .muted { text-align: center; }
+.outline .field-label { margin-top: 16px; }
+.outline-synopsis { line-height: 1.7; }
+.outline-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.outline-actions .btn { flex: 1; min-width: 200px; }
+.outline + p, .outline .muted.small.center { text-align: center; }
+
 /* 주제 그룹(배경·모험 / 생활 습관) */
 .theme-group { margin-bottom: 16px; }
 .theme-group:last-child { margin-bottom: 0; }

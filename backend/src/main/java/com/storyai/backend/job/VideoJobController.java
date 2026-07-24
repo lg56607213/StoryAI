@@ -44,6 +44,24 @@ public class VideoJobController {
         return VideoJobResponse.from(videoJobService.getJob(id));
     }
 
+    /** 줄거리 확인 단계: 고객 수정 요청을 반영해 줄거리를 다시 생성(그림 생성 전, 비용 없음). */
+    @PostMapping("/{id}/outline/revise")
+    public VideoJobResponse reviseOutline(@PathVariable Long id, @RequestBody OutlineReviseRequest request) {
+        return VideoJobResponse.from(videoJobService.reviseOutline(id, request.feedback()));
+    }
+
+    /** 줄거리 확정 → 미리보기 생성으로 진행(고객이 직접 고친 제목·줄거리가 있으면 반영). */
+    @PostMapping("/{id}/outline/approve")
+    public VideoJobResponse approveOutline(@PathVariable Long id, @RequestBody OutlineApproveRequest request) {
+        return VideoJobResponse.from(videoJobService.approveOutline(id, request.title(), request.synopsis()));
+    }
+
+    public record OutlineReviseRequest(String feedback) {
+    }
+
+    public record OutlineApproveRequest(String title, String synopsis) {
+    }
+
     /** 미리보기 확정 → 전체 생성 시작(구매유형·이메일 수집, 결제는 이후). */
     @PostMapping("/{id}/confirm")
     public VideoJobResponse confirm(@PathVariable Long id, @RequestBody ConfirmVideoJobRequest request,

@@ -134,6 +134,11 @@ public class VideoJob {
     @Column(columnDefinition = "TEXT")
     private String storyDirection;
 
+    /** 줄거리 확인 단계에서 고객이 남긴 수정 요청(최신값). 줄거리 재생성 시 반영한다. */
+    @Setter
+    @Column(columnDefinition = "TEXT")
+    private String outlineFeedback;
+
     // --- 책(BOOK) 선택 옵션 ---
     @Enumerated(EnumType.STRING)
     private BookStyle bookStyle;
@@ -235,6 +240,11 @@ public class VideoJob {
 
     public void markRunning() {
         this.status = JobStatus.RUNNING;
+    }
+
+    /** 줄거리 확정 → 미리보기 단계로 전환. */
+    public void moveToPreviewPhase() {
+        this.bookPhase = BookPhase.PREVIEW;
     }
 
     public void markFailed(String reason) {

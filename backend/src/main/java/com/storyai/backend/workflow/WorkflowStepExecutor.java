@@ -69,6 +69,17 @@ public class WorkflowStepExecutor {
             return;
         }
 
+        // 줄거리 확인 게이트: 책(BOOK)이 OUTLINE 단계면 줄거리 생성 직후 멈춰 고객에게 보여준다.
+        // (그림 생성 전이라 비용이 없다. 고객이 확인·수정한 뒤 approveOutline으로 미리보기를 이어간다.)
+        boolean outlineGate = job.getOutputType() == com.storyai.backend.domain.videojob.OutputType.BOOK
+                && job.getBookPhase() == com.storyai.backend.domain.videojob.BookPhase.OUTLINE
+                && step == WorkflowStep.STORY_GENERATION;
+        if (outlineGate) {
+            job.markCompleted();
+            videoJobRepository.save(job);
+            return;
+        }
+
         Optional<WorkflowStep> nextStep = workflowPlan.next(job.getOutputType(), step);
         if (nextStep.isPresent()) {
             job.moveToStep(nextStep.get());
