@@ -78,8 +78,10 @@ public final class ImagePrompts {
         StringBuilder refInfo = new StringBuilder();
         for (int i = 0; i < humanCount; i++) {
             refInfo.append("Reference image ").append(i + 1)
-                    .append(" is a main character - keep this character IDENTICAL (same face, likeness, hairstyle, "
-                            + "and the exact outfit shown in the reference). ");
+                    .append(" is a main character - keep this character's IDENTITY identical (same face, likeness, "
+                            + "hairstyle, and the exact outfit shown in the reference). "
+                            + "The reference is only a neutral standing pose for identity: do NOT copy that pose. "
+                            + "Re-pose this character freely to act out the scene described below. ");
         }
         if (companionDesc != null) {
             refInfo.append("Reference image ").append(humanCount + 1)
@@ -94,8 +96,18 @@ public final class ImagePrompts {
                 + "Do NOT add, invent, duplicate, or draw ANY other person, child, friend, sibling, or bystander "
                 + "that is not one of the references - even if the scene text seems to mention someone else. ";
 
+        // 참조 시트가 "정면·차렷" 자세라 그대로 따라 그리는 경향이 있다 → 표정·동작을 명시적으로 요구한다.
+        String expressive =
+                "STORYTELLING (most important): this is a narrative moment, not a character portrait. "
+                        + "Act out the scene: give each character a CLEAR facial expression that matches the "
+                        + "emotion in the scene (crying, laughing, surprised, worried, proud, shy) and an "
+                        + "EXPRESSIVE full-body pose and gesture (kneeling, hugging, reaching out, tumbling, "
+                        + "hiding, pointing). Show how the characters relate to each other in the moment. "
+                        + "Frame them as a close or medium shot so faces and feelings read clearly. "
+                        + "Do NOT draw characters standing straight and still facing the camera. ";
+
         return styleLine(style) + " Create ONE wide children's storybook illustration for this scene: "
-                + scene + ". " + refInfo + peopleRule
+                + scene + ". " + refInfo + peopleRule + expressive
                 + "Keep each character's clothing EXACTLY the same as in their reference image — do not change, swap, "
                 + "or invent outfits between pages." + ANATOMY + " "
                 + "Full scene with background, warm and tender mood. "

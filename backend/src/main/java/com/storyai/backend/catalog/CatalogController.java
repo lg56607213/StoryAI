@@ -29,7 +29,7 @@ public class CatalogController {
                         option(OutputType.BOOK.name(), OutputType.BOOK.getLabel()),
                         option(OutputType.VIDEO.name(), OutputType.VIDEO.getLabel())
                 ),
-                "themes", enumOptions(StoryTheme.values(), StoryTheme::name, StoryTheme::getLabel),
+                "themes", themeOptions(),
                 "bookStyles", enumOptions(BookStyle.values(), BookStyle::name, BookStyle::getLabel),
                 "bookPageOptions", List.of(24, 36),
                 "videoStyles", enumOptions(VideoStyle.values(), VideoStyle::name, VideoStyle::getLabel),
@@ -83,6 +83,17 @@ public class CatalogController {
                         Map.of("pages", 36, "priceKrw", Pricing.bundlePriceKrw(36, video, physical))
                 )
         );
+    }
+
+    /** 주제 목록 — 갈래(배경·모험 / 생활 습관)를 함께 내려 프론트가 탭으로 그룹핑한다. */
+    private List<Map<String, String>> themeOptions() {
+        return java.util.Arrays.stream(StoryTheme.values())
+                .map(t -> Map.of(
+                        "code", t.name(),
+                        "label", t.getLabel(),
+                        "category", t.getCategory().name(),
+                        "categoryLabel", t.getCategory().getLabel()))
+                .toList();
     }
 
     private <E> List<Map<String, String>> enumOptions(E[] values,

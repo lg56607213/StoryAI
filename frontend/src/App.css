@@ -943,6 +943,16 @@ textarea.area {
 }
 .admin-table td.buy { color: #d1541f; font-weight: 700; }
 .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+/* 주제 그룹(배경·모험 / 생활 습관) */
+.theme-group { margin-bottom: 16px; }
+.theme-group:last-child { margin-bottom: 0; }
+.theme-group-label {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #7b6d74;
+  margin: 0 0 8px;
+}
+
 /* 마이페이지 (고객) */
 .mypage { max-width: 1080px; }
 .mp-layout { display: grid; grid-template-columns: 230px 1fr; gap: 26px; align-items: start; }

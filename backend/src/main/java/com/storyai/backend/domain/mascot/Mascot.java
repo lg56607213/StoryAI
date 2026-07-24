@@ -107,11 +107,19 @@ public enum Mascot {
             return BYEOL;
         }
         return switch (theme) {
+            // 배경·모험
             case PRINCESS, PRINCE, SPACE -> BYEOL;
             case HERO, ADVENTURE, DINOSAUR -> BURI;
             case ANIMAL_FRIENDS, FOREST -> KKAMNYANG;
             case OCEAN, PIRATE -> PADO;
             case JUNGLE -> CHOCO;
+
+            // 생활 습관 — 상황에 어울리는 친구를 붙인다.
+            case BRUSHING_TEETH, HOSPITAL -> BURI;          // 무서운 순간에 용기를 주는 친구
+            case BATH_TIME, WATER_PLAY, SWIMMING -> PADO;   // 물에서 앞장서는 친구
+            case HANGEUL, STUDY_HABIT -> KKAMNYANG;         // 알려주고 이끌어 주는 조언자
+            case SLEEP_ALONE, NEW_SIBLING -> BYEOL;         // 다정하게 마음을 달래주는 친구
+            case EATING_WELL, FIRST_DAY -> CHOCO;           // 함께 놀고 먹는 단짝
         };
     }
 }

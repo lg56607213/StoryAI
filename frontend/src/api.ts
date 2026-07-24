@@ -9,6 +9,12 @@ export interface Option {
   label: string
 }
 
+/** 주제 옵션 — 갈래(배경·모험 / 생활 습관)로 그룹핑된다. */
+export interface ThemeOption extends Option {
+  category: string
+  categoryLabel: string
+}
+
 export interface PriceRow {
   pages: number
   priceKrw: number
@@ -32,7 +38,7 @@ export interface Pricing {
 
 export interface Options {
   outputTypes: Option[]
-  themes: Option[]
+  themes: ThemeOption[]
   ageGroups: Option[]
   bookStyles: Option[]
   bookPageOptions: number[]

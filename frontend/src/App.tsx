@@ -21,6 +21,7 @@ import {
   type JobResponse,
   type Me,
   type Options,
+  type ThemeOption,
 } from './api'
 
 interface CropQueue {
@@ -441,6 +442,11 @@ function App() {
     )
   }
 
+  // 주제를 갈래별로 묶는다(배경·모험 먼저, 생활 습관 다음). options가 확정된 이후라 안전.
+  const themeGroups: [string, ThemeOption[]][] = (['BACKGROUND', 'HABIT'] as const)
+    .map((cat) => [cat, options.themes.filter((t) => t.category === cat)] as [string, ThemeOption[]])
+    .filter(([, list]) => list.length > 0)
+
   // 홈(랜딩) 화면.
   if (view === 'home') {
     return (
@@ -759,23 +765,32 @@ function App() {
 
       <section className="card">
         <h3 className="step">2. 주제</h3>
-        <div className="chips">
-          {options.themes.map((o) => (
-            <button
-              key={o.code}
-              className={`chip ${theme === o.code ? 'on' : ''}`}
-              onClick={() => setTheme(o.code)}
-            >
-              {o.label}
-            </button>
-          ))}
-          <button
-            className={`chip ${theme === CUSTOM_THEME ? 'on' : ''}`}
-            onClick={() => setTheme(CUSTOM_THEME)}
-          >
-            ✏️ 직접입력
-          </button>
-        </div>
+        {themeGroups.map(([cat, list]) => (
+          <div key={cat} className="theme-group">
+            <p className="theme-group-label">
+              {cat === 'HABIT' ? '🪥 생활 습관 (아이 습관 들이기)' : '🏰 배경 · 모험'}
+            </p>
+            <div className="chips">
+              {list.map((o) => (
+                <button
+                  key={o.code}
+                  className={`chip ${theme === o.code ? 'on' : ''}`}
+                  onClick={() => setTheme(o.code)}
+                >
+                  {o.label}
+                </button>
+              ))}
+              {cat === 'HABIT' && (
+                <button
+                  className={`chip ${theme === CUSTOM_THEME ? 'on' : ''}`}
+                  onClick={() => setTheme(CUSTOM_THEME)}
+                >
+                  ✏️ 직접입력
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
         {theme === CUSTOM_THEME && (
           <input
             className="text"
