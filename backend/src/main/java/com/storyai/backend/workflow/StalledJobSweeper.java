@@ -32,6 +32,7 @@ public class StalledJobSweeper {
 
     private final VideoJobRepository videoJobRepository;
     private final WorkflowEngine workflowEngine;
+    private final com.storyai.backend.video.NarrationVideoService narrationVideoService;
 
     /** 이 시간(시간) 안에 갱신된 확정 주문만 재개 대상(너무 오래된 건 최종 실패). */
     @Value("${storyai.workflow.resume-window-hours:6}")
@@ -48,6 +49,14 @@ public class StalledJobSweeper {
     /** 한 번의 스윕에서 재개할 최대 건수(부하 급증 방지). */
     @Value("${storyai.workflow.sweep-batch:3}")
     private int sweepBatch;
+
+    /** 낭독 영상이 이 시간(분) 이상 generating이면 멈춘 것으로 보고 재생성(영상은 오래 걸리므로 넉넉히). */
+    @Value("${storyai.workflow.video-stall-minutes:25}")
+    private int videoStallMinutes;
+
+    /** 낭독 영상 자동 재시도 최대 횟수. */
+    @Value("${storyai.workflow.video-max-recovery-attempts:5}")
+    private int videoMaxAttempts;
 
     @Scheduled(fixedDelayString = "${storyai.workflow.sweep-ms:180000}",
             initialDelayString = "${storyai.workflow.sweep-initial-ms:90000}")
@@ -107,6 +116,54 @@ public class StalledJobSweeper {
         }
         if (retried > 0) {
             log.info("자동 재개 스윕: {}건 재시도", retried);
+        }
+
+        sweepVideos(now, windowCutoff);
+    }
+
+    /**
+     * 낭독 영상 재시도: PDF는 완성돼 발송됐지만 영상이 아직 안 만들어진(실패·멈춤) 확정 주문을
+     * 상한까지 다시 생성해 결국 고객 메일로 보낸다(PDF와 동일한 "결국 전송" 보장).
+     */
+    private void sweepVideos(LocalDateTime now, LocalDateTime windowCutoff) {
+        List<VideoJob> targets = videoJobRepository
+                .findByStatusAndVideoIncludedTrueAndNarrationVideoUrlIsNull(JobStatus.COMPLETED);
+        if (targets.isEmpty()) {
+            return;
+        }
+        LocalDateTime videoStallCutoff = now.minusMinutes(Math.max(5, videoStallMinutes));
+        int retried = 0;
+        for (VideoJob job : targets) {
+            if (retried >= sweepBatch) {
+                break;
+            }
+            if (job.getConfirmedAt() == null) {
+                continue; // 확정(구매)된 주문만 자동 재시도
+            }
+            LocalDateTime touched = job.getUpdatedAt() != null ? job.getUpdatedAt() : job.getCreatedAt();
+            if (touched == null || touched.isBefore(windowCutoff)) {
+                continue; // 너무 오래된 건은 자동 재시도 제외(관리자가 수동 처리)
+            }
+            if (job.getVideoRecoveryAttempts() >= videoMaxAttempts) {
+                continue; // 상한 초과 → 그만 시도
+            }
+            String vs = job.getNarrationVideoStatus();
+            boolean failed = "failed".equalsIgnoreCase(vs);
+            // generating/미시작이지만 오래 진행이 없으면 멈춘 것으로 보고 재시도(방금 시작된 건은 제외).
+            boolean stalled = (vs == null || vs.isBlank() || "generating".equalsIgnoreCase(vs))
+                    && touched.isBefore(videoStallCutoff);
+            if (!failed && !stalled) {
+                continue; // 정상 진행 중이거나 방금 시작 → 건너뜀
+            }
+            job.markVideoForRetry();
+            videoJobRepository.save(job);
+            log.info("↻ 낭독 영상 자동 재시도(스윕): job {} (attempt {})",
+                    job.getId(), job.getVideoRecoveryAttempts());
+            narrationVideoService.generateAsync(job.getId());
+            retried++;
+        }
+        if (retried > 0) {
+            log.info("영상 자동 재시도 스윕: {}건", retried);
         }
     }
 }

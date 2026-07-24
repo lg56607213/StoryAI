@@ -226,6 +226,11 @@ public class VideoJob {
     @Builder.Default
     private int recoveryAttempts = 0;
 
+    /** 낭독 영상 생성을 자동 재시도한 횟수(무한 재시도 방지용 상한 관리). */
+    @Column(nullable = false, columnDefinition = "int default 0")
+    @Builder.Default
+    private int videoRecoveryAttempts = 0;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -274,6 +279,12 @@ public class VideoJob {
         this.status = JobStatus.RUNNING;
         this.errorMessage = null;
         this.recoveryAttempts += 1;
+    }
+
+    /** 낭독 영상 자동 재시도: 상태를 generating으로 돌리고 재시도 횟수를 올린다. */
+    public void markVideoForRetry() {
+        this.narrationVideoStatus = "generating";
+        this.videoRecoveryAttempts += 1;
     }
 
     /** 미리보기 확정 → 전체 생성 단계로 전환하고 삽화 단계부터 워크플로우를 재개시킨다. */

@@ -28,4 +28,10 @@ public interface VideoJobRepository extends JpaRepository<VideoJob, Long> {
 
     /** 재시작 복구: 진행 중이던(또는 시작도 못 한) 작업 찾기. */
     List<VideoJob> findByStatusIn(List<JobStatus> statuses);
+
+    /**
+     * 영상 재시도 대상: 완성(COMPLETED)됐고 영상 포함 주문인데 아직 영상이 없는(URL 미생성) 건.
+     * (narrationVideoStatus가 failed 또는 멈춘 generating인 경우를 스위퍼에서 걸러 재시도한다.)
+     */
+    List<VideoJob> findByStatusAndVideoIncludedTrueAndNarrationVideoUrlIsNull(JobStatus status);
 }
