@@ -26,6 +26,13 @@ public class EmailNotifier {
     @Value("${spring.mail.username:}")
     private String smtpFrom;
 
+    /** 이메일 링크에 쓸 백엔드 공개 주소(다운로드 링크 절대경로). */
+    @Value("${storyai.api-base-url:https://api.todayhero.co.kr}")
+    private String apiBaseUrl;
+
+    /** 이 크기를 넘는 PDF는 첨부하지 않고 다운로드 링크로 보낸다(고화질 PDF는 첨부 한도 초과 방지). */
+    private static final int MAX_ATTACH_BYTES = 8 * 1024 * 1024;
+
     public EmailNotifier(ResendMailer resend, ObjectProvider<JavaMailSender> mailSenderProvider) {
         this.resend = resend;
         this.mailSenderProvider = mailSenderProvider;
@@ -121,21 +128,27 @@ public class EmailNotifier {
             return false;
         }
         String subject = "[투데이히어로] '" + safeTitle + "' 동화책이 완성되었어요 📖";
-        String body = safeTitle + " 동화책이 완성되었어요!\n\n"
-                + "첨부된 PDF 파일에서 우리 아이 동화책을 확인하실 수 있어요.\n"
-                + "소중한 순간을 담아드릴 수 있어 기뻐요. 감사합니다.\n\n"
-                + "— 투데이히어로 (todayhero.co.kr)";
         String fileName = safeTitle + ".pdf";
+        // 고화질 등으로 PDF가 크면 첨부 대신 다운로드 링크로 보낸다(첨부 용량 초과로 발송 실패 방지).
+        boolean attach = pdfBytes != null && pdfBytes.length > 0 && pdfBytes.length <= MAX_ATTACH_BYTES;
+        String absUrl = absoluteUrl(downloadUrl);
+        String body = safeTitle + " 동화책이 완성되었어요!\n\n"
+                + (attach
+                    ? "첨부된 PDF 파일에서 우리 아이 동화책을 확인하실 수 있어요.\n"
+                    : "아래 링크에서 우리 아이 동화책 PDF를 내려받으실 수 있어요.\n")
+                + (absUrl.isBlank() ? "" : "\n▶ PDF 내려받기\n" + absUrl + "\n")
+                + "\n소중한 순간을 담아드릴 수 있어 기뻐요. 감사합니다.\n\n"
+                + "— 투데이히어로 (todayhero.co.kr)";
 
         try {
             if (resend.isConfigured()) {
-                resend.send(toEmail, subject, body, pdfBytes, fileName);
-                log.info("완성본 이메일 발송 완료(Resend): to={}", toEmail);
+                resend.send(toEmail, subject, body, attach ? pdfBytes : null, attach ? fileName : null);
+                log.info("완성본 이메일 발송 완료(Resend, 첨부={}): to={}", attach, toEmail);
                 return true;
             }
             JavaMailSender sender = mailSenderProvider.getIfAvailable();
             if (sender == null) {
-                log.info("[발송 수단 미설정 → 생략] to={}, 제목='{}', 다운로드={}", toEmail, safeTitle, downloadUrl);
+                log.info("[발송 수단 미설정 → 생략] to={}, 제목='{}', 다운로드={}", toEmail, safeTitle, absUrl);
                 return false;
             }
             MimeMessage message = sender.createMimeMessage();
@@ -146,15 +159,26 @@ public class EmailNotifier {
             }
             helper.setSubject(subject);
             helper.setText(body, false);
-            if (pdfBytes != null && pdfBytes.length > 0) {
+            if (attach) {
                 helper.addAttachment(fileName, new ByteArrayResource(pdfBytes), "application/pdf");
             }
             sender.send(message);
-            log.info("완성본 이메일 발송 완료(SMTP): to={}", toEmail);
+            log.info("완성본 이메일 발송 완료(SMTP, 첨부={}): to={}", attach, toEmail);
             return true;
         } catch (Exception e) {
             log.warn("이메일 발송 실패: to={}, 원인={}", toEmail, e.getMessage());
             return false;
         }
+    }
+
+    /** 상대 경로(/api/...)를 이메일에 넣을 절대 URL로 바꾼다. */
+    private String absoluteUrl(String path) {
+        if (path == null || path.isBlank()) {
+            return "";
+        }
+        if (path.startsWith("http")) {
+            return path;
+        }
+        return (apiBaseUrl == null ? "" : apiBaseUrl.replaceAll("/+$", "")) + path;
     }
 }
