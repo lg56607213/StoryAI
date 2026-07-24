@@ -8,6 +8,7 @@ const COMPANY = {
   ceo: '박동천',
   bizNo: '766-86-02631',
   addr: '서울특별시 영등포구 여의대방로379, 605호',
+  tel: '02-6925-0517',
   email: 'jdgp@jdgp.co.kr',
   service: '투데이히어로(TodayHero)',
   site: 'todayhero.co.kr',
@@ -126,7 +127,8 @@ function Terms() {
 
       <div className="legal-company">
         <p>{COMPANY.name} | 대표 {COMPANY.ceo} | 사업자등록번호 {COMPANY.bizNo}</p>
-        <p>{COMPANY.addr} | 문의 {COMPANY.email}</p>
+        <p>{COMPANY.addr}</p>
+        <p>고객센터 {COMPANY.tel} | 문의 {COMPANY.email}</p>
       </div>
     </div>
   )
@@ -232,13 +234,14 @@ function Privacy() {
 
       <h4>10. 개인정보 보호책임자</h4>
       <p>
-        성명: {COMPANY.ceo} (대표) / 문의: {COMPANY.email}<br />
+        성명: {COMPANY.ceo} (대표) / 고객센터: {COMPANY.tel} / 문의: {COMPANY.email}<br />
         이용자는 서비스 이용 중 발생한 개인정보 관련 문의·불만을 위 연락처로 접수할 수 있습니다.
       </p>
 
       <div className="legal-company">
         <p>{COMPANY.name} | 대표 {COMPANY.ceo} | 사업자등록번호 {COMPANY.bizNo}</p>
-        <p>{COMPANY.addr} | 문의 {COMPANY.email}</p>
+        <p>{COMPANY.addr}</p>
+        <p>고객센터 {COMPANY.tel} | 문의 {COMPANY.email}</p>
       </div>
     </div>
   )

@@ -81,6 +81,17 @@ storyai:
   book:
     preview-pages: ${PREVIEW_PAGES:4}
     illustrate-limit: ${ILLUSTRATE_LIMIT:9999}
+  # 결제(PG) — 키움페이 통합결제 LINK(웹표준, V3.1 보안). CPID/연동키를 넣으면 실제 결제가 켜진다.
+  #   미설정 시 payment.enabled=false → 기존처럼 결제 없이 생성(내부 테스트/심사 전).
+  payment:
+    provider: ${PAYMENT_PROVIDER:none}   # none | kiwoom
+    kiwoom:
+      cpid: ${KIWOOM_CPID:}
+      cancel-auth-key: ${KIWOOM_CANCEL_AUTH_KEY:}   # 취소 API용 결제연동키(Authorization)
+      # 신용카드 결제수단: CARD(신용카드D) 또는 CARDK(신용카드K). 계약에 맞춰 지정.
+      card-method: ${KIWOOM_CARD_METHOD:CARD}
+      # 개발서버 apitest / 운영서버 api. 심사·테스트는 개발서버로.
+      api-base: ${KIWOOM_API_BASE:https://apitest.kiwoompay.co.kr}
   # 낭독 영상(mp4) 합성. ffmpeg는 배포 이미지(Dockerfile)에 설치돼 있어야 함.
   video:
     ffmpeg-path: ${FFMPEG_PATH:ffmpeg}

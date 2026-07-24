@@ -92,6 +92,8 @@ export interface JobResponse {
   generatedTitle: string | null
   synopsis: string | null
   outlineFeedback: string | null
+  confirmed: boolean
+  paid: boolean
   priceKrw: number | null
   resultUrl: string | null
   resultVideoUrl: string | null
@@ -146,6 +148,30 @@ export function createProject(req: CreateRequest): Promise<JobResponse> {
 
 export function getProject(id: number): Promise<JobResponse> {
   return fetch(apiUrl(`/api/video-jobs/${id}`), withCreds).then((r) => handle<JobResponse>(r))
+}
+
+// ---- 결제(키움페이) ----
+export interface PayStatus {
+  /** 결제 화면 노출 여부(provider=kiwoom) */
+  enabled: boolean
+  /** 실제 결제 가능(CPID 설정됨) */
+  ready: boolean
+}
+export interface PayPrepare {
+  action: string
+  fields: Record<string, string>
+  orderNo: string
+  amount: number
+}
+export function getPayStatus(): Promise<PayStatus> {
+  return fetch(apiUrl('/api/pay/status'), withCreds).then((r) => handle<PayStatus>(r))
+}
+/** 결제창 파라미터 발급(금액은 서버에서 확정). type: 'M'(모바일)|'P'(PC). */
+export function preparePayment(id: number, type: 'M' | 'P' = 'M'): Promise<PayPrepare> {
+  return fetch(apiUrl(`/api/pay/kiwoom/prepare/${id}?type=${type}`), {
+    method: 'POST',
+    ...withCreds,
+  }).then((r) => handle<PayPrepare>(r))
 }
 
 /** 줄거리 확인: 고객 수정 요청을 반영해 줄거리를 다시 생성(그림 전, 무료). */

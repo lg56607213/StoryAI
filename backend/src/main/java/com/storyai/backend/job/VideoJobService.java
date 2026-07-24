@@ -40,6 +40,7 @@ public class VideoJobService {
     private final WorkflowEngine workflowEngine;
     private final com.storyai.backend.ai.voice.ElevenLabsClient elevenLabs;
     private final com.storyai.backend.auth.AdminGuard adminGuard;
+    private final com.storyai.backend.payment.KiwoomPayClient kiwoomPayClient;
 
     /** 로그인 계정당 하루 미리보기(생성) 제한. 0이면 무제한. */
     @org.springframework.beans.factory.annotation.Value("${storyai.rate-limit.previews-per-user-per-day:3}")
@@ -134,9 +135,11 @@ public class VideoJobService {
         if (job.getBookPhase() == BookPhase.FULL) {
             throw new IllegalArgumentException("이미 전체 생성이 진행/완료된 주문입니다.");
         }
+        // 구매 정보 저장(생성 시작과 분리 — 결제가 켜져 있으면 결제 후에 생성한다).
         String purchaseType = blankToNull(request.purchaseType());
-        job.startFullGeneration(purchaseType, blankToNull(request.deliveryEmail()));
-        // 구매 티어(PDF / PDF_VIDEO / PDF_VIDEO_BOOK) → 실물·영상 포함 여부 세팅. ("BOOK"=구버전 실물)
+        job.setPurchaseType(purchaseType);
+        job.setDeliveryEmail(blankToNull(request.deliveryEmail()));
+        // 구매 티어(PDF / PDF_VIDEO / PDF_VIDEO_BOOK) → 실물·영상 포함 여부. ("BOOK"=구버전 실물)
         boolean physical = "PDF_VIDEO_BOOK".equals(purchaseType) || "BOOK".equals(purchaseType);
         boolean video = purchaseType != null && purchaseType.contains("VIDEO");
         job.setPhysicalBookRequested(physical);
@@ -154,8 +157,17 @@ public class VideoJobService {
             job.setRequesterEmail(identity);
             job.setRequesterProvider(LoginIdentity.providerOf(auth));
         }
+
+        if (kiwoomPayClient.uiEnabled()) {
+            // 결제 활성화: 여기서 생성하지 않고 결제 대기 상태로 둔다(미리보기 단계 유지).
+            // 결제 성공 통지가 오면 PaymentService가 전체 생성을 시작한다.
+            videoJobRepository.save(job);
+            return job;
+        }
+
+        // 결제 미설정(내부 테스트): 기존처럼 바로 전체 생성.
+        job.startFullGeneration(purchaseType, job.getDeliveryEmail());
         videoJobRepository.save(job);
-        // 커밋 이후 PAGE_ILLUSTRATION부터 재개된다.
         workflowEngine.start(job.getId());
         return job;
     }

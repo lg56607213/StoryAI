@@ -130,6 +130,10 @@ public class VideoJob {
     @Setter
     private LocalDateTime confirmedAt;
 
+    /** 결제 완료 시각(결제 연동 시). null이면 미결제. */
+    @Setter
+    private LocalDateTime paidAt;
+
     /** 스토리 방향 (선택) — 고객이 이야기 틀을 잡아주는 자유 입력 */
     @Column(columnDefinition = "TEXT")
     private String storyDirection;

@@ -34,3 +34,7 @@ Thumbs.db
 /*.pdf
 backend/storage/
 docs/poc*/
+
+# 키움페이 연동 참고자료(레포에 커밋하지 않음)
+KIWOOMPAY_LINK/
+KIWOOMPAY_LINK.zip

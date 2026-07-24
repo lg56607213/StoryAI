@@ -6,12 +6,14 @@ import AdminDashboard from './AdminDashboard'
 import MyPage from './MyPage'
 import OutlineReview from './OutlineReview'
 import ParentVoiceRecorder from './ParentVoiceRecorder'
+import PaymentCheckout from './PaymentCheckout'
 import {
   apiUrl,
   confirmProject,
   createProject,
   getMe,
   getOptions,
+  getPayStatus,
   getProject,
   loginUrl,
   logout,
@@ -22,6 +24,7 @@ import {
   type JobResponse,
   type Me,
   type Options,
+  type PayStatus,
   type ThemeOption,
 } from './api'
 
@@ -101,6 +104,9 @@ function App() {
   const [cropQueue, setCropQueue] = useState<CropQueue | null>(null)
 
   const [job, setJob] = useState<JobResponse | null>(null)
+  const [payStatus, setPayStatus] = useState<PayStatus | null>(null)
+  // 결제창에서 돌아온 결과(성공/실패/취소) 배너. null이면 표시 안 함.
+  const [payLanding, setPayLanding] = useState<'return' | 'fail' | 'cancel' | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const pollRef = useRef<number | null>(null)
@@ -180,6 +186,22 @@ function App() {
         setVideoDuration(o.videoDurationOptions[0] ?? null)
       })
       .catch((e) => setLoadError(String(e.message ?? e)))
+    getPayStatus().then(setPayStatus).catch(() => setPayStatus({ enabled: false, ready: false }))
+
+    // 결제창에서 돌아온 랜딩(/pay/return|fail|cancel?job=ID) 처리:
+    // 배너를 띄우고 해당 주문을 다시 불러온다(결제 완료면 전체 생성이 시작됨).
+    const path = window.location.pathname
+    const m = path.match(/^\/pay\/(return|fail|cancel)$/)
+    if (m) {
+      const kind = m[1] as 'return' | 'fail' | 'cancel'
+      const jobId = Number(new URLSearchParams(window.location.search).get('job'))
+      setPayLanding(kind)
+      if (jobId) {
+        getProject(jobId).then(setJob).catch(() => {})
+      }
+      // 주소창을 정리해 새로고침 시 배너가 반복되지 않게 한다.
+      window.history.replaceState(null, '', '/')
+    }
   }, [])
 
   // 생성 후 완료까지 폴링
@@ -516,6 +538,18 @@ function App() {
           <p>우리 아이가 주인공인 동화</p>
         </header>
         <div className="card result">
+          {payLanding && (
+            <div className={`pay-banner ${payLanding === 'return' ? 'ok' : 'warn'}`}>
+              {payLanding === 'return' ? (
+                <>💳 결제가 접수되었어요. 결제가 확인되면 전체 책 제작이 자동으로 시작됩니다.</>
+              ) : payLanding === 'fail' ? (
+                <>결제에 실패했어요. 다시 시도하거나 다른 카드로 결제해 주세요.</>
+              ) : (
+                <>결제가 취소되었어요. 준비되면 다시 결제하실 수 있어요.</>
+              )}
+              <button className="linklike" onClick={() => setPayLanding(null)}>닫기</button>
+            </div>
+          )}
           {!done && !failed && (() => {
             const order = job.outputType === 'BOOK' ? BOOK_STEPS_UI : VIDEO_STEPS_UI
             const curIdx = Math.max(0, order.findIndex((s) => s.code === job.currentStep))
@@ -565,7 +599,10 @@ function App() {
               }}
             />
           )}
-          {isPreview && (
+          {isPreview && job.confirmed && !job.paid && payStatus?.enabled && (
+            <PaymentCheckout job={job} ready={!!payStatus.ready} />
+          )}
+          {isPreview && !(job.confirmed && !job.paid && payStatus?.enabled) && (
             <>
               <div className="check">👀</div>
               <h2>{job.generatedTitle ?? '미리보기가 나왔어요!'}</h2>
@@ -651,9 +688,13 @@ function App() {
               )}
               {submitError && <p className="error-text center">{submitError}</p>}
               <button className="btn primary" disabled={confirming} onClick={onConfirm}>
-                {confirming ? '주문 확정 중…' : '이걸로 전체 만들기'}
+                {confirming ? '주문 확정 중…' : payStatus?.enabled ? '주문 확정하고 결제하기' : '이걸로 전체 만들기'}
               </button>
-              <p className="muted small">전체 생성은 몇 분 걸려요. 결제는 이후 단계에서 붙습니다.</p>
+              <p className="muted small">
+                {payStatus?.enabled
+                  ? '주문을 확정하면 결제 화면으로 넘어가요. 결제 완료 후 전체 책이 만들어집니다.'
+                  : '전체 생성은 몇 분 걸려요.'}
+              </p>
             </>
           )}
           {isFinal && (

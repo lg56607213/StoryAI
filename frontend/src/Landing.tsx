@@ -278,7 +278,7 @@ export default function Landing({
         <div className="lp-footer-biz muted small">
           <p>주식회사 제이디엔드 | 대표 박동천 | 사업자등록번호 766-86-02631</p>
           <p>사업장 소재지 : 서울특별시 영등포구 여의대방로379, 605호</p>
-          <p>문의 : jdgp@jdgp.co.kr</p>
+          <p>고객센터 : 02-6925-0517 | 문의 : jdgp@jdgp.co.kr</p>
         </div>
       </footer>
 

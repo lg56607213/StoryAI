@@ -1208,6 +1208,79 @@ textarea.area {
 .tier-label { color: #5a4a54; font-weight: 600; }
 .tier-price { color: #e1749b; font-weight: 700; white-space: nowrap; }
 
+/* 결제(키움페이) 화면 */
+.pay { text-align: center; }
+.pay-summary {
+  text-align: left;
+  border: 1.5px solid #eaddd0;
+  border-radius: 14px;
+  background: #fff;
+  padding: 14px 18px;
+  margin: 14px 0;
+}
+.pay-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 0;
+  font-size: 15px;
+  color: #5a4a54;
+}
+.pay-row + .pay-row { border-top: 1px dashed #f0e2d6; }
+.pay-row span { color: #8a7a84; }
+.pay-row b { color: #4a3a44; text-align: right; }
+.pay-row.total b { color: #e1749b; font-size: 18px; }
+.pay-policy {
+  text-align: left;
+  background: #fff9f3;
+  border: 1px solid #f0e2d6;
+  border-radius: 12px;
+  padding: 12px 16px 12px 14px;
+  margin: 6px 0 14px;
+  font-size: 13px;
+  color: #6a5a64;
+}
+.pay-policy b { color: #4a3a44; }
+.pay-policy ul { margin: 8px 0 0; padding-left: 18px; }
+.pay-policy li { margin: 4px 0; line-height: 1.5; }
+.pay-agree {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  font-size: 13px;
+  color: #6a5a64;
+  margin: 4px 0 14px;
+  line-height: 1.5;
+}
+.pay-agree input { margin-top: 3px; flex-shrink: 0; }
+.pay-btn { width: 100%; }
+.linklike {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #e1749b;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}
+/* 결제 결과 배너(성공/실패/취소) */
+.pay-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  margin-bottom: 14px;
+  text-align: left;
+  line-height: 1.5;
+}
+.pay-banner.ok { background: #eef8f0; border: 1px solid #bfe3c8; color: #2f7d43; }
+.pay-banner.warn { background: #fff4f0; border: 1px solid #f4c9b8; color: #b5502f; }
+.pay-banner .linklike { margin-left: auto; color: inherit; white-space: nowrap; }
+
 /* 부모 목소리 녹음 */
 .pv-cta { margin-top: 16px; padding-top: 16px; border-top: 1px dashed #f0e2d6; }
 .pv-cta .muted { margin-top: 8px; }
