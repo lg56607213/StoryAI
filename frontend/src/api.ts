@@ -291,6 +291,18 @@ export async function hideMyBook(id: number): Promise<void> {
   if (!res.ok) throw new Error(`삭제 실패 (HTTP ${res.status})`)
 }
 
+/** 저장소 사용량 현황(관리자). */
+export function getAdminStorage(): Promise<Record<string, unknown>> {
+  return fetch(apiUrl('/api/admin/storage'), withCreds).then((r) => handle<Record<string, unknown>>(r))
+}
+/** 저장소 정리 실행(관리자). dropUploads=true면 업로드 원본까지 삭제. */
+export function cleanupAdminStorage(dropUploads = true): Promise<Record<string, unknown>> {
+  return fetch(apiUrl(`/api/admin/storage/cleanup?dropUploads=${dropUploads}`), {
+    method: 'POST',
+    ...withCreds,
+  }).then((r) => handle<Record<string, unknown>>(r))
+}
+
 /** 멈춘 작업을 현재 단계부터 재시도(관리자). */
 export function retryAdminJob(id: number): Promise<{ id: number; resumedFrom: string; status: string }> {
   return fetch(apiUrl(`/api/admin/jobs/${id}/retry`), { method: 'POST', ...withCreds })

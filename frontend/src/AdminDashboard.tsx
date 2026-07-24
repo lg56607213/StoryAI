@@ -5,6 +5,8 @@ import {
   getAdminUsers,
   getAdminJobs,
   getAdminDiagnostics,
+  getAdminStorage,
+  cleanupAdminStorage,
   retryAdminJob,
   type AdminStats,
   type AdminPurchase,
@@ -23,6 +25,30 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
   const [loading, setLoading] = useState(true)
   const [diag, setDiag] = useState<Record<string, Record<string, unknown>> | null>(null)
   const [retrying, setRetrying] = useState<number | null>(null)
+  const [storage, setStorage] = useState<Record<string, unknown> | null>(null)
+  const [cleaning, setCleaning] = useState(false)
+
+  async function refreshStorage() {
+    try {
+      setStorage(await getAdminStorage())
+    } catch {
+      setStorage(null)
+    }
+  }
+
+  async function onCleanup() {
+    if (!confirm('저장소를 정리할까요?\n\n· 실패·미확정 미리보기의 생성 이미지 삭제\n· 업로드 원본 사진 삭제(개인정보 파기)\n· 구매 완성본(PDF·영상)과 이력은 그대로 보존됩니다.')) return
+    setCleaning(true)
+    try {
+      const r = await cleanupAdminStorage(true)
+      alert('정리 완료!\n' + Object.entries(r).map(([k, v]) => `${k}: ${v}`).join('\n'))
+      await refreshStorage()
+    } catch (e) {
+      alert('정리 실패: ' + String((e as Error).message ?? e))
+    } finally {
+      setCleaning(false)
+    }
+  }
 
   /** 멈춘 작업을 현재 단계부터 다시 진행시킨다(서버 재시작 등으로 끊긴 건 복구용). */
   async function onRetry(id: number) {
@@ -52,9 +78,10 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
       .finally(() => setLoading(false))
   }, [days])
 
-  // 연동 상태는 기간과 무관하므로 최초 1회만.
+  // 연동 상태·저장소는 기간과 무관하므로 최초 1회만.
   useEffect(() => {
     getAdminDiagnostics().then(setDiag).catch(() => setDiag(null))
+    refreshStorage()
   }, [])
 
   const won = (n: number | null | undefined) =>
@@ -142,6 +169,30 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
               </div>
               <p className="muted small">
                 꺼진 항목은 Railway 환경변수를 넣으면 켜져요. 값(키)은 표시하지 않습니다.
+              </p>
+            </section>
+          )}
+
+          {/* 저장소 사용량 + 정리 */}
+          {storage && (
+            <section className="card">
+              <h3 className="step">💾 저장소</h3>
+              <div className="diag-grid">
+                <div className="diag-group">
+                  {Object.entries(storage).map(([k, v]) => (
+                    <div className="diag-row" key={k}>
+                      <span className="diag-key">{k}</span>
+                      <span className="diag-val">{String(v)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button className="btn primary" disabled={cleaning} onClick={onCleanup}>
+                {cleaning ? '정리 중…' : '🧹 저장소 정리하기'}
+              </button>
+              <p className="muted small">
+                실패·미확정 미리보기의 생성 이미지와 업로드 원본 사진을 삭제해요.
+                <b>구매 완성본(PDF·영상)과 이력은 그대로 보존</b>됩니다. 매일 새벽 4시 자동 정리도 동작해요.
               </p>
             </section>
           )}

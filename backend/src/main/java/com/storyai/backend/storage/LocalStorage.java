@@ -139,6 +139,73 @@ public class LocalStorage {
         }
     }
 
+    /** 하위 디렉터리(uploads/gen/…)별 사용량(바이트). 비어있으면 0. */
+    public long dirSizeBytes(String sub) {
+        Path p = resolveKey(sub);
+        if (p == null || !Files.exists(p)) {
+            return 0;
+        }
+        try (var walk = Files.walk(p)) {
+            return walk.filter(Files::isRegularFile).mapToLong(f -> {
+                try {
+                    return Files.size(f);
+                } catch (IOException e) {
+                    return 0;
+                }
+            }).sum();
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
+    /** 특정 잡의 생성 이미지 폴더(gen/{jobId})를 통째로 삭제. 삭제한 바이트 반환. */
+    public long deleteGenerated(Long jobId) {
+        return deleteTree(resolveKey("gen/" + jobId));
+    }
+
+    /** 업로드 원본 사진 전체 삭제(생성이 끝나면 불필요 + 개인정보 파기). 삭제한 바이트 반환. */
+    public long deleteAllUploads() {
+        return deleteTree(resolveKey("uploads"));
+    }
+
+    /** 업로드 URL 하나를 파일에서 삭제. */
+    public void deleteByUrl(String url) {
+        if (url == null || !url.startsWith(URL_PREFIX)) {
+            return;
+        }
+        Path p = resolveKey(url.substring(URL_PREFIX.length()));
+        if (p != null) {
+            try {
+                Files.deleteIfExists(p);
+            } catch (IOException ignore) {
+                // best-effort
+            }
+        }
+    }
+
+    /** 트리 삭제(루트 밖이면 안전하게 무시). 삭제한 총 바이트 반환. */
+    private long deleteTree(Path dir) {
+        if (dir == null || !Files.exists(dir) || !dir.startsWith(root)) {
+            return 0;
+        }
+        long[] freed = {0};
+        try (var walk = Files.walk(dir)) {
+            walk.sorted(java.util.Comparator.reverseOrder()).forEach(p -> {
+                try {
+                    if (Files.isRegularFile(p)) {
+                        freed[0] += Files.size(p);
+                    }
+                    Files.deleteIfExists(p);
+                } catch (IOException ignore) {
+                    // best-effort
+                }
+            });
+        } catch (IOException ignore) {
+            // best-effort
+        }
+        return freed[0];
+    }
+
     /** 실제로 파일을 쓸 수 있는지(권한·용량 포함) 확인한다. */
     public boolean writable() {
         try {

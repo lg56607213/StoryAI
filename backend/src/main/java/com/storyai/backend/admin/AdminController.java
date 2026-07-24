@@ -48,6 +48,26 @@ public class AdminController {
     private final com.storyai.backend.ai.image.ImageGenerator imageGenerator;
     private final com.storyai.backend.workflow.WorkflowEngine workflowEngine;
     private final com.storyai.backend.storage.LocalStorage localStorage;
+    private final com.storyai.backend.storage.StorageCleanupService storageCleanupService;
+
+    /** 저장소 사용량 현황(관리자). */
+    @GetMapping("/storage")
+    public Map<String, Object> storage(Authentication auth) {
+        adminGuard.require(auth);
+        return storageCleanupService.usage();
+    }
+
+    /**
+     * 저장소 정리 실행(관리자). dropUploads=true면 업로드 원본 사진도 전량 삭제(개인정보 파기 겸함).
+     * DB 이력·구매 완성본은 보존한다.
+     */
+    @org.springframework.web.bind.annotation.PostMapping("/storage/cleanup")
+    public Map<String, Object> cleanup(
+            @RequestParam(name = "dropUploads", defaultValue = "true") boolean dropUploads,
+            Authentication auth) {
+        adminGuard.require(auth);
+        return storageCleanupService.cleanup(dropUploads);
+    }
 
     /**
      * 멈춘 작업 재시도 — 현재 단계부터 다시 진행시킨다.
