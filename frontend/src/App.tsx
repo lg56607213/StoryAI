@@ -7,6 +7,7 @@ import MyPage from './MyPage'
 import OutlineReview from './OutlineReview'
 import ParentVoiceRecorder from './ParentVoiceRecorder'
 import PaymentCheckout from './PaymentCheckout'
+import CompletionScreen from './CompletionScreen'
 import {
   apiUrl,
   confirmProject,
@@ -104,6 +105,8 @@ function App() {
   const [cropQueue, setCropQueue] = useState<CropQueue | null>(null)
 
   const [job, setJob] = useState<JobResponse | null>(null)
+  // 확정/결제 이후 단계: 'voice'(영상 주문 목소리 등록) → 'done'(완료 안내). null이면 일반 화면.
+  const [postStage, setPostStage] = useState<'voice' | 'done' | null>(null)
   const [payStatus, setPayStatus] = useState<PayStatus | null>(null)
   // 결제창에서 돌아온 결과(성공/실패/취소) 배너. null이면 표시 안 함.
   const [payLanding, setPayLanding] = useState<'return' | 'fail' | 'cancel' | null>(null)
@@ -144,16 +147,34 @@ function App() {
 
   function startCreate() {
     setJob(null)
+    setPostStage(null)
     setView('create')
   }
   function goHome() {
     setJob(null)
+    setPostStage(null)
     setView('home')
+  }
+  /**
+   * 확정/결제 완료 후 흐름으로 진입한다.
+   * 영상 포함 주문이면 목소리 등록(voice)부터, 아니면 바로 완료 안내(done).
+   * 생성은 이미 백그라운드로 시작됐으므로 사용자는 기다릴 필요가 없다.
+   */
+  function enterPostFlow(j: JobResponse) {
+    setJob(j)
+    setPostStage(j.videoIncluded ? 'voice' : 'done')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  function goMyPage() {
+    setJob(null)
+    setPostStage(null)
+    setView('mypage')
   }
   /** 마이페이지에서 고른 동화책을 열어 결과 화면으로 이동한다. */
   async function openBook(id: number) {
     try {
       setJob(await getProject(id))
+      setPostStage(null)
       setView('create')
     } catch (e) {
       alert('동화책을 불러오지 못했어요: ' + String((e as Error).message ?? e))
@@ -197,7 +218,16 @@ function App() {
       const jobId = Number(new URLSearchParams(window.location.search).get('job'))
       setPayLanding(kind)
       if (jobId) {
-        getProject(jobId).then(setJob).catch(() => {})
+        getProject(jobId)
+          .then((j) => {
+            if (kind === 'return') {
+              // 결제 성공: 통지로 전체 생성이 시작됨 → 목소리 등록/완료 안내 흐름으로.
+              enterPostFlow(j)
+            } else {
+              setJob(j)
+            }
+          })
+          .catch(() => {})
       }
       // 주소창을 정리해 새로고침 시 배너가 반복되지 않게 한다.
       window.history.replaceState(null, '', '/')
@@ -435,9 +465,14 @@ function App() {
             }
           : {}),
       })
-      setJob(updated) // status RUNNING → 폴링이 다시 시작되어 전체 생성 진행
-      // 확정되면 진행 화면으로 바뀌므로 맨 위로 올려 전환이 분명히 보이게 한다.
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      if (payStatus?.enabled) {
+        // 결제 활성화: 확정만 되고 생성은 아직. 결제 화면(PaymentCheckout)으로 전환.
+        setJob(updated)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      } else {
+        // 결제 미사용: 확정 즉시 생성 시작 → 목소리 등록/완료 안내 흐름으로.
+        enterPostFlow(updated)
+      }
     } catch (e) {
       setSubmitError(String((e as Error).message ?? e))
     } finally {
@@ -522,6 +557,45 @@ function App() {
     )
   }
 
+  // 확정/결제 이후 흐름: 목소리 등록(영상 주문) → 완료 안내. 생성은 백그라운드로 진행 중.
+  if (job && postStage === 'done') {
+    return <CompletionScreen job={job} onHome={goHome} onMyPage={goMyPage} />
+  }
+  if (job && postStage === 'voice') {
+    return (
+      <main className="app">
+        <header className="hero">
+          <h1>TodayHero</h1>
+          <p>우리 아이가 주인공인 동화</p>
+        </header>
+        <div className="card result">
+          <div className="check">🎙️</div>
+          <h2>엄마·아빠 목소리로 읽어드릴까요?</h2>
+          <p className="muted">
+            영상의 <b>이야기 서술</b>을 부모님 목소리로 들려드려요. (등장인물 대사는 캐릭터 목소리)
+            <br />
+            아래 글을 30초만 읽어 녹음하면 돼요. 원치 않으시면 건너뛰어도 좋아요.
+          </p>
+          <ParentVoiceRecorder
+            jobId={job.id}
+            hasParentVoice={job.hasParentVoice}
+            onRegistered={(j) => setJob(j)}
+          />
+          <div className="done-actions">
+            <button className="btn primary" onClick={() => setPostStage('done')}>
+              {job.hasParentVoice ? '다음' : '목소리 등록하고 다음'}
+            </button>
+            {!job.hasParentVoice && (
+              <button className="btn ghost" onClick={() => setPostStage('done')}>
+                건너뛰기
+              </button>
+            )}
+          </div>
+        </div>
+      </main>
+    )
+  }
+
   // 생성 진행/완료 화면
   if (job) {
     const done = job.status === 'COMPLETED'
@@ -600,7 +674,7 @@ function App() {
             />
           )}
           {isPreview && job.confirmed && !job.paid && payStatus?.enabled && (
-            <PaymentCheckout job={job} ready={!!payStatus.ready} />
+            <PaymentCheckout job={job} ready={!!payStatus.ready} onProceed={enterPostFlow} />
           )}
           {isPreview && !(job.confirmed && !job.paid && payStatus?.enabled) && (
             <>

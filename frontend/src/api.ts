@@ -173,6 +173,16 @@ export function preparePayment(id: number, type: 'M' | 'P' = 'M'): Promise<PayPr
     ...withCreds,
   }).then((r) => handle<PayPrepare>(r))
 }
+/**
+ * 결제 없이 전체 생성 시작(출시 전 내부 테스트/심사용). 실결제(CPID 설정) 상태에서는 서버가 거부한다.
+ * 갱신된 주문(전체 생성 시작 상태)을 반환한다.
+ */
+export function proceedUnpaid(id: number): Promise<JobResponse> {
+  return fetch(apiUrl(`/api/pay/kiwoom/proceed-unpaid/${id}`), {
+    method: 'POST',
+    ...withCreds,
+  }).then((r) => handle<JobResponse>(r))
+}
 
 /** 줄거리 확인: 고객 수정 요청을 반영해 줄거리를 다시 생성(그림 전, 무료). */
 export function reviseOutline(id: number, feedback: string): Promise<JobResponse> {

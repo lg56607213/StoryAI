@@ -80,8 +80,8 @@ public class NarrationVideoService {
         }
     }
 
-    /** 비동기 트리거: 상태를 갱신하며 백그라운드로 영상을 만든다. */
-    @Async("workflowTaskExecutor")
+    /** 비동기 트리거: 상태를 갱신하며 백그라운드로 영상을 만든다(미디어 전용 풀). */
+    @Async("mediaTaskExecutor")
     public void generateAsync(Long jobId) {
         VideoJob job = videoJobRepository.findById(jobId).orElse(null);
         if (job == null) {

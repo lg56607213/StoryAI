@@ -88,6 +88,13 @@ public class WorkflowStepExecutor {
         } else {
             job.markCompleted();
             videoJobRepository.save(job);
+            // 전체(FULL) 완성 + 영상 포함 주문이면 낭독 영상을 자동 생성하도록 커밋 후 트리거한다.
+            boolean fullVideoBook = job.getOutputType() == com.storyai.backend.domain.videojob.OutputType.BOOK
+                    && job.getBookPhase() == com.storyai.backend.domain.videojob.BookPhase.FULL
+                    && job.isVideoIncluded();
+            if (fullVideoBook) {
+                eventPublisher.publishEvent(new JobFullyCompletedEvent(jobId));
+            }
         }
     }
 }

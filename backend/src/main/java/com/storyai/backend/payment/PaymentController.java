@@ -67,6 +67,15 @@ public class PaymentController {
         return ResponseEntity.ok(body);
     }
 
+    /**
+     * 결제 없이 전체 생성 시작(출시 전 내부 테스트/심사용). 실결제(CPID 설정) 상태에서는 거부된다.
+     * 프론트가 이후 목소리 등록·완료 안내 화면으로 넘어갈 수 있도록 갱신된 주문을 반환한다.
+     */
+    @PostMapping("/kiwoom/proceed-unpaid/{id}")
+    public com.storyai.backend.job.dto.VideoJobResponse proceedUnpaid(@PathVariable Long id) {
+        return com.storyai.backend.job.dto.VideoJobResponse.from(paymentService.proceedWithoutPayment(id));
+    }
+
     /** 승인 취소. amount 미지정 시 전액 취소. */
     @PostMapping("/kiwoom/cancel/{id}")
     public Map<String, Object> cancel(@PathVariable Long id, @RequestBody(required = false) CancelRequest req) {

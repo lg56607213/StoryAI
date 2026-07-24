@@ -1,13 +1,23 @@
 import { useState } from 'react'
-import { preparePayment } from './api'
+import { preparePayment, proceedUnpaid } from './api'
 import type { JobResponse } from './api'
 import LegalModal, { type LegalDoc } from './Legal'
 
 /**
  * 결제 화면. 주문 요약 + 약관·환불 규정 동의 + 결제하기.
  * '결제하기'는 서버에서 결제창 파라미터(해시)를 받아 키움페이 결제창(linkEnc)으로 폼 전송한다.
+ * CPID 미설정(ready=false)일 때는 실제 결제창을 열 수 없으므로, 출시 전 테스트/심사용으로
+ * '결제 없이 진행' 경로를 제공한다(onProceed로 다음 단계 전달).
  */
-export default function PaymentCheckout({ job, ready }: { job: JobResponse; ready: boolean }) {
+export default function PaymentCheckout({
+  job,
+  ready,
+  onProceed,
+}: {
+  job: JobResponse
+  ready: boolean
+  onProceed: (job: JobResponse) => void
+}) {
   const [agree, setAgree] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -42,6 +52,23 @@ export default function PaymentCheckout({ job, ready }: { job: JobResponse; read
       })
       document.body.appendChild(form)
       form.submit()
+    } catch (e) {
+      setError(String((e as Error).message ?? e))
+      setBusy(false)
+    }
+  }
+
+  // CPID 미설정 시: 결제 없이 전체 생성 시작(출시 전 테스트/심사용).
+  async function onProceedUnpaid() {
+    if (!agree) {
+      setError('진행을 위해 구매 조건·환불 규정에 동의해 주세요.')
+      return
+    }
+    setError(null)
+    setBusy(true)
+    try {
+      const updated = await proceedUnpaid(job.id)
+      onProceed(updated)
     } catch (e) {
       setError(String((e as Error).message ?? e))
       setBusy(false)
@@ -97,13 +124,22 @@ export default function PaymentCheckout({ job, ready }: { job: JobResponse; read
 
       {error && <p className="error-text center">{error}</p>}
 
-      <button className="btn primary pay-btn" onClick={onPay} disabled={busy || !ready}>
-        {busy ? '결제창 여는 중…' : `${amount.toLocaleString()}원 결제하기`}
-      </button>
-      {!ready && (
-        <p className="muted small center">
-          결제 시스템 준비 중입니다. (PG 심사 완료 후 결제가 활성화됩니다)
-        </p>
+      {ready ? (
+        <button className="btn primary pay-btn" onClick={onPay} disabled={busy}>
+          {busy ? '결제창 여는 중…' : `${amount.toLocaleString()}원 결제하기`}
+        </button>
+      ) : (
+        <>
+          <button className="btn primary pay-btn" disabled title="PG 심사/설정 완료 후 활성화됩니다">
+            {`${amount.toLocaleString()}원 결제하기`}
+          </button>
+          <p className="muted small center">
+            결제 시스템 준비 중입니다. (PG 심사 완료 후 카드 결제가 활성화됩니다)
+          </p>
+          <button className="linklike pay-testproceed" onClick={onProceedUnpaid} disabled={busy}>
+            {busy ? '진행 중…' : '결제 없이 진행 (개발 테스트용)'}
+          </button>
+        </>
       )}
 
       {legal && <LegalModal doc={legal} onClose={() => setLegal(null)} />}

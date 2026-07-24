@@ -159,6 +159,29 @@ public class PaymentService {
         return true;
     }
 
+    /**
+     * 결제 없이 전체 생성을 시작한다(출시 전 내부 테스트/심사용).
+     * 실결제가 켜져 있으면(CPID 설정=ready) 반드시 결제를 거쳐야 하므로 거부한다.
+     */
+    @Transactional
+    public VideoJob proceedWithoutPayment(Long jobId) {
+        if (kiwoom.isConfigured()) {
+            throw new IllegalStateException("실결제가 활성화된 상태에서는 결제 없이 진행할 수 없습니다.");
+        }
+        VideoJob job = videoJobRepository.findById(jobId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다: " + jobId));
+        if (job.getOutputType() != OutputType.BOOK) {
+            throw new IllegalArgumentException("책 주문만 처리할 수 있습니다.");
+        }
+        if (job.getBookPhase() != BookPhase.FULL) {
+            job.startFullGeneration(job.getPurchaseType(), job.getDeliveryEmail());
+            videoJobRepository.save(job);
+            workflowEngine.start(job.getId());
+        }
+        job.getStoryCharacters().size(); // 응답 매핑 전 lazy 컬렉션 초기화
+        return job;
+    }
+
     /** 승인 취소(전체 또는 부분). */
     @Transactional
     public void cancel(Long jobId, Integer amount, String reason) {
