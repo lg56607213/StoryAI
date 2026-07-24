@@ -81,10 +81,11 @@ storyai:
   book:
     preview-pages: ${PREVIEW_PAGES:4}
     illustrate-limit: ${ILLUSTRATE_LIMIT:9999}
-  # 결제(PG) — 키움페이 통합결제 LINK(웹표준, V3.1 보안). CPID/연동키를 넣으면 실제 결제가 켜진다.
-  #   미설정 시 payment.enabled=false → 기존처럼 결제 없이 생성(내부 테스트/심사 전).
+  # 결제(PG) — 키움페이 통합결제 LINK(웹표준, V3.1 보안).
+  #   provider=kiwoom: 결제화면 노출(카드사 심사용). CPID까지 넣으면 실제 결제창/카드사 인증창 호출.
+  #   provider=none: 결제 없이 바로 생성(내부 E2E 테스트용). Railway에서 PAYMENT_PROVIDER=none으로 전환 가능.
   payment:
-    provider: ${PAYMENT_PROVIDER:none}   # none | kiwoom
+    provider: ${PAYMENT_PROVIDER:kiwoom}   # none | kiwoom (기본 kiwoom=심사용 결제화면 노출)
     kiwoom:
       cpid: ${KIWOOM_CPID:}
       cancel-auth-key: ${KIWOOM_CANCEL_AUTH_KEY:}   # 취소 API용 결제연동키(Authorization)
