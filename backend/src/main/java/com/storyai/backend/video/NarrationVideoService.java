@@ -100,11 +100,17 @@ public class NarrationVideoService {
             boolean parentVoice = job.getParentVoiceId() != null && !job.getParentVoiceId().isBlank();
             emailNotifier.sendVideoReady(job.getDeliveryEmail(), job.getGeneratedTitle(),
                     publicUrl(url), parentVoice);
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            // Throwable까지: 메모리 부족(OutOfMemoryError) 등으로 죽어도 "만드는 중"에 갇히지 않고
+            // 실패로 표시한다(사용자가 완성화면에서 다시 시도 가능).
             log.error("낭독 영상 생성 실패 job={}: {}", jobId, e.getMessage(), e);
-            VideoJob fresh = videoJobRepository.findById(jobId).orElse(job);
-            fresh.setNarrationVideoStatus("failed");
-            videoJobRepository.save(fresh);
+            try {
+                VideoJob fresh = videoJobRepository.findById(jobId).orElse(job);
+                fresh.setNarrationVideoStatus("failed");
+                videoJobRepository.save(fresh);
+            } catch (Throwable ignore) {
+                // 저장까지 실패하면 로그만 남긴다.
+            }
         }
     }
 
