@@ -59,6 +59,10 @@ public class NarrationVideoService {
     @Value("${storyai.api-base-url:https://api.todayhero.co.kr}")
     private String apiBaseUrl;
 
+    /** 재녹음 안내 링크용 프론트 주소(로그인 → 마이페이지에서 책 열어 재녹음). */
+    @Value("${storyai.frontend-url:https://todayhero.co.kr}")
+    private String frontendUrl;
+
     @Value("${storyai.video.ffmpeg-path:ffmpeg}")
     private String ffmpeg;
     @Value("${storyai.video.width:1280}")
@@ -90,6 +94,19 @@ public class NarrationVideoService {
         try {
             job.setNarrationVideoStatus("generating");
             videoJobRepository.save(job);
+
+            // 부모 목소리를 쓸 예정이면, 실제로 그 목소리가 사용 가능한지 먼저 확인한다.
+            // 쓸 수 없으면(녹음 처리 실패 등) 음성 없는 영상을 보내지 않고 "다시 녹음" 안내를 보낸다.
+            String pv = job.getParentVoiceId();
+            boolean parentIntended = pv != null && !pv.isBlank() && elevenLabs.isConfigured();
+            if (parentIntended && !parentVoiceUsable(pv)) {
+                job.setNarrationVideoStatus("voice_failed");
+                videoJobRepository.save(job);
+                emailNotifier.sendVoiceRerecord(job.getDeliveryEmail(), job.getGeneratedTitle(), rerecordUrl());
+                log.warn("부모 목소리 사용 불가 → 재녹음 안내(음성 없는 영상 미발송) job={}", jobId);
+                return;
+            }
+
             String url = generate(job);
             job.setNarrationVideoUrl(url);
             job.setNarrationVideoStatus("ready");
@@ -112,6 +129,22 @@ public class NarrationVideoService {
                 // 저장까지 실패하면 로그만 남긴다.
             }
         }
+    }
+
+    /** 부모 목소리가 실제로 사용 가능한지 짧은 문장으로 시험 합성해 확인한다. */
+    private boolean parentVoiceUsable(String voiceId) {
+        try {
+            byte[] test = elevenLabs.textToSpeechPcm("안녕하세요.", voiceId);
+            return test != null && test.length > 0;
+        } catch (Exception e) {
+            log.warn("부모 목소리 확인 실패 voice={}: {}", voiceId, e.getMessage());
+            return false;
+        }
+    }
+
+    /** 재녹음 안내 링크(프론트 주소). */
+    private String rerecordUrl() {
+        return frontendUrl == null ? "" : frontendUrl.replaceAll("/+$", "");
     }
 
     /** 동기 생성: 최종 mp4를 저장하고 그 URL(/api/files/...)을 반환한다. */

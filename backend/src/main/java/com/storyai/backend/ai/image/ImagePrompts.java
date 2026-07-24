@@ -124,6 +124,8 @@ public final class ImagePrompts {
                 + "or invent outfits between pages." + ANATOMY + " "
                 + "Full scene with background, warm and tender mood. "
                 + "Fill the entire wide frame edge-to-edge with the scene (full background, no empty margins). "
-                + "IMPORTANT: no text, no words, no letters, no watermark in the image.";
+                + "IMPORTANT: pure illustration only — absolutely NO speech bubbles, NO speech balloons, NO dialogue "
+                + "bubbles, NO comic panels or borders, NO captions, NO text, words, letters or watermark anywhere "
+                + "in the image. Show emotion and dialogue only through faces, body language and gestures.";
     }
 }

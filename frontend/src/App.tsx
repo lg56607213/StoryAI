@@ -844,6 +844,16 @@ function App() {
                     </>
                   ) : job.narrationVideoStatus === 'generating' ? (
                     <p className="muted">영상을 만들고 있어요… 목소리를 나눠 녹음하는 중이라 몇 분 걸려요. ⏳</p>
+                  ) : job.narrationVideoStatus === 'voice_failed' ? (
+                    <div className="voice-fail-box">
+                      <p className="email-status fail">
+                        🎙️ 녹음하신 <b>부모님 목소리를 처리하지 못했어요.</b> 목소리 없이 영상을 보내드리지
+                        않고 기다리고 있어요.
+                      </p>
+                      <p className="muted small">
+                        아래에서 <b>다시 녹음</b>해 주시면, 그 목소리로 영상을 완성해 바로 보내드립니다.
+                      </p>
+                    </div>
                   ) : (
                     <>
                       <p className="muted">

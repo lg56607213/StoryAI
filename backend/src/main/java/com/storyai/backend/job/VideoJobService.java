@@ -41,6 +41,7 @@ public class VideoJobService {
     private final com.storyai.backend.ai.voice.ElevenLabsClient elevenLabs;
     private final com.storyai.backend.auth.AdminGuard adminGuard;
     private final com.storyai.backend.payment.KiwoomPayClient kiwoomPayClient;
+    private final com.storyai.backend.video.NarrationVideoService narrationVideoService;
 
     /** 로그인 계정당 하루 미리보기(생성) 제한. 0이면 무제한. */
     @org.springframework.beans.factory.annotation.Value("${storyai.rate-limit.previews-per-user-per-day:3}")
@@ -198,6 +199,15 @@ public class VideoJobService {
         job.setParentVoiceId(voiceId);
         job.setParentVoiceConsent(true);
         videoJobRepository.save(job);
+        // 이미 완성된 영상 주문인데 (부모목소리 실패 등으로) 아직 영상이 없으면, 새 목소리로 영상 재생성.
+        boolean awaitingVideo = job.getOutputType() == OutputType.BOOK
+                && job.isVideoIncluded()
+                && job.getStatus() == JobStatus.COMPLETED
+                && job.getBookPhase() == BookPhase.FULL
+                && (job.getNarrationVideoUrl() == null || job.getNarrationVideoUrl().isBlank());
+        if (awaitingVideo) {
+            narrationVideoService.generateAsync(jobId);
+        }
         job.getStoryCharacters().size(); // 응답 매핑(VideoJobResponse.from) 전 lazy 컬렉션 초기화
         return job;
     }

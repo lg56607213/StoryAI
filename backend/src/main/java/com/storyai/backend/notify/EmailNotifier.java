@@ -85,6 +85,34 @@ public class EmailNotifier {
         }
     }
 
+    /**
+     * 부모 목소리로 영상을 만들려 했으나 목소리 처리에 실패한 경우 — 음성 없는 영상을 보내지 않고
+     * "다시 녹음해 달라"고 안내한다. 재녹음하면 그 목소리로 영상을 완성해 보낸다.
+     */
+    public boolean sendVoiceRerecord(String toEmail, String title, String rerecordUrl) {
+        String safeTitle = (title == null || title.isBlank()) ? "동화책" : title;
+        if (toEmail == null || toEmail.isBlank()) {
+            log.info("부모목소리 재녹음 안내(제목={}), 수신 이메일 없음 → 발송 생략", safeTitle);
+            return false;
+        }
+        String subject = "[투데이히어로] '" + safeTitle + "' 영상 — 부모님 목소리 재녹음이 필요해요 🎙️";
+        String body = safeTitle + " 읽어주는 영상을 부모님 목소리로 만들어 드리려 했는데,\n"
+                + "녹음하신 목소리를 처리하는 데 문제가 생겼어요. 😢\n\n"
+                + "소중한 목소리로 완성해 드리기 위해, 번거로우시겠지만 다시 한 번 녹음을 부탁드려요.\n"
+                + "다시 녹음해 주시면 그 목소리로 영상을 완성해 바로 보내드립니다.\n\n"
+                + "▶ 다시 녹음하러 가기\n" + (rerecordUrl == null ? "" : rerecordUrl) + "\n\n"
+                + "불편을 드려 죄송합니다. 감사합니다.\n\n"
+                + "— 투데이히어로 (todayhero.co.kr)";
+        try {
+            sendSimple(toEmail, subject, body);
+            log.info("부모목소리 재녹음 안내 메일 발송: to={}", toEmail);
+            return true;
+        } catch (Exception e) {
+            log.warn("재녹음 안내 메일 실패: to={}, 원인={}", toEmail, e.getMessage());
+            return false;
+        }
+    }
+
     /** 완성본 PDF를 이메일로 발송한다. 성공하면 true. 실패해도 예외 없이 false 반환(작업은 성공 처리). */
     public boolean sendBookReady(String toEmail, String title, byte[] pdfBytes, String downloadUrl) {
         String safeTitle = (title == null || title.isBlank()) ? "동화책" : title;

@@ -22,7 +22,9 @@ import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.GradientPaint;
 import java.awt.Graphics2D;
+import java.awt.Paint;
 import java.awt.RenderingHints;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
@@ -174,30 +176,66 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         Font body = gaegu.deriveFont(60f);
         Font pn = jua.deriveFont(30f);
 
-        // 그림을 페이지 전체에 꽉 채우고(풀블리드), 글은 반투명 밴드에 얹는다 → 빈 여백 제거.
+        // 그림을 페이지 전체에 꽉 채우고(풀블리드), 글은 박스 없이 그림 위에 자연스럽게 얹는다.
         drawImageFullBleed(g, img, W, H);
         if (!text.isBlank()) {
-            int bandM = 90, bandH = 340;
-            // 페이지마다 밴드를 아래/위 번갈아 배치해 단조롭지 않게.
+            // 페이지마다 아래/위 번갈아 배치해 단조롭지 않게(틀에 갇힌 느낌 제거).
             boolean bottom = (i % 2 == 0);
-            int by = bottom ? H - bandH - 80 : 80;
-            drawCaptionBand(g, bandM, by, W - 2 * bandM, bandH, text, page.getPageNumber(), body, pn);
+            drawStoryText(g, text, page.getPageNumber(), bottom, body, pn);
         }
         g.dispose();
         return bmp;
     }
 
-    /** 반투명 흰 밴드에 이야기 문구를 얹는다(그림 위 캡션). 빈 패널 없이 페이지가 꽉 찬다. */
-    private void drawCaptionBand(Graphics2D g, int x, int y, int w, int h, String text, int pageNum,
-                                 Font body, Font pn) {
-        g.setColor(new Color(0, 0, 0, 26));
-        g.fill(new RoundRectangle2D.Float(x + 6, y + 8, w, h, 64, 64));
-        g.setColor(new Color(255, 252, 247, 233));
-        g.fill(new RoundRectangle2D.Float(x, y, w, h, 64, 64));
-        int pad = 72;
-        drawParagraph(g, text, body, INK, x + pad, y + pad, w - 2 * pad, h - 2 * pad - 40);
+    /**
+     * 이야기 문구를 "박스(말풍선/밴드) 없이" 그림 위에 자연스럽게 얹는다.
+     * 어떤 배경에서도 잘 읽히도록 은은한 그라데이션 스크림 + 흰 글씨 + 부드러운 그림자를 쓴다.
+     */
+    private void drawStoryText(Graphics2D g, String text, int pageNum, boolean bottom, Font body, Font pn) {
+        int margin = 130;
+        int maxW = W - 2 * margin;
+        g.setFont(body);
+        FontMetrics fm = g.getFontMetrics();
+        List<String> lines = wrap(fm, text, maxW);
+        int lineH = (int) (fm.getHeight() * 1.22);
+        int totalH = lines.size() * lineH;
+        int padV = 70;
+        int areaH = totalH + padV * 2;
+        int areaY = bottom ? H - areaH : 0;
+
+        // 부드러운 그라데이션 스크림(딱딱한 박스가 아니라 자연스러운 음영). 글 영역보다 넉넉히.
+        int scrimH = areaH + 130;
+        int scrimY = bottom ? H - scrimH : 0;
+        Paint oldPaint = g.getPaint();
+        Color clear = new Color(18, 14, 20, 0);
+        Color dark = new Color(18, 14, 20, 155);
+        g.setPaint(bottom
+                ? new GradientPaint(0, scrimY, clear, 0, scrimY + scrimH, dark)
+                : new GradientPaint(0, scrimY, dark, 0, scrimY + scrimH, clear));
+        g.fillRect(0, scrimY, W, scrimH);
+        g.setPaint(oldPaint);
+
+        // 흰 글씨 + 어두운 그림자(검은/흰 대비로 또렷하게).
+        int startY = areaY + padV + fm.getAscent();
+        for (int k = 0; k < lines.size(); k++) {
+            String line = lines.get(k);
+            int lw = fm.stringWidth(line);
+            int lx = (W - lw) / 2;
+            int ly = startY + k * lineH;
+            g.setColor(new Color(0, 0, 0, 140));
+            g.drawString(line, lx + 3, ly + 4); // 그림자
+            g.setColor(Color.WHITE);
+            g.drawString(line, lx, ly);
+        }
+
+        // 페이지 번호(작게, 흐릿한 흰색).
         if (pageNum > 0) {
-            drawParagraph(g, String.valueOf(pageNum), pn, ACCENT, x, y + h - 60, w, 44);
+            g.setFont(pn);
+            g.setColor(new Color(255, 255, 255, 200));
+            FontMetrics pfm = g.getFontMetrics();
+            String p = String.valueOf(pageNum);
+            int py = bottom ? H - 34 : scrimY + scrimH + 44;
+            g.drawString(p, (W - pfm.stringWidth(p)) / 2, py);
         }
     }
 
