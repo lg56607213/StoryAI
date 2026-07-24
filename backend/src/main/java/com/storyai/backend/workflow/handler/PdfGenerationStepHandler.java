@@ -64,6 +64,13 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
     @org.springframework.beans.factory.annotation.Value("${storyai.book.preview-pages:4}")
     private int previewPages;
 
+    /** 실물책(인쇄) 주문일 때 페이지를 이 배수만큼 고해상도로 렌더링한다(글자·레이아웃이 또렷해짐). */
+    @org.springframework.beans.factory.annotation.Value("${storyai.book.hires-scale:2}")
+    private int hiresScale;
+
+    /** 현재 페이지 렌더 배수(스레드별). 실물책이면 hiresScale, 아니면 1. 동시 생성 안전을 위해 ThreadLocal. */
+    private final ThreadLocal<Integer> pageScale = ThreadLocal.withInitial(() -> 1);
+
     @Override
     public WorkflowStep getStep() {
         return WorkflowStep.PDF_GENERATION;
@@ -71,6 +78,9 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
 
     @Override
     public void execute(VideoJob job) {
+        // 실물책 주문이면 고해상도로 렌더(인쇄용). PDF만 주문·미리보기는 기본 화질.
+        pageScale.set(job.isPhysicalBookRequested() ? Math.max(1, hiresScale) : 1);
+        try {
         List<BookPage> pages = bookPageRepository.findByVideoJobIdOrderByPageNumberAsc(job.getId());
         // 미리보기 단계면 앞쪽 previewPages 페이지만 PDF에 담는다.
         boolean preview = job.getBookPhase() == com.storyai.backend.domain.videojob.BookPhase.PREVIEW;
@@ -112,6 +122,9 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
             boolean sent = emailNotifier.sendBookReady(job.getDeliveryEmail(),
                     job.getGeneratedTitle() != null ? job.getGeneratedTitle() : "동화책", pdfBytes, job.getResultUrl());
             job.setEmailSent(sent);
+        }
+        } finally {
+            pageScale.remove();
         }
     }
 
@@ -253,16 +266,23 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
     // ---------- 그리기 헬퍼 ----------
 
     private BufferedImage canvas() {
-        BufferedImage b = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
+        int s = Math.max(1, pageScale.get());
+        BufferedImage b = new BufferedImage(W * s, H * s, BufferedImage.TYPE_INT_RGB);
         Graphics2D g = b.createGraphics();
         g.setColor(CREAM);
-        g.fillRect(0, 0, W, H);
+        g.fillRect(0, 0, W * s, H * s);
         g.dispose();
         return b;
     }
 
     private Graphics2D graphics(BufferedImage b) {
         Graphics2D g = b.createGraphics();
+        // 고해상도 배수만큼 좌표계를 확대 → 이후 모든 그리기(글자·도형)는 원래 좌표 그대로,
+        // 실제로는 고해상도로 래스터화된다(글자가 또렷해짐). 삽화는 아래 보간 힌트로 고품질 확대.
+        int s = Math.max(1, pageScale.get());
+        if (s != 1) {
+            g.scale(s, s);
+        }
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -408,7 +428,9 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
     }
 
     private void addPage(PDDocument doc, BufferedImage page) throws Exception {
-        PDImageXObject xo = JPEGFactory.createFromImage(doc, page, 0.85f);
+        // 실물책(고해상도)이면 압축을 줄여 인쇄 품질 확보, 일반 PDF는 파일 크기를 위해 0.85.
+        float quality = Math.max(1, pageScale.get()) > 1 ? 0.95f : 0.85f;
+        PDImageXObject xo = JPEGFactory.createFromImage(doc, page, quality);
         PDPage p = new PDPage(new PDRectangle(842, 595)); // A4 가로
         doc.addPage(p);
         try (PDPageContentStream cs = new PDPageContentStream(doc, p)) {
