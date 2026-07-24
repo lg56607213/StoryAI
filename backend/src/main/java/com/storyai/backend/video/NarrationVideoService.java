@@ -11,7 +11,7 @@ import com.storyai.backend.domain.bookpage.BookPage;
 import com.storyai.backend.domain.bookpage.BookPageRepository;
 import com.storyai.backend.domain.videojob.VideoJob;
 import com.storyai.backend.domain.videojob.VideoJobRepository;
-import com.storyai.backend.storage.LocalStorage;
+import com.storyai.backend.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,7 +50,7 @@ public class NarrationVideoService {
     private final VideoJobRepository videoJobRepository;
     private final GeminiClient gemini;
     private final VoiceCasting casting;
-    private final LocalStorage storage;
+    private final StorageService storage;
     private final ObjectMapper objectMapper;
     private final com.storyai.backend.ai.voice.ElevenLabsClient elevenLabs;
     private final com.storyai.backend.notify.EmailNotifier emailNotifier;

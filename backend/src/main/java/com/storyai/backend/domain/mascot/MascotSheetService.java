@@ -2,7 +2,7 @@ package com.storyai.backend.domain.mascot;
 
 import com.storyai.backend.ai.image.ImageGenerator;
 import com.storyai.backend.domain.videojob.BookStyle;
-import com.storyai.backend.storage.LocalStorage;
+import com.storyai.backend.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MascotSheetService {
 
     private final ImageGenerator imageGenerator;
-    private final LocalStorage storage;
+    private final StorageService storage;
 
     /** 조합별 생성 동시성 제어(병렬 삽화에서 같은 시트를 중복 생성하지 않도록). */
     private final Map<String, Object> locks = new ConcurrentHashMap<>();

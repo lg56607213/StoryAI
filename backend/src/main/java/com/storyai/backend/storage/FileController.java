@@ -2,6 +2,7 @@ package com.storyai.backend.storage;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,7 +27,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class FileController {
 
-    private final LocalStorage localStorage;
+    private final StorageService localStorage;
 
     @PostMapping("/api/uploads")
     public Map<String, List<String>> upload(@RequestParam("files") MultipartFile[] files) {
@@ -58,6 +59,15 @@ public class FileController {
     public ResponseEntity<byte[]> serve(HttpServletRequest request) {
         String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
         String key = path.substring("/api/files/".length());
+
+        // R2 등 원격 저장소면 presigned URL로 302 리다이렉트 → 백엔드 대역폭·메모리를 아낀다.
+        String redirect = localStorage.redirectUrlForKey(key);
+        if (redirect != null) {
+            return ResponseEntity.status(HttpStatus.FOUND)
+                    .header(HttpHeaders.LOCATION, redirect)
+                    .build();
+        }
+
         byte[] bytes = localStorage.readKey(key);
         if (bytes == null) {
             return ResponseEntity.notFound().build();

@@ -1,6 +1,7 @@
 package com.storyai.backend.storage;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -10,13 +11,13 @@ import java.nio.file.Path;
 import java.util.UUID;
 
 /**
- * 로컬 파일 저장소. S3 연동 전까지 업로드 사진·생성 이미지·PDF를 로컬 디렉터리에 저장/조회한다.
+ * 로컬 볼륨 파일 저장소(기본). 업로드 사진·생성 이미지·PDF를 로컬 디렉터리에 저장/조회한다.
+ * storyai.storage.provider=r2 이면 이 빈 대신 {@link R2Storage}가 활성화된다.
  * URL 규칙: 저장 파일은 "/api/files/{key}" 로 서빙된다 (key = root 기준 상대경로).
  */
 @Component
-public class LocalStorage {
-
-    public static final String URL_PREFIX = "/api/files/";
+@ConditionalOnProperty(name = "storyai.storage.provider", havingValue = "local", matchIfMissing = true)
+public class LocalStorage implements StorageService {
 
     private final Path root;
 
@@ -96,12 +97,28 @@ public class LocalStorage {
         write(p, bytes);
     }
 
-    // --- 책 PDF (기존) ---
-    public Path bookPdfPath(Long jobId) {
-        return root.resolve("book-" + jobId + ".pdf");
+    // --- 책 PDF (키 기반: book-{jobId}.pdf) ---
+    @Override
+    public void storeBookPdf(Long jobId, byte[] bytes) {
+        writeKey(bookPdfKey(jobId), bytes);
     }
 
-    public void write(Path path, byte[] bytes) {
+    @Override
+    public byte[] readBookPdf(Long jobId) {
+        return readKey(bookPdfKey(jobId));
+    }
+
+    @Override
+    public boolean bookPdfExists(Long jobId) {
+        Path p = resolveKey(bookPdfKey(jobId));
+        return p != null && Files.exists(p);
+    }
+
+    private String bookPdfKey(Long jobId) {
+        return "book-" + jobId + ".pdf";
+    }
+
+    private void write(Path path, byte[] bytes) {
         try {
             Files.createDirectories(path.getParent());
             Files.write(path, bytes);
@@ -110,16 +127,12 @@ public class LocalStorage {
         }
     }
 
-    public byte[] read(Path path) {
+    private byte[] read(Path path) {
         try {
             return Files.readAllBytes(path);
         } catch (IOException e) {
             throw new UncheckedIOException("파일 읽기 실패: " + path, e);
         }
-    }
-
-    public boolean exists(Path path) {
-        return Files.exists(path);
     }
 
     // --- 진단용(관리자 화면) ---

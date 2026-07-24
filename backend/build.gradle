@@ -25,6 +25,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.apache.pdfbox:pdfbox:3.0.3'
+	// Cloudflare R2(S3 호환) 저장소용 AWS SDK v2. R2는 S3 API를 그대로 쓴다.
+	implementation platform('software.amazon.awssdk:bom:2.28.29')
+	implementation 'software.amazon.awssdk:s3'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	runtimeOnly 'com.h2database:h2'

@@ -10,7 +10,7 @@ import com.storyai.backend.domain.storycharacter.StoryCharacterRepository;
 import com.storyai.backend.domain.videojob.OutputType;
 import com.storyai.backend.domain.videojob.VideoJob;
 import com.storyai.backend.domain.videojob.WorkflowStep;
-import com.storyai.backend.storage.LocalStorage;
+import com.storyai.backend.storage.StorageService;
 import com.storyai.backend.workflow.WorkflowStepHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ public class CharacterAnalysisStepHandler implements WorkflowStepHandler {
     private final MediaAssetRepository mediaAssetRepository;
     private final StoryCharacterRepository storyCharacterRepository;
     private final ImageGenerator imageGenerator;
-    private final LocalStorage localStorage;
+    private final StorageService localStorage;
 
     @Override
     public WorkflowStep getStep() {

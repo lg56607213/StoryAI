@@ -5,7 +5,7 @@ import com.storyai.backend.domain.videojob.VideoJob;
 import com.storyai.backend.job.dto.ConfirmVideoJobRequest;
 import com.storyai.backend.job.dto.CreateVideoJobRequest;
 import com.storyai.backend.job.dto.VideoJobResponse;
-import com.storyai.backend.storage.LocalStorage;
+import com.storyai.backend.storage.StorageService;
 import com.storyai.backend.video.NarrationVideoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +29,7 @@ import java.nio.file.Path;
 public class VideoJobController {
 
     private final VideoJobService videoJobService;
-    private final LocalStorage localStorage;
+    private final StorageService localStorage;
     private final NarrationVideoService narrationVideoService;
 
     @PostMapping
@@ -95,12 +95,11 @@ public class VideoJobController {
         if (job.getOutputType() != OutputType.BOOK) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        Path pdf = localStorage.bookPdfPath(id);
-        if (!localStorage.exists(pdf)) {
-            // 아직 생성 중이거나 실패
+        byte[] bytes = localStorage.readBookPdf(id);
+        if (bytes == null) {
+            // 아직 생성 중이거나, 파일이 정리되어 없음
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
         }
-        byte[] bytes = localStorage.read(pdf);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"storybook-" + id + ".pdf\"")

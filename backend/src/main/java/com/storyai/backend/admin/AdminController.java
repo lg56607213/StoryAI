@@ -47,7 +47,7 @@ public class AdminController {
     private final com.storyai.backend.video.NarrationVideoService narrationVideoService;
     private final com.storyai.backend.ai.image.ImageGenerator imageGenerator;
     private final com.storyai.backend.workflow.WorkflowEngine workflowEngine;
-    private final com.storyai.backend.storage.LocalStorage localStorage;
+    private final com.storyai.backend.storage.StorageService localStorage;
     private final com.storyai.backend.storage.StorageCleanupService storageCleanupService;
 
     /** 저장소 사용량 현황(관리자). */

@@ -7,7 +7,7 @@ import com.storyai.backend.domain.storycharacter.StoryCharacter;
 import com.storyai.backend.domain.storycharacter.StoryCharacterRepository;
 import com.storyai.backend.domain.videojob.VideoJob;
 import com.storyai.backend.domain.videojob.WorkflowStep;
-import com.storyai.backend.storage.LocalStorage;
+import com.storyai.backend.storage.StorageService;
 import com.storyai.backend.workflow.WorkflowStepHandler;
 import lombok.RequiredArgsConstructor;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -56,7 +56,7 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
 
     private final BookPageRepository bookPageRepository;
     private final StoryCharacterRepository storyCharacterRepository;
-    private final LocalStorage localStorage;
+    private final StorageService localStorage;
     private final com.storyai.backend.notify.EmailNotifier emailNotifier;
 
     @org.springframework.beans.factory.annotation.Value("${storyai.book.preview-pages:4}")
@@ -98,7 +98,7 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             doc.save(baos);
             pdfBytes = baos.toByteArray();
-            localStorage.write(localStorage.bookPdfPath(job.getId()), pdfBytes);
+            localStorage.storeBookPdf(job.getId(), pdfBytes);
         } catch (Exception e) {
             throw new IllegalStateException("PDF 생성 실패: " + e.getMessage(), e);
         }

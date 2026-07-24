@@ -1,6 +1,6 @@
 package com.storyai.backend.domain.review;
 
-import com.storyai.backend.storage.LocalStorage;
+import com.storyai.backend.storage.StorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
@@ -43,7 +43,7 @@ public class ReviewController {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("yyyy.MM.dd");
 
     private final ReviewRepository reviewRepository;
-    private final LocalStorage localStorage;
+    private final StorageService localStorage;
 
     @GetMapping
     public Map<String, Object> list() {

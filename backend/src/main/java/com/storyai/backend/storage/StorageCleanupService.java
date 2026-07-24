@@ -29,7 +29,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class StorageCleanupService {
 
-    private final LocalStorage storage;
+    private final StorageService storage;
     private final VideoJobRepository videoJobRepository;
 
     /** 이 일수보다 오래된 "미확정 미리보기"의 생성 이미지를 정리한다. */

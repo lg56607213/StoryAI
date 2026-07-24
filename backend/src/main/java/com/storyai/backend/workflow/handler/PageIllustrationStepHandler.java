@@ -10,7 +10,7 @@ import com.storyai.backend.domain.storycharacter.StoryCharacterRepository;
 import com.storyai.backend.domain.videojob.BookPhase;
 import com.storyai.backend.domain.videojob.VideoJob;
 import com.storyai.backend.domain.videojob.WorkflowStep;
-import com.storyai.backend.storage.LocalStorage;
+import com.storyai.backend.storage.StorageService;
 import com.storyai.backend.workflow.WorkflowStepHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +33,7 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
     private final BookPageRepository bookPageRepository;
     private final StoryCharacterRepository storyCharacterRepository;
     private final ImageGenerator imageGenerator;
-    private final LocalStorage localStorage;
+    private final StorageService localStorage;
     private final MascotSheetService mascotSheetService;
 
     /** 개발/테스트 비용 제어: 실제 삽화를 생성할 최대 페이지 수 (초과분은 placeholder). 기본 무제한. */
