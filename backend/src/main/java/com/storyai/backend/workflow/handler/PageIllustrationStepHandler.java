@@ -36,6 +36,7 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
     private final StorageService localStorage;
     private final MascotSheetService mascotSheetService;
     private final PageImagePersister pageImagePersister;
+    private final ImageGenerationGate imageGate;
 
     /** 개발/테스트 비용 제어: 실제 삽화를 생성할 최대 페이지 수 (초과분은 placeholder). 기본 무제한. */
     @Value("${storyai.book.illustrate-limit:9999}")
@@ -109,10 +110,13 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
                             // 장면에 단짝 친구가 등장하면 동물 동반자로 함께 참조(사람 수 규칙은 그대로).
                             byte[] companion = (mascot != null && mascot.mentionedIn(page.getSceneDescription()))
                                     ? mascotSheet : null;
-                            byte[] img = imageGenerator.illustrateWithCompanion(
-                                    page.getSceneDescription(), sheets, companion, mascotDesc, style);
-                            String url = localStorage.storeGenerated(
-                                    job.getId(), "page-" + page.getPageNumber() + ".png", img);
+                            // 전역 게이트: 서버 전체 동시 이미지 생성 수 제한(메모리 초과·OOM 방지).
+                            String url = imageGate.run(() -> {
+                                byte[] img = imageGenerator.illustrateWithCompanion(
+                                        page.getSceneDescription(), sheets, companion, mascotDesc, style);
+                                return localStorage.storeGenerated(
+                                        job.getId(), "page-" + page.getPageNumber() + ".png", img);
+                            });
                             generatedUrls.put(i, url);
                             // 만든 즉시 DB에 반영·커밋 → 도중에 죽어도 재시도 시 이 그림은 재사용(비용 절약).
                             pageImagePersister.saveImageUrl(page.getId(), url);
