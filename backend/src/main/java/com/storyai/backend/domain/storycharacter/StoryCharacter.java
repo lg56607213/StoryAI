@@ -47,11 +47,17 @@ public class StoryCharacter {
     @Column(nullable = false)
     private String name;
 
+    /**
+     * 관계(enum 이름을 문자열로 저장). 길이를 넉넉히 못박아 둔다 —
+     * 초기 스키마가 짧은 값(MAIN/FRIEND) 기준으로 만들어져 OLDER_BROTHER 같은 긴 값에서
+     * "Data truncated for column 'role'" 오류가 났었다.
+     */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 40)
     private CharacterRole role;
 
     /** role=CUSTOM일 때 고객이 직접 입력한 관계(예: "이모", "할머니"). */
+    @Column(length = 40)
     private String customRole;
 
     /** 화면·프롬프트에 쓸 관계 표기. 직접입력이면 그 값을, 아니면 기본 라벨을 쓴다. */
