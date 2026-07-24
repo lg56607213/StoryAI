@@ -221,6 +221,11 @@ public class VideoJob {
     @Column(columnDefinition = "TEXT")
     private String errorMessage;
 
+    /** 서버 중단·오류로 자동 재개를 시도한 횟수(무한 재시도 방지용 상한 관리). */
+    @Column(nullable = false, columnDefinition = "int default 0")
+    @Builder.Default
+    private int recoveryAttempts = 0;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -262,6 +267,13 @@ public class VideoJob {
 
     public void moveToStep(WorkflowStep step) {
         this.currentStep = step;
+    }
+
+    /** 자동 재개를 위해 상태를 RUNNING으로 되돌리고 재시도 횟수를 올린다(현재 단계부터 이어감). */
+    public void markForRetry() {
+        this.status = JobStatus.RUNNING;
+        this.errorMessage = null;
+        this.recoveryAttempts += 1;
     }
 
     /** 미리보기 확정 → 전체 생성 단계로 전환하고 삽화 단계부터 워크플로우를 재개시킨다. */
