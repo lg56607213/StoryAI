@@ -19,6 +19,11 @@ public class HealthController {
     private final com.storyai.backend.ai.image.ImageGenerator imageGenerator;
     private final com.storyai.backend.storage.StorageService storageService;
 
+    /** 배포 확인용 표식. 기능이 바뀔 때마다 갱신해 "새 빌드가 떴는지"를 즉시 판별한다. */
+    private static final String BUILD = "2026-07-24-schema-migration";
+    /** 서버 기동 시각 — 값이 바뀌면 재시작(재배포)된 것. */
+    private static final java.time.Instant STARTED_AT = java.time.Instant.now();
+
     @GetMapping("/api/health")
     public Map<String, String> health() {
         return Map.of("status", "ok", "service", "storyai-backend");
@@ -31,6 +36,8 @@ public class HealthController {
     @GetMapping("/api/status")
     public Map<String, Object> status() {
         Map<String, Object> m = new LinkedHashMap<>();
+        m.put("build", BUILD);
+        m.put("startedAt", STARTED_AT.toString());
         m.put("story", claudeClient.isConfigured() ? "claude" : "gemini");
         m.put("image", imageGenerator.isAvailable());
         m.put("characterVoice", geminiClient.isConfigured());
