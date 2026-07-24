@@ -58,6 +58,18 @@ public final class ImagePrompts {
                 + " Full body, standing, plain warm cream background, centered. No text, no watermark.";
     }
 
+    /**
+     * 스타일 미리보기 샘플 — 참조 이미지 없이, 모든 스타일에 동일한 장면을 그려 화풍만 비교되게 한다.
+     * (아이가 꽃밭에서 두 팔 벌린 장면 — 스타일별 색감·질감이 잘 드러남)
+     */
+    public static String styleSample(String style) {
+        return styleLine(style)
+                + " Create ONE children's storybook illustration of a cheerful young child standing with both "
+                + "arms happily raised in a bright field of colorful flowers, a cute small town and soft sky in the "
+                + "background. Full scene, warm and tender mood, fill the entire frame edge-to-edge with the scene "
+                + "(no empty margins). No text, no words, no letters, no watermark." + ANATOMY;
+    }
+
     /** 마스코트("히어로 친구들") 시트 — 참조 이미지 없이 외형 스펙만으로 생성. */
     public static String mascotSheet(String appearance, String style) {
         return styleLine(style)

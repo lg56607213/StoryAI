@@ -128,6 +128,17 @@ export function getOptions(): Promise<Options> {
   return fetch(apiUrl('/api/options'), withCreds).then((r) => handle<Options>(r))
 }
 
+/** 그림 스타일별 미리보기 샘플 이미지. url은 준비되면 표시(처음엔 백그라운드 생성). */
+export interface StyleSample {
+  code: string
+  label: string
+  url: string
+  ready: boolean
+}
+export function getStyleSamples(): Promise<StyleSample[]> {
+  return fetch(apiUrl('/api/options/style-samples'), withCreds).then((r) => handle<StyleSample[]>(r))
+}
+
 /** 사진 파일들을 서버에 업로드하고 저장된 URL 목록을 반환. */
 export function uploadPhotos(files: File[]): Promise<string[]> {
   const form = new FormData()

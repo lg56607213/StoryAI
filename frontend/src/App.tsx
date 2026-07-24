@@ -16,6 +16,7 @@ import {
   getOptions,
   getPayStatus,
   getProject,
+  getStyleSamples,
   loginUrl,
   logout,
   startNarrationVideo,
@@ -26,6 +27,7 @@ import {
   type Me,
   type Options,
   type PayStatus,
+  type StyleSample,
   type ThemeOption,
 } from './api'
 
@@ -86,7 +88,11 @@ function App() {
   const [me, setMe] = useState<Me | null>(null)
   const [view, setView] = useState<'home' | 'create' | 'admin' | 'mypage'>('home')
 
-  const [outputType, setOutputType] = useState('BOOK')
+  // 현재는 책(BOOK)만 제공 — 출력 유형 선택 단계는 없앴다(항상 BOOK).
+  const [outputType] = useState('BOOK')
+  // 만들기 마법사 단계: 0 주제 · 1 스타일/분량 · 2 등장인물 · 3 특별한 요청
+  const [wizardStep, setWizardStep] = useState(0)
+  const [styleSamples, setStyleSamples] = useState<StyleSample[]>([])
   const [theme, setTheme] = useState('')
   const [customTheme, setCustomTheme] = useState('')
   const [ageGroup, setAgeGroup] = useState('')
@@ -148,6 +154,7 @@ function App() {
   function startCreate() {
     setJob(null)
     setPostStage(null)
+    setWizardStep(0)
     setView('create')
   }
   function goHome() {
@@ -207,6 +214,7 @@ function App() {
         setVideoDuration(o.videoDurationOptions[0] ?? null)
       })
       .catch((e) => setLoadError(String(e.message ?? e)))
+    getStyleSamples().then(setStyleSamples).catch(() => setStyleSamples([]))
     getPayStatus().then(setPayStatus).catch(() => setPayStatus({ enabled: false, ready: false }))
 
     // 결제창에서 돌아온 랜딩(/pay/return|fail|cancel?job=ID) 처리:
@@ -233,6 +241,15 @@ function App() {
       window.history.replaceState(null, '', '/')
     }
   }, [])
+
+  // 스타일 샘플이 아직 생성 중이면(첫 방문 시 백그라운드 생성) 준비될 때까지 잠깐씩 다시 불러온다.
+  useEffect(() => {
+    if (styleSamples.length === 0 || styleSamples.every((s) => s.ready)) return
+    const t = window.setTimeout(() => {
+      getStyleSamples().then(setStyleSamples).catch(() => {})
+    }, 8000)
+    return () => window.clearTimeout(t)
+  }, [styleSamples])
 
   // 생성 후 완료까지 폴링
   useEffect(() => {
@@ -315,6 +332,13 @@ function App() {
         (c.role !== 'CUSTOM' || !!c.customRole?.trim()),
     ) &&
     !submitting
+
+  // 마법사 단계별 진행 가능 여부.
+  const charactersReady = characters.every(
+    (c) => c.name.trim() && c.photos.length > 0 && (c.role !== 'CUSTOM' || !!c.customRole?.trim()),
+  )
+  const stepValid = [themeReady && !!ageGroup, !!bookStyle && !!bookPages, charactersReady, true]
+  const WIZARD_TITLES = ['주제', '스타일 · 분량', '등장인물', '특별한 요청']
 
   function updateCharacter(idx: number, patch: Partial<CharacterDraft>) {
     setCharacters((prev) => prev.map((c, i) => (i === idx ? { ...c, ...patch } : c)))
@@ -875,25 +899,21 @@ function App() {
         <p>아이 사진으로 만드는 우리 아이 주인공 동화책</p>
       </header>
 
-      <section className="card">
-        <h3 className="step">1. 무엇을 만들까요?</h3>
-        <div className="chips">
-          {options.outputTypes
-            .filter((o) => o.code === 'BOOK')
-            .map((o) => (
-              <button
-                key={o.code}
-                className={`chip ${outputType === o.code ? 'on' : ''}`}
-                onClick={() => setOutputType(o.code)}
-              >
-                📖 {o.label}
-              </button>
-            ))}
-        </div>
-      </section>
+      <div className="wiz-steps">
+        {WIZARD_TITLES.map((t, i) => (
+          <div
+            key={t}
+            className={`wiz-step ${i === wizardStep ? 'on' : ''} ${i < wizardStep ? 'done' : ''}`}
+          >
+            <span className="wiz-dot">{i < wizardStep ? '✓' : i + 1}</span>
+            <span className="wiz-label">{t}</span>
+          </div>
+        ))}
+      </div>
 
+      {wizardStep === 0 && (
       <section className="card">
-        <h3 className="step">2. 주제</h3>
+        <h3 className="step">주제를 골라주세요</h3>
         {themeGroups.map(([cat, list]) => (
           <div key={cat} className="theme-group">
             <p className="theme-group-label">
@@ -942,22 +962,42 @@ function App() {
           ))}
         </div>
       </section>
+      )}
 
+      {wizardStep === 1 && (
       <section className="card">
-        <h3 className="step">3. 스타일 &amp; 분량</h3>
+        <h3 className="step">그림 스타일 &amp; 분량</h3>
         {isBook ? (
           <>
-            <label className="field-label">그림 스타일</label>
-            <div className="chips">
-              {options.bookStyles.map((o) => (
-                <button
-                  key={o.code}
-                  className={`chip ${bookStyle === o.code ? 'on' : ''}`}
-                  onClick={() => setBookStyle(o.code)}
-                >
-                  {o.label}
-                </button>
-              ))}
+            <label className="field-label">그림 스타일 <span className="muted small">— 예시를 보고 골라주세요</span></label>
+            <div className="style-grid">
+              {options.bookStyles.map((o) => {
+                const sample = styleSamples.find((s) => s.code === o.code)
+                return (
+                  <button
+                    key={o.code}
+                    type="button"
+                    className={`style-card ${bookStyle === o.code ? 'on' : ''}`}
+                    onClick={() => setBookStyle(o.code)}
+                  >
+                    <div className="style-thumb">
+                      {sample?.url ? (
+                        <img
+                          src={apiUrl(sample.url)}
+                          alt={o.label}
+                          loading="lazy"
+                          onError={(e) => {
+                            ;(e.currentTarget as HTMLImageElement).style.visibility = 'hidden'
+                          }}
+                        />
+                      ) : (
+                        <span className="style-thumb-ph">🎨</span>
+                      )}
+                    </div>
+                    <span className="style-card-label">{o.label}</span>
+                  </button>
+                )
+              })}
             </div>
             <label className="field-label">페이지 수</label>
             <div className="chips">
@@ -1009,9 +1049,11 @@ function App() {
           </>
         )}
       </section>
+      )}
 
+      {wizardStep === 2 && (
       <section className="card">
-        <h3 className="step">4. 등장인물</h3>
+        <h3 className="step">등장인물</h3>
         <p className="muted small">
           첫 번째 인물이 주인공이에요. 둘째나 친구를 함께 추가할 수 있어요.
         </p>
@@ -1091,9 +1133,11 @@ function App() {
           ※ 얼굴이 또렷한 사진 3~5장을 올리면 더 닮게 나와요.
         </p>
       </section>
+      )}
 
+      {wizardStep === 3 && (
       <section className="card">
-        <h3 className="step">5. 특별한 요청 <span className="muted small">(선택)</span></h3>
+        <h3 className="step">특별한 요청 <span className="muted small">(선택)</span></h3>
         <label className="field-label">헌정 메세지 <span className="muted small">— 책 첫 장에 들어가요</span></label>
         <textarea
           className="text area"
@@ -1150,11 +1194,38 @@ function App() {
           onChange={(e) => setStoryDirection(e.target.value)}
         />
       </section>
+      )}
 
-      <section className="card submit-bar">
-        <button className="btn primary" disabled={!canSubmit} onClick={onSubmit}>
-          {submitting ? '만드는 중…' : '만들기 시작'}
-        </button>
+      <section className="card wiz-nav">
+        {wizardStep > 0 ? (
+          <button
+            className="btn ghost"
+            onClick={() => {
+              setWizardStep((s) => s - 1)
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+            }}
+          >
+            ← 이전
+          </button>
+        ) : (
+          <span />
+        )}
+        {wizardStep < 3 ? (
+          <button
+            className="btn primary"
+            disabled={!stepValid[wizardStep]}
+            onClick={() => {
+              setWizardStep((s) => s + 1)
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+            }}
+          >
+            다음 →
+          </button>
+        ) : (
+          <button className="btn primary" disabled={!canSubmit} onClick={onSubmit}>
+            {submitting ? '만드는 중…' : '만들기 시작'}
+          </button>
+        )}
       </section>
       {submitError && <p className="error-text center">{submitError}</p>}
       {cropQueue && (

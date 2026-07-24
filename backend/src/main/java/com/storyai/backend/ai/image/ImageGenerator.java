@@ -29,6 +29,14 @@ public interface ImageGenerator {
     byte[] mascotSheet(String appearance, String style);
 
     /**
+     * 스타일 미리보기 샘플 PNG. 사진 참조 없이 고정 장면을 선택 화풍으로 그린다(스타일당 1회 캐시).
+     * 기본 구현은 미지원 예외 — 구현체가 지원하면 오버라이드한다.
+     */
+    default byte[] styleSample(String style) {
+        throw new UnsupportedOperationException("styleSample 미지원");
+    }
+
+    /**
      * 마스코트를 동반자로 함께 그리는 삽화.
      * characterSheets = 사람 주인공 시트(사람 수 규칙에 사용), companionSheet = 동물 친구 시트(사람으로 세지 않음).
      */

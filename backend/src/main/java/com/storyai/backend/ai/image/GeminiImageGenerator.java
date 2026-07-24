@@ -41,6 +41,11 @@ public class GeminiImageGenerator implements ImageGenerator {
     }
 
     @Override
+    public byte[] styleSample(String style) {
+        return gemini.generateImage(ImagePrompts.styleSample(style), List.of(), "1:1");
+    }
+
+    @Override
     public byte[] illustrate(String scene, List<byte[]> characterSheets, String style) {
         return illustrateWithCompanion(scene, characterSheets, null, null, style);
     }
