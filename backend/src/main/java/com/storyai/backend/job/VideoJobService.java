@@ -196,6 +196,22 @@ public class VideoJobService {
             elevenLabs.deleteVoice(job.getParentVoiceId());
         }
         String voiceId = elevenLabs.cloneVoice("todayhero-job-" + jobId, audio, filename);
+        // 복제된 목소리가 실제로 합성에 쓸 수 있는지 "지금 바로" 확인한다.
+        // 실패하면 그 자리에서 다시 녹음하도록 명확한 오류를 돌려준다(나중에 메일로 처리하는 번거로움 방지).
+        try {
+            byte[] test = elevenLabs.textToSpeechPcm("안녕하세요.", voiceId);
+            if (test == null || test.length == 0) {
+                throw new IllegalStateException("빈 음성");
+            }
+        } catch (Exception e) {
+            try {
+                elevenLabs.deleteVoice(voiceId); // 쓸 수 없는 복제본은 즉시 정리(슬롯 낭비 방지)
+            } catch (Exception ignore) {
+                // 삭제 실패는 무시
+            }
+            throw new IllegalStateException(
+                    "녹음하신 목소리를 처리하지 못했어요. 조용한 곳에서 30초 이상 또렷하게 다시 녹음해 주세요.");
+        }
         job.setParentVoiceId(voiceId);
         job.setParentVoiceConsent(true);
         videoJobRepository.save(job);
