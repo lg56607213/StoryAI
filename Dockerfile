@@ -12,6 +12,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/build/libs/*.jar app.jar
 # Railway가 PORT를 주입 → application.yml의 server.port가 이를 사용.
-# 컨테이너 메모리의 50%를 JVM 힙으로(기본 25%는 이미지 처리에 부족해 스레드 OOM→작업 멈춤 유발).
-# 나머지 50%는 ffmpeg(영상 합성)·메타스페이스·스레드 등 네이티브 메모리 여유로 남긴다.
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=50.0", "-jar", "app.jar"]
+# JVM 힙을 1GB로 명시 고정: 512MB에서 나던 OOM을 없애면서(4배), Hobby에서 메모리를
+# 8GB까지 무한정 잡아 요금이 커지는 것도 방지한다(딱 필요한 만큼만). ffmpeg·네이티브 여유는 별도.
+# 메모리를 더 늘리려면 JAVA_MAX_HEAP(예: 1536m)로 덮어쓸 수 있게 둔다.
+ENTRYPOINT ["sh", "-c", "java -Xmx${JAVA_MAX_HEAP:-1024m} -jar app.jar"]
