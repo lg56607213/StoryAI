@@ -135,6 +135,7 @@ public class VideoJobService {
         if (job.getBookPhase() == BookPhase.FULL) {
             throw new IllegalArgumentException("이미 전체 생성이 진행/완료된 주문입니다.");
         }
+        job.getStoryCharacters().size(); // 응답 매핑(VideoJobResponse.from) 전 lazy 컬렉션 초기화(트랜잭션 내)
         // 구매 정보 저장(생성 시작과 분리 — 결제가 켜져 있으면 결제 후에 생성한다).
         String purchaseType = blankToNull(request.purchaseType());
         job.setPurchaseType(purchaseType);
@@ -196,7 +197,9 @@ public class VideoJobService {
         String voiceId = elevenLabs.cloneVoice("todayhero-job-" + jobId, audio, filename);
         job.setParentVoiceId(voiceId);
         job.setParentVoiceConsent(true);
-        return videoJobRepository.save(job);
+        videoJobRepository.save(job);
+        job.getStoryCharacters().size(); // 응답 매핑(VideoJobResponse.from) 전 lazy 컬렉션 초기화
+        return job;
     }
 
     /**
@@ -211,6 +214,7 @@ public class VideoJobService {
         job.markRunning();
         videoJobRepository.save(job);
         workflowEngine.start(jobId);
+        job.getStoryCharacters().size(); // 응답 매핑(VideoJobResponse.from) 전 lazy 컬렉션 초기화
         return job;
     }
 
@@ -234,6 +238,7 @@ public class VideoJobService {
         job.markRunning();
         videoJobRepository.save(job);
         workflowEngine.start(jobId);
+        job.getStoryCharacters().size(); // 응답 매핑(VideoJobResponse.from) 전 lazy 컬렉션 초기화
         return job;
     }
 
