@@ -137,8 +137,8 @@ public class StalledJobSweeper {
             if (retried >= sweepBatch) {
                 break;
             }
-            if (job.getConfirmedAt() == null) {
-                continue; // 확정(구매)된 주문만 자동 재시도
+            if (job.getConfirmedAt() == null || job.getBookPhase() != BookPhase.FULL) {
+                continue; // 확정(구매)됐고 전체생성(FULL)까지 끝난 주문만 — 미리보기 단계는 영상 생성 금지
             }
             LocalDateTime touched = job.getUpdatedAt() != null ? job.getUpdatedAt() : job.getCreatedAt();
             if (touched == null || touched.isBefore(windowCutoff)) {
