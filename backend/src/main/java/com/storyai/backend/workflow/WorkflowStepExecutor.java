@@ -62,10 +62,16 @@ public class WorkflowStepExecutor {
 
         try {
             handler.execute(job);
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            // Throwable까지 잡는다: 메모리 부족(OutOfMemoryError) 등으로 스텝이 죽으면
+            // 작업이 "제작 중"에 영영 멈추지 않고 실패로 정리돼 고객이 다시 만들 수 있게 한다.
             log.error("Workflow step {} failed for job {}", step, jobId, e);
-            job.markFailed(e.getMessage());
-            videoJobRepository.save(job);
+            try {
+                job.markFailed(e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
+                videoJobRepository.save(job);
+            } catch (Throwable ignore) {
+                // OOM 직후 DB 저장까지 실패할 수 있으나, 이 경우 재시작 복구가 처리한다.
+            }
             return;
         }
 

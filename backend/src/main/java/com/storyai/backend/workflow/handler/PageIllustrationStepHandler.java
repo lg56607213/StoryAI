@@ -44,8 +44,8 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
     @Value("${storyai.book.preview-pages:4}")
     private int previewPages;
 
-    /** 삽화 병렬 생성 동시 실행 수(Gemini 부하/429 제어). */
-    @Value("${storyai.book.illustrate-concurrency:4}")
+    /** 삽화 병렬 생성 동시 실행 수(Gemini 부하/429 + 메모리 제어). 큰 이미지 동시 처리로 인한 OOM 방지 위해 2. */
+    @Value("${storyai.book.illustrate-concurrency:2}")
     private int illustrateConcurrency;
 
     @Override

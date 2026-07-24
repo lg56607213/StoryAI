@@ -33,18 +33,22 @@ public class WorkflowRecovery {
     @Value("${storyai.workflow.resume-window-hours:6}")
     private int resumeWindowHours;
 
-    /** 한 번에 재개할 최대 건수(재시작 직후 과부하 방지). */
-    @Value("${storyai.workflow.resume-max:20}")
+    /** 한 번에 재개할 최대 건수(재시작 직후 과부하·OOM 재발 방지). 나머지는 실패 처리해 악순환을 끊는다. */
+    @Value("${storyai.workflow.resume-max:3}")
     private int resumeMax;
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void resumeInterruptedJobs() {
-        List<VideoJob> stuck = videoJobRepository.findByStatusIn(
-                List.of(JobStatus.RUNNING, JobStatus.PENDING));
+        List<VideoJob> stuck = new java.util.ArrayList<>(videoJobRepository.findByStatusIn(
+                List.of(JobStatus.RUNNING, JobStatus.PENDING)));
         if (stuck.isEmpty()) {
             return;
         }
+        // 최신 작업부터 재개(고객이 방금 만든 건 우선). 나머지(오래된 것)는 실패 처리.
+        stuck.sort(java.util.Comparator.comparing(
+                (VideoJob j) -> j.getUpdatedAt() != null ? j.getUpdatedAt() : j.getCreatedAt(),
+                java.util.Comparator.nullsFirst(java.util.Comparator.naturalOrder())).reversed());
         LocalDateTime cutoff = LocalDateTime.now().minusHours(Math.max(1, resumeWindowHours));
 
         int resumed = 0, failed = 0;
