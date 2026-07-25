@@ -53,6 +53,7 @@ public class NarrationVideoService {
     private final StorageService storage;
     private final ObjectMapper objectMapper;
     private final com.storyai.backend.ai.voice.ElevenLabsClient elevenLabs;
+    private final com.storyai.backend.ai.voice.CloudTtsClient cloudTts;
     private final com.storyai.backend.notify.EmailNotifier emailNotifier;
 
     /** 이메일에 넣을 절대 URL의 기준(백엔드 공개 주소). 저장 파일은 /api/files/... 로 서빙된다. */
@@ -254,18 +255,29 @@ public class NarrationVideoService {
                 }
             }
 
-            // 2) 기본 경로: 캐스팅된 Gemini 목소리 (속도제한에 견디게 재시도)
-            VoiceStyle vs = casting.resolve(seg.voice(), protagonist);
+            // 2) 기본 경로: 정식 Cloud TTS(한도 넉넉) 우선, 실패 시 Gemini 프리뷰 TTS로 폴백.
             try {
-                byte[] wav = geminiSpeechWithRetry(seg.text(), vs.voiceName(), vs.style(), page.getPageNumber());
+                byte[] wav;
+                if (cloudTts.isConfigured()) {
+                    try {
+                        wav = cloudTts.synthesize(seg.text(), seg.voice());
+                    } catch (Exception ce) {
+                        log.warn("Cloud TTS 실패 → Gemini 폴백(page {}): {}", page.getPageNumber(), ce.getMessage());
+                        VoiceStyle vs = casting.resolve(seg.voice(), protagonist);
+                        wav = geminiSpeechWithRetry(seg.text(), vs.voiceName(), vs.style(), page.getPageNumber());
+                    }
+                } else {
+                    VoiceStyle vs = casting.resolve(seg.voice(), protagonist);
+                    wav = geminiSpeechWithRetry(seg.text(), vs.voiceName(), vs.style(), page.getPageNumber());
+                }
                 rate = readWavRate(wav);
                 pcm.write(wav, 44, wav.length - 44);      // WAV 헤더(44B) 제외한 PCM
                 pcm.write(silence(rate, gapMs));           // 세그먼트 사이 쉼
             } catch (Exception e) {
                 log.warn("세그먼트 TTS 최종 실패(page {} voice {}): {}", page.getPageNumber(), seg.voice(), e.getMessage());
             }
-            // 다음 호출 전 잠깐 쉬어 분당 요청 한도(속도제한)를 피한다.
-            sleepMs(ttsThrottleMs);
+            // Cloud TTS는 한도가 넉넉해 스로틀 불필요. Gemini 프리뷰 폴백일 때만 간격을 둔다.
+            sleepMs(cloudTts.isConfigured() ? 0 : ttsThrottleMs);
         }
         byte[] all = pcm.toByteArray();
         if (all.length == 0) {
