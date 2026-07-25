@@ -58,7 +58,7 @@ export default function PaymentCheckout({
     }
   }
 
-  // CPID 미설정 시: 결제 없이 전체 생성 시작(출시 전 테스트/심사용).
+  // CPID 미설정 시: 결제 없이 전체 생성 시작(출시 전 테스트/심사용). 약관 동의 필수.
   async function onProceedUnpaid() {
     if (!agree) {
       setError('진행을 위해 구매 조건·환불 규정에 동의해 주세요.')
@@ -125,7 +125,7 @@ export default function PaymentCheckout({
       {error && <p className="error-text center">{error}</p>}
 
       {ready ? (
-        <button className="btn primary pay-btn" onClick={onPay} disabled={busy}>
+        <button className="btn primary pay-btn" onClick={onPay} disabled={busy || !agree}>
           {busy ? '결제창 여는 중…' : `${amount.toLocaleString()}원 결제하기`}
         </button>
       ) : (
@@ -136,11 +136,12 @@ export default function PaymentCheckout({
           <p className="muted small center">
             결제 시스템 준비 중입니다. (PG 심사 완료 후 카드 결제가 활성화됩니다)
           </p>
-          <button className="linklike pay-testproceed" onClick={onProceedUnpaid} disabled={busy}>
+          <button className="linklike pay-testproceed" onClick={onProceedUnpaid} disabled={busy || !agree}>
             {busy ? '진행 중…' : '결제 없이 진행 (개발 테스트용)'}
           </button>
         </>
       )}
+      {!agree && <p className="muted small center">※ 위 약관에 동의해야 결제·진행할 수 있어요.</p>}
 
       {legal && <LegalModal doc={legal} onClose={() => setLegal(null)} />}
     </div>
