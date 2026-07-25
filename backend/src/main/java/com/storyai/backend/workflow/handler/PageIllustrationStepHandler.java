@@ -108,8 +108,11 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
                         }
                         try {
                             // 장면에 단짝 친구가 등장하면 동물 동반자로 함께 참조(사람 수 규칙은 그대로).
-                            byte[] companion = (mascot != null && mascot.mentionedIn(page.getSceneDescription()))
-                                    ? mascotSheet : null;
+                            // 장면(영문) 또는 본문(한글 이름)에 단짝이 나오면 시트를 넘겨 항상 같은 모습으로 그린다
+                            // (시트를 안 넘기면 모델이 이름만 보고 엉뚱한 동물=고양이로 그릴 수 있음).
+                            boolean mascotHere = mascot != null
+                                    && (mascot.mentionedIn(page.getSceneDescription()) || mascot.mentionedIn(page.getText()));
+                            byte[] companion = mascotHere ? mascotSheet : null;
                             // 전역 게이트: 서버 전체 동시 이미지 생성 수 제한(메모리 초과·OOM 방지).
                             String url = imageGate.run(() -> {
                                 byte[] img = imageGenerator.illustrateWithCompanion(

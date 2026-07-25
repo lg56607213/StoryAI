@@ -28,8 +28,10 @@ public enum Mascot {
             "small_animal"),
 
     KKAMNYANG("깜냥", "아기 부엉이", "owl",
-            "a small fluffy baby owl with grey-brown feathers, large round eyes with light ring markings "
-                    + "that look like glasses, a tiny tuft of feathers on its head, and a little twig staff",
+            "a small fluffy baby OWL (a bird) with grey-brown feathers and wings, large round eyes with light "
+                    + "ring markings that look like glasses, a tiny tuft of feathers on its head, a small beak, "
+                    + "and a little twig staff. IMPORTANT: this is an OWL BIRD — never draw it as a cat, kitten, "
+                    + "or any four-legged animal",
             "아는 것이 많은 조언자. 힌트와 재미있는 수수께끼로 길을 알려 준다.",
             "elder"),
 

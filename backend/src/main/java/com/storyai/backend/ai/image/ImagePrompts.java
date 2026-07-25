@@ -98,15 +98,20 @@ public final class ImagePrompts {
         if (companionDesc != null) {
             refInfo.append("Reference image ").append(humanCount + 1)
                     .append(" is ").append(companionDesc)
-                    .append(" - an ANIMAL companion, not a person. Keep this creature IDENTICAL to its reference "
-                            + "(same species, colors, markings, proportions and accessories). ");
+                    .append(" - an ANIMAL companion, not a person. Keep this creature EXACTLY as its reference "
+                            + "and EXACTLY this species (same animal, colors, markings, proportions and "
+                            + "accessories). NEVER substitute a different animal (never a cat), and NEVER merge it "
+                            + "with a human. The human character(s) stay fully human and the animal stays an animal. ");
         }
         String peopleRule = "This whole story has EXACTLY " + humanCount + " human character"
                 + (humanCount == 1 ? "" : "s")
                 + ". Draw ONLY the " + humanCount + " human reference character" + (humanCount == 1 ? "" : "s")
                 + " above" + (companionDesc != null ? " plus the animal companion" : "") + ". "
                 + "Do NOT add, invent, duplicate, or draw ANY other person, child, friend, sibling, or bystander "
-                + "that is not one of the references - even if the scene text seems to mention someone else. ";
+                + "that is not one of the references - even if the scene text seems to mention someone else. "
+                + "Every human stays FULLY HUMAN on every page - never give a human wings, feathers, a beak or "
+                + "a tail, and never turn a human into an animal or into the mascot. Each human keeps their own "
+                + "distinct face and identity and is never swapped with another character. ";
 
         // 참조 시트가 "정면·차렷" 자세라 그대로 따라 그리는 경향이 있다 → 표정·동작을 명시적으로 요구한다.
         String expressive =
