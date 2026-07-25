@@ -24,7 +24,7 @@ const HERO_FRIENDS = [
   },
   {
     code: 'kkamnyang',
-    name: '깜냥',
+    name: '부기',
     species: '아기 부엉이',
     desc: '아는 게 많은 조언자. 수수께끼로 길을 알려줘요.',
     themes: '숲속 · 동물친구',

@@ -27,7 +27,7 @@ public enum Mascot {
             "겁이 조금 많지만 결정적인 순간에 가장 용감해지는 친구.",
             "small_animal"),
 
-    KKAMNYANG("깜냥", "아기 부엉이", "owl",
+    KKAMNYANG("부기", "아기 부엉이", "owl",
             "a small fluffy baby OWL (a bird) with grey-brown feathers and wings, large round eyes with light "
                     + "ring markings that look like glasses, a tiny tuft of feathers on its head, a small beak, "
                     + "and a little twig staff. IMPORTANT: this is an OWL BIRD — never draw it as a cat, kitten, "
