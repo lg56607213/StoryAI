@@ -216,27 +216,35 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         int areaH = totalH + padV * 2;
         int areaY = bottom ? H - areaH : 0;
 
-        // 부드러운 그라데이션 스크림(딱딱한 박스가 아니라 자연스러운 음영). 글 영역보다 넉넉히.
-        int scrimH = areaH + 130;
+        // 그라데이션 스크림(박스 아님, 자연스러운 음영)을 충분히 진하게 → 흰 글씨가 확실히 보이게.
+        int scrimH = areaH + 150;
         int scrimY = bottom ? H - scrimH : 0;
         Paint oldPaint = g.getPaint();
-        Color clear = new Color(18, 14, 20, 0);
-        Color dark = new Color(18, 14, 20, 155);
+        Color clear = new Color(15, 12, 18, 0);
+        Color dark = new Color(15, 12, 18, 210);
         g.setPaint(bottom
                 ? new GradientPaint(0, scrimY, clear, 0, scrimY + scrimH, dark)
                 : new GradientPaint(0, scrimY, dark, 0, scrimY + scrimH, clear));
         g.fillRect(0, scrimY, W, scrimH);
         g.setPaint(oldPaint);
 
-        // 흰 글씨 + 어두운 그림자(검은/흰 대비로 또렷하게).
+        // 흰 글씨 + 진한 외곽선(8방향) → 밝은 배경 위에서도 또렷하게 읽힘.
         int startY = areaY + padV + fm.getAscent();
+        Color outline = new Color(0, 0, 0, 230);
+        int t = 3; // 외곽선 두께
         for (int k = 0; k < lines.size(); k++) {
             String line = lines.get(k);
             int lw = fm.stringWidth(line);
             int lx = (W - lw) / 2;
             int ly = startY + k * lineH;
-            g.setColor(new Color(0, 0, 0, 140));
-            g.drawString(line, lx + 3, ly + 4); // 그림자
+            g.setColor(outline);
+            for (int dx = -t; dx <= t; dx++) {
+                for (int dy = -t; dy <= t; dy++) {
+                    if (dx != 0 || dy != 0) {
+                        g.drawString(line, lx + dx, ly + dy);
+                    }
+                }
+            }
             g.setColor(Color.WHITE);
             g.drawString(line, lx, ly);
         }

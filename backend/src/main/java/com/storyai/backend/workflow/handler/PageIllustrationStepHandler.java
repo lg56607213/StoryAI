@@ -76,6 +76,8 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
         Mascot mascot = Mascot.forTheme(job.getStoryTheme());
         byte[] mascotSheet = canGenerate ? mascotSheetService.sheetFor(mascot, job.getBookStyle()) : null;
         String mascotDesc = mascot != null ? mascot.describeForIllustration() : null;
+        // 여러 명일 때 "참조사진 N = 이름" 매핑을 장면 앞에 붙여 인물이 서로 뒤바뀌는 걸 막는다.
+        String charMap = characterMap(characters);
 
         // 1) 생성 대상 선별: phase 범위 내 & 아직 실제 삽화 없는 페이지(비용 한도까지).
         List<Integer> targets = new ArrayList<>();
@@ -116,7 +118,7 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
                             // 전역 게이트: 서버 전체 동시 이미지 생성 수 제한(메모리 초과·OOM 방지).
                             String url = imageGate.run(() -> {
                                 byte[] img = imageGenerator.illustrateWithCompanion(
-                                        page.getSceneDescription(), sheets, companion, mascotDesc, style);
+                                        charMap + page.getSceneDescription(), sheets, companion, mascotDesc, style);
                                 return localStorage.storeGenerated(
                                         job.getId(), "page-" + page.getPageNumber() + ".png", img);
                             });
@@ -170,6 +172,25 @@ public class PageIllustrationStepHandler implements WorkflowStepHandler {
         }
         log.info("삽화 단계 완료(병렬 동시{}): phase={}, 생성 {}, 재사용(기존) {}, 대체 {} / 대상 {}페이지",
                 poolSize, job.getBookPhase(), generated, kept, reused, upTo);
+    }
+
+    /**
+     * 여러 명일 때 "참조사진 N = 이름" 매핑 문구를 만든다(장면 앞에 붙임).
+     * 모델이 어떤 참조가 누구인지 알게 해서 소영/상우가 서로 뒤바뀌는 걸 막는다.
+     */
+    private String characterMap(List<StoryCharacter> characters) {
+        if (characters == null || characters.size() < 2) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(
+                "Character identity map — the reference character images are given IN THIS ORDER; match each "
+                        + "named person to their OWN reference and NEVER swap who is who: ");
+        for (int i = 0; i < characters.size(); i++) {
+            sb.append("reference image ").append(i + 1).append(" = the person named \"")
+                    .append(characters.get(i).getName() == null ? "" : characters.get(i).getName()).append("\"")
+                    .append(i < characters.size() - 1 ? "; " : ". ");
+        }
+        return sb.toString();
     }
 
     /** 페이지 의상(everyday/costume)에 맞는 캐릭터 시트를 인물별로 고른다. 없으면 다른 시트로 폴백. */

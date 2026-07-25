@@ -73,6 +73,13 @@ public class NarrationVideoService {
     @Value("${storyai.video.gap-ms:350}")
     private int gapMs;
 
+    /** TTS 호출 사이 대기(ms) — 분당 요청 한도(속도제한) 회피용 스로틀. */
+    @Value("${storyai.video.tts-throttle-ms:1500}")
+    private int ttsThrottleMs;
+
+    /** TTS 실패 시 재시도 전 대기(ms) — 점점 길게(분당 한도 리셋 대기). 첫 시도는 0. */
+    private static final long[] TTS_RETRY_WAITS_MS = {0, 6000, 15000, 30000};
+
     /** ffmpeg 실행 가능 여부(배포 이미지에 설치돼 있는지). */
     public boolean isFfmpegAvailable() {
         try {
@@ -247,16 +254,18 @@ public class NarrationVideoService {
                 }
             }
 
-            // 2) 기본 경로: 캐스팅된 Gemini 목소리
+            // 2) 기본 경로: 캐스팅된 Gemini 목소리 (속도제한에 견디게 재시도)
             VoiceStyle vs = casting.resolve(seg.voice(), protagonist);
             try {
-                byte[] wav = gemini.generateSpeech(seg.text(), vs.voiceName(), vs.style());
+                byte[] wav = geminiSpeechWithRetry(seg.text(), vs.voiceName(), vs.style(), page.getPageNumber());
                 rate = readWavRate(wav);
                 pcm.write(wav, 44, wav.length - 44);      // WAV 헤더(44B) 제외한 PCM
                 pcm.write(silence(rate, gapMs));           // 세그먼트 사이 쉼
             } catch (Exception e) {
-                log.warn("세그먼트 TTS 실패(page {} voice {}): {}", page.getPageNumber(), seg.voice(), e.getMessage());
+                log.warn("세그먼트 TTS 최종 실패(page {} voice {}): {}", page.getPageNumber(), seg.voice(), e.getMessage());
             }
+            // 다음 호출 전 잠깐 쉬어 분당 요청 한도(속도제한)를 피한다.
+            sleepMs(ttsThrottleMs);
         }
         byte[] all = pcm.toByteArray();
         if (all.length == 0) {
@@ -334,6 +343,35 @@ public class NarrationVideoService {
         }
         String base = apiBaseUrl == null ? "" : apiBaseUrl.replaceAll("/+$", "");
         return base + url;
+    }
+
+    /** Gemini TTS를 속도제한(429) 등에 견디게 재시도한다(점점 길게 대기). 모두 실패하면 예외. */
+    private byte[] geminiSpeechWithRetry(String text, String voiceName, String style, int pageNum) {
+        RuntimeException last = null;
+        for (int i = 0; i < TTS_RETRY_WAITS_MS.length; i++) {
+            if (TTS_RETRY_WAITS_MS[i] > 0) {
+                log.info("TTS 재시도 대기 {}ms (page {}, {}/{})",
+                        TTS_RETRY_WAITS_MS[i], pageNum, i + 1, TTS_RETRY_WAITS_MS.length);
+                sleepMs(TTS_RETRY_WAITS_MS[i]);
+            }
+            try {
+                return gemini.generateSpeech(text, voiceName, style);
+            } catch (RuntimeException e) {
+                last = e;
+            }
+        }
+        throw last != null ? last : new IllegalStateException("Gemini TTS 실패");
+    }
+
+    private void sleepMs(long ms) {
+        if (ms <= 0) {
+            return;
+        }
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     private byte[] silence(int rate, int ms) {
