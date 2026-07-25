@@ -841,6 +841,9 @@ function App() {
                       >
                         영상 다운로드
                       </a>
+                      <button className="btn ghost small" onClick={handleMakeNarration}>
+                        🔄 영상 다시 만들기
+                      </button>
                     </>
                   ) : job.narrationVideoStatus === 'generating' ? (
                     <p className="muted">영상을 만들고 있어요… 목소리를 나눠 녹음하는 중이라 몇 분 걸려요. ⏳</p>

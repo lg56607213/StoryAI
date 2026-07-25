@@ -295,5 +295,8 @@ public class VideoJob {
         this.status = JobStatus.RUNNING;
         this.currentStep = WorkflowStep.PAGE_ILLUSTRATION;
         this.errorMessage = null;
+        // 미리보기 때 잘못 만들어졌을 수 있는 영상은 버리고, 전체 완성 후 전체 페이지로 새로 만든다.
+        this.narrationVideoUrl = null;
+        this.narrationVideoStatus = null;
     }
 }
