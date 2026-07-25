@@ -22,10 +22,13 @@ export default function ParentVoiceRecorder({
   jobId,
   hasParentVoice,
   onRegistered,
+  onPendingChange,
 }: {
   jobId: number
   hasParentVoice: boolean
   onRegistered: (job: JobResponse) => void
+  /** 녹음은 했지만 아직 "등록하기"를 안 눌러 저장이 안 된 상태를 부모에게 알린다(넘어가기 경고용). */
+  onPendingChange?: (pending: boolean) => void
 }) {
   const [consent, setConsent] = useState(false)
   const [recording, setRecording] = useState(false)
@@ -48,6 +51,11 @@ export default function ParentVoiceRecorder({
       recorderRef.current?.stream.getTracks().forEach((t) => t.stop())
     }
   }, [previewUrl])
+
+  // 녹음했는데 아직 등록(업로드) 안 한 상태를 부모에게 알린다(넘어가기 전 경고용).
+  useEffect(() => {
+    onPendingChange?.(!!blob && !hasParentVoice && !recording && !uploading)
+  }, [blob, hasParentVoice, recording, uploading, onPendingChange])
 
   async function startRecording() {
     setError(null)

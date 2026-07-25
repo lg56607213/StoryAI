@@ -113,6 +113,8 @@ function App() {
   const [job, setJob] = useState<JobResponse | null>(null)
   // 확정/결제 이후 단계: 'voice'(영상 주문 목소리 등록) → 'done'(완료 안내). null이면 일반 화면.
   const [postStage, setPostStage] = useState<'voice' | 'done' | null>(null)
+  // 녹음은 했지만 아직 "등록하기"를 안 눌러 저장 안 된 상태(넘어가기 전 경고용).
+  const [voicePending, setVoicePending] = useState(false)
   const [payStatus, setPayStatus] = useState<PayStatus | null>(null)
   // 결제창에서 돌아온 결과(성공/실패/취소) 배너. null이면 표시 안 함.
   const [payLanding, setPayLanding] = useState<'return' | 'fail' | 'cancel' | null>(null)
@@ -603,14 +605,40 @@ function App() {
           <ParentVoiceRecorder
             jobId={job.id}
             hasParentVoice={job.hasParentVoice}
-            onRegistered={(j) => setJob(j)}
+            onRegistered={(j) => {
+              setJob(j)
+              setVoicePending(false)
+            }}
+            onPendingChange={setVoicePending}
           />
           <div className="done-actions">
-            <button className="btn primary" onClick={() => setPostStage('done')}>
-              {job.hasParentVoice ? '다음' : '목소리 등록하고 다음'}
+            <button
+              className="btn primary"
+              onClick={() => {
+                if (
+                  voicePending &&
+                  !window.confirm(
+                    '녹음하신 목소리를 아직 등록하지 않았어요.\n"이 목소리로 등록하기" 버튼을 눌러야 저장됩니다.\n\n그래도 목소리 없이 넘어갈까요?',
+                  )
+                )
+                  return
+                setPostStage('done')
+              }}
+            >
+              다음
             </button>
             {!job.hasParentVoice && (
-              <button className="btn ghost" onClick={() => setPostStage('done')}>
+              <button
+                className="btn ghost"
+                onClick={() => {
+                  if (
+                    voicePending &&
+                    !window.confirm('녹음을 등록하지 않고 건너뛰면 목소리가 저장되지 않아요. 건너뛸까요?')
+                  )
+                    return
+                  setPostStage('done')
+                }}
+              >
                 건너뛰기
               </button>
             )}
