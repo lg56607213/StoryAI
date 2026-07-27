@@ -42,9 +42,18 @@ public class Payment {
     @Column(nullable = false, unique = true, length = 50)
     private String orderNo;
 
-    /** 결제 금액(원, VAT 포함). 통지 금액과 일치해야 승인 처리한다. */
+    /** 결제 금액(원, VAT 포함, 쿠폰 할인 적용된 최종 금액). 통지 금액과 일치해야 승인 처리한다. */
     @Column(nullable = false)
     private int amount;
+
+    /** 할인 전 원래 금액(원). 쿠폰 적용 기록용. */
+    @Setter
+    private Integer originalAmount;
+
+    /** 적용된 쿠폰 코드(없으면 null). */
+    @Setter
+    @Column(length = 40)
+    private String couponCode;
 
     /** 결제수단(PAYMETHOD) — CARD/CARDK 등. */
     @Column(length = 20)

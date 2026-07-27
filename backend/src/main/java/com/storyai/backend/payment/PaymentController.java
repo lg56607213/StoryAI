@@ -39,11 +39,29 @@ public class PaymentController {
                 "ready", paymentService.isReady());    // 실제 결제 가능(CPID 설정됨)
     }
 
-    /** 결제창을 열기 위한 파라미터를 발급한다(금액은 서버에서 확정). */
+    /** 결제창을 열기 위한 파라미터를 발급한다(금액은 서버에서 확정, 쿠폰 적용). */
     @PostMapping("/kiwoom/prepare/{id}")
     public Map<String, Object> prepare(@PathVariable Long id,
-                                       @RequestParam(name = "type", defaultValue = "M") String type) {
-        return paymentService.prepare(id, type);
+                                       @RequestParam(name = "type", defaultValue = "M") String type,
+                                       @RequestParam(name = "coupon", required = false) String coupon) {
+        return paymentService.prepare(id, type, coupon);
+    }
+
+    /** 쿠폰 확인: 이 주문에 쿠폰 적용 시 할인율·최종금액을 미리 알려준다. */
+    @PostMapping("/coupon/check/{id}")
+    public Map<String, Object> checkCoupon(@PathVariable Long id, @RequestBody CouponRequest req) {
+        return paymentService.checkCoupon(id, req == null ? null : req.code());
+    }
+
+    /** 무료 주문(0원): 100% 쿠폰 등으로 최종 0원일 때만 결제 없이 전체 생성 시작. */
+    @PostMapping("/free/{id}")
+    public com.storyai.backend.job.dto.VideoJobResponse free(@PathVariable Long id,
+                                                             @RequestBody CouponRequest req) {
+        return com.storyai.backend.job.dto.VideoJobResponse.from(
+                paymentService.freeOrder(id, req == null ? null : req.code()));
+    }
+
+    public record CouponRequest(String code) {
     }
 
     /**
@@ -65,15 +83,6 @@ public class PaymentController {
                 ? "<html><body><RESULT>SUCCESS</RESULT></body></html>"
                 : "<html><body><RESULT>FAIL</RESULT></body></html>";
         return ResponseEntity.ok(body);
-    }
-
-    /**
-     * 결제 없이 전체 생성 시작(출시 전 내부 테스트/심사용). 실결제(CPID 설정) 상태에서는 거부된다.
-     * 프론트가 이후 목소리 등록·완료 안내 화면으로 넘어갈 수 있도록 갱신된 주문을 반환한다.
-     */
-    @PostMapping("/kiwoom/proceed-unpaid/{id}")
-    public com.storyai.backend.job.dto.VideoJobResponse proceedUnpaid(@PathVariable Long id) {
-        return com.storyai.backend.job.dto.VideoJobResponse.from(paymentService.proceedWithoutPayment(id));
     }
 
     /** 승인 취소. amount 미지정 시 전액 취소. */

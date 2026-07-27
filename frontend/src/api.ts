@@ -177,20 +177,43 @@ export interface PayPrepare {
 export function getPayStatus(): Promise<PayStatus> {
   return fetch(apiUrl('/api/pay/status'), withCreds).then((r) => handle<PayStatus>(r))
 }
-/** 결제창 파라미터 발급(금액은 서버에서 확정). type: 'M'(모바일)|'P'(PC). */
-export function preparePayment(id: number, type: 'M' | 'P' = 'M'): Promise<PayPrepare> {
-  return fetch(apiUrl(`/api/pay/kiwoom/prepare/${id}?type=${type}`), {
+/** 결제창 파라미터 발급(금액은 서버에서 확정, 쿠폰 적용). type: 'M'(모바일)|'P'(PC). */
+export function preparePayment(
+  id: number,
+  type: 'M' | 'P' = 'M',
+  coupon?: string,
+): Promise<PayPrepare> {
+  const q = coupon ? `?type=${type}&coupon=${encodeURIComponent(coupon)}` : `?type=${type}`
+  return fetch(apiUrl(`/api/pay/kiwoom/prepare/${id}${q}`), {
     method: 'POST',
     ...withCreds,
   }).then((r) => handle<PayPrepare>(r))
 }
-/**
- * 결제 없이 전체 생성 시작(출시 전 내부 테스트/심사용). 실결제(CPID 설정) 상태에서는 서버가 거부한다.
- * 갱신된 주문(전체 생성 시작 상태)을 반환한다.
- */
-export function proceedUnpaid(id: number): Promise<JobResponse> {
-  return fetch(apiUrl(`/api/pay/kiwoom/proceed-unpaid/${id}`), {
+
+/** 쿠폰 확인 결과. */
+export interface CouponCheck {
+  valid: boolean
+  originalAmount: number
+  finalAmount: number
+  discountPercent: number
+  free?: boolean
+  message: string
+}
+/** 쿠폰 적용 시 할인율·최종금액 미리 확인. */
+export function checkCoupon(id: number, code: string): Promise<CouponCheck> {
+  return fetch(apiUrl(`/api/pay/coupon/check/${id}`), {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+    ...withCreds,
+  }).then((r) => handle<CouponCheck>(r))
+}
+/** 무료 주문(0원): 100% 쿠폰 등으로 최종 0원일 때 결제 없이 전체 생성 시작. */
+export function payFree(id: number, code: string): Promise<JobResponse> {
+  return fetch(apiUrl(`/api/pay/free/${id}`), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
     ...withCreds,
   }).then((r) => handle<JobResponse>(r))
 }

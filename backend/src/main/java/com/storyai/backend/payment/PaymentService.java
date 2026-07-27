@@ -35,6 +35,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final VideoJobRepository videoJobRepository;
     private final WorkflowEngine workflowEngine;
+    private final CouponService couponService;
 
     /** 결제 성공 후 고객이 돌아올 프론트 주소(성공/실패/취소). */
     @Value("${storyai.frontend-url:http://localhost:5173}")
@@ -55,15 +56,21 @@ public class PaymentService {
      * 반환 맵: linkEncUrl + 결제창에 POST할 필드들.
      */
     @Transactional
-    public Map<String, Object> prepare(Long jobId, String type) {
+    public Map<String, Object> prepare(Long jobId, String type, String couponCode) {
         VideoJob job = videoJobRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다: " + jobId));
         if (job.getOutputType() != OutputType.BOOK) {
             throw new IllegalArgumentException("책 주문만 결제할 수 있습니다.");
         }
-        Integer amount = Pricing.priceKrw(job);
-        if (amount == null || amount <= 0) {
+        Integer base = Pricing.priceKrw(job);
+        if (base == null || base <= 0) {
             throw new IllegalArgumentException("결제 금액을 계산할 수 없습니다. 구매 유형·페이지 수를 확인해 주세요.");
+        }
+        // 쿠폰 적용(있으면). 서버에서 다시 검증해 금액을 확정한다(클라이언트 신뢰 금지).
+        var coupon = couponService.validate(couponCode).orElse(null);
+        int amount = coupon != null ? coupon.applyTo(base) : base;
+        if (amount <= 0) {
+            throw new IllegalArgumentException("0원 주문은 결제창이 아니라 '무료로 받기'로 진행됩니다.");
         }
         if (!kiwoom.isConfigured()) {
             throw new IllegalStateException("결제가 아직 활성화되지 않았습니다. (PG 심사/설정 완료 후 가능)");
@@ -73,11 +80,13 @@ public class PaymentService {
         String payMethod = kiwoom.cardMethod();
         String reqType = "P".equalsIgnoreCase(type) ? "P" : "M"; // 기본 모바일
 
-        // 결제 레코드 생성(READY).
+        // 결제 레코드 생성(READY). amount=쿠폰 적용된 최종 금액.
         Payment payment = Payment.builder()
                 .videoJobId(jobId)
                 .orderNo(orderNo)
                 .amount(amount)
+                .originalAmount(base)
+                .couponCode(coupon != null ? coupon.getCode() : null)
                 .payMethod(payMethod)
                 .status(PaymentStatus.READY)
                 .build();
@@ -86,7 +95,7 @@ public class PaymentService {
         String enc = kiwoom.requestHash(payMethod, reqType, orderNo, amount);
 
         // 결제창(2단계) POST 필드. HOME/FAIL/CLOSE는 결제창에서 이동할 프론트 주소.
-        String base = frontendUrl.replaceAll("/+$", "");
+        String frontBase = frontendUrl.replaceAll("/+$", "");
         Map<String, Object> fields = new LinkedHashMap<>();
         fields.put("PAYMETHOD", payMethod);
         fields.put("TYPE", reqType);
@@ -101,9 +110,9 @@ public class PaymentService {
         fields.put("EMAIL", job.getDeliveryEmail() == null ? "" : job.getDeliveryEmail());
         fields.put("TAXFREECD", "00"); // 과세(우리 가격은 VAT 포함)
         fields.put("KIWOOM_ENC", enc);
-        fields.put("HOMEURL", base + "/pay/return?job=" + jobId);
-        fields.put("FAILURL", base + "/pay/fail?job=" + jobId);
-        fields.put("CLOSEURL", base + "/pay/cancel?job=" + jobId);
+        fields.put("HOMEURL", frontBase + "/pay/return?job=" + jobId);
+        fields.put("FAILURL", frontBase + "/pay/fail?job=" + jobId);
+        fields.put("CLOSEURL", frontBase + "/pay/cancel?job=" + jobId);
 
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("action", kiwoom.linkEncUrl());
@@ -146,6 +155,9 @@ public class PaymentService {
 
         payment.markPaid(daoutrx, params.get("AUTHNO"), params.get("CARDNAME"), params.get("CARDCODE"));
         paymentRepository.save(payment);
+        if (payment.getCouponCode() != null) {
+            couponService.redeem(payment.getCouponCode()); // 쿠폰 사용 횟수 반영
+        }
 
         // 결제 완료 → 전체 생성 시작(미리보기 이후 PAGE_ILLUSTRATION부터).
         VideoJob job = videoJobRepository.findById(payment.getVideoJobId()).orElse(null);
@@ -160,26 +172,75 @@ public class PaymentService {
     }
 
     /**
-     * 결제 없이 전체 생성을 시작한다(출시 전 내부 테스트/심사용).
-     * 실결제가 켜져 있으면(CPID 설정=ready) 반드시 결제를 거쳐야 하므로 거부한다.
+     * 쿠폰 확인: 이 주문에 쿠폰을 적용하면 할인율·최종금액이 얼마인지 알려준다(실제 적용은 결제/무료 시).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> checkCoupon(Long jobId, String code) {
+        VideoJob job = videoJobRepository.findById(jobId)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다: " + jobId));
+        int base = orZero(Pricing.priceKrw(job));
+        var coupon = couponService.validate(code).orElse(null);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("valid", coupon != null);
+        out.put("originalAmount", base);
+        if (coupon == null) {
+            out.put("discountPercent", 0);
+            out.put("finalAmount", base);
+            out.put("message", code == null || code.isBlank() ? "" : "사용할 수 없는 쿠폰이에요.");
+        } else {
+            int fin = coupon.applyTo(base);
+            out.put("discountPercent", coupon.getDiscountPercent());
+            out.put("finalAmount", fin);
+            out.put("free", fin <= 0);
+            out.put("message", coupon.getDiscountPercent() + "% 할인 적용!" + (fin <= 0 ? " (무료)" : ""));
+        }
+        return out;
+    }
+
+    /**
+     * 무료 주문(0원): 100% 쿠폰 등으로 최종 금액이 0원일 때만 결제 없이 전체 생성을 시작한다.
+     * 쿠폰이 없거나 0원이 아니면 거부한다.
      */
     @Transactional
-    public VideoJob proceedWithoutPayment(Long jobId) {
-        if (kiwoom.isConfigured()) {
-            throw new IllegalStateException("실결제가 활성화된 상태에서는 결제 없이 진행할 수 없습니다.");
-        }
+    public VideoJob freeOrder(Long jobId, String couponCode) {
         VideoJob job = videoJobRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다: " + jobId));
         if (job.getOutputType() != OutputType.BOOK) {
             throw new IllegalArgumentException("책 주문만 처리할 수 있습니다.");
         }
+        int base = orZero(Pricing.priceKrw(job));
+        var coupon = couponService.validate(couponCode)
+                .orElseThrow(() -> new IllegalArgumentException("사용할 수 없는 쿠폰이에요."));
+        int fin = coupon.applyTo(base);
+        if (fin > 0) {
+            throw new IllegalArgumentException("이 쿠폰은 전액 할인이 아니에요. 남은 금액은 결제가 필요합니다.");
+        }
+        // 무료 결제 레코드(PAID) 기록 + 쿠폰 사용 처리.
+        Payment payment = Payment.builder()
+                .videoJobId(jobId)
+                .orderNo("FREE" + jobId + "-" + shortStamp())
+                .amount(0)
+                .originalAmount(base)
+                .couponCode(coupon.getCode())
+                .payMethod("FREE")
+                .status(PaymentStatus.PAID)
+                .build();
+        payment.setPaidAt(java.time.LocalDateTime.now());
+        paymentRepository.save(payment);
+        couponService.redeem(coupon.getCode());
+
         if (job.getBookPhase() != BookPhase.FULL) {
+            job.setPaidAt(payment.getPaidAt());
             job.startFullGeneration(job.getPurchaseType(), job.getDeliveryEmail());
             videoJobRepository.save(job);
             workflowEngine.start(job.getId());
         }
         job.getStoryCharacters().size(); // 응답 매핑 전 lazy 컬렉션 초기화
         return job;
+    }
+
+    private int orZero(Integer v) {
+        return v == null ? 0 : v;
     }
 
     /** 승인 취소(전체 또는 부분). */

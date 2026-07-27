@@ -1348,6 +1348,14 @@ textarea.area {
 }
 .pay-agree input { margin-top: 3px; flex-shrink: 0; }
 .pay-btn { width: 100%; }
+/* 쿠폰 */
+.coupon-box { margin: 4px 0 14px; }
+.coupon-row { display: flex; gap: 8px; }
+.coupon-row .text { flex: 1; }
+.coupon-row .btn { white-space: nowrap; }
+.coupon-ok { color: #2f7d43; font-size: 13px; margin: 8px 0 0; }
+.coupon-off { color: #2f7d43; }
+.pay-strike { color: #b6a7b0; text-decoration: line-through; font-weight: 400; font-size: 14px; }
 .linklike {
   background: none;
   border: none;
