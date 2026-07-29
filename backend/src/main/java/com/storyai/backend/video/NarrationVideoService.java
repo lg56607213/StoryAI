@@ -125,6 +125,9 @@ public class NarrationVideoService {
             boolean parentVoice = job.getParentVoiceId() != null && !job.getParentVoiceId().isBlank();
             emailNotifier.sendVideoReady(job.getDeliveryEmail(), job.getGeneratedTitle(),
                     publicUrl(url), parentVoice);
+
+            // 영상 완성 후 복제 음성 삭제(일랩 슬롯 확보 + 개인정보 파기). 재생성 시엔 기본 목소리/재녹음.
+            cleanupParentVoice(job);
         } catch (Throwable e) {
             // Throwable까지: 메모리 부족(OutOfMemoryError) 등으로 죽어도 "만드는 중"에 갇히지 않고
             // 실패로 표시한다(사용자가 완성화면에서 다시 시도 가능).
@@ -137,6 +140,33 @@ public class NarrationVideoService {
                 // 저장까지 실패하면 로그만 남긴다.
             }
         }
+    }
+
+    /** 영상 완성 후 복제 음성 자동 삭제 여부(일랩 슬롯 확보·개인정보 파기). */
+    @Value("${storyai.video.delete-parent-voice-after:true}")
+    private boolean deleteParentVoiceAfter;
+
+    /**
+     * 영상 완성 후 복제된 부모 목소리를 삭제한다(일랩 커스텀 음성 슬롯은 소수라 재사용 필요 + 개인정보 파기).
+     * 삭제 후엔 parentVoiceId를 비워, 영상 재생성 시 기본 목소리로(또는 재녹음)로 진행되게 한다.
+     */
+    private void cleanupParentVoice(VideoJob job) {
+        if (!deleteParentVoiceAfter) {
+            return;
+        }
+        String pv = job.getParentVoiceId();
+        if (pv == null || pv.isBlank()) {
+            return;
+        }
+        try {
+            elevenLabs.deleteVoice(pv);
+            log.info("영상 완성 후 부모 목소리 삭제 job={} voice={}", job.getId(), pv);
+        } catch (Exception e) {
+            log.warn("부모 목소리 삭제 실패 job={}: {}", job.getId(), e.getMessage());
+        }
+        job.setParentVoiceId(null);
+        job.setParentVoiceConsent(false);
+        videoJobRepository.save(job);
     }
 
     /** 부모 목소리가 실제로 사용 가능한지 짧은 문장으로 시험 합성해 확인한다. */
