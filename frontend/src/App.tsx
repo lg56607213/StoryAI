@@ -51,6 +51,9 @@ const STEP_LABELS: Record<string, string> = {
   VIDEO_COMPOSITION: '영상 합성 중',
 }
 
+/** 카카오 로그인 노출 여부. 비즈앱 승인 전이라 일반 사용자는 실패하므로 잠시 숨김(승인되면 true). */
+const KAKAO_LOGIN_ENABLED = false
+
 /** 주제 "직접입력"을 나타내는 내부 값(백엔드 enum이 아니므로 전송 시 customTheme으로 변환). */
 const CUSTOM_THEME = '__CUSTOM__'
 
@@ -574,7 +577,9 @@ function App() {
           </header>
           <section className="card login-card">
             <p className="login-lead">로그인하고 우리 아이 동화를 만들어보세요</p>
-            <a className="btn login-kakao" href={loginUrl('kakao')}>카카오로 시작하기</a>
+            {KAKAO_LOGIN_ENABLED && (
+              <a className="btn login-kakao" href={loginUrl('kakao')}>카카오로 시작하기</a>
+            )}
             <a className="btn login-google" href={loginUrl('google')}>구글로 시작하기</a>
             <p className="muted small center">로그인하면 만든 동화를 내 계정에 안전하게 보관해요</p>
           </section>
