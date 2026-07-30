@@ -1474,3 +1474,5 @@ textarea.area {
   margin: 0 auto 14px;
   display: block;
 }
+
+.print-dl{display:flex;gap:6px;flex-wrap:wrap}

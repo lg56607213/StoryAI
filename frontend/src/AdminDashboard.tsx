@@ -8,6 +8,7 @@ import {
   getAdminStorage,
   cleanupAdminStorage,
   retryAdminJob,
+  downloadPrintPdf,
   type AdminStats,
   type AdminPurchase,
   type AdminUser,
@@ -27,6 +28,19 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
   const [retrying, setRetrying] = useState<number | null>(null)
   const [storage, setStorage] = useState<Record<string, unknown> | null>(null)
   const [cleaning, setCleaning] = useState(false)
+  const [dl, setDl] = useState<string | null>(null)
+
+  /** 인쇄용 PDF(내지 고화질 / A3 표지) 다운로드. */
+  async function onDownloadPrint(id: number, kind: 'interior' | 'cover') {
+    setDl(`${id}-${kind}`)
+    try {
+      await downloadPrintPdf(id, kind)
+    } catch (e) {
+      alert('다운로드 실패: ' + String((e as Error).message ?? e))
+    } finally {
+      setDl(null)
+    }
+  }
 
   async function refreshStorage() {
     try {
@@ -341,6 +355,7 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
                       <th>받을 이메일</th>
                       <th>배송지 (하드커버)</th>
                       <th>상태</th>
+                      <th>인쇄 PDF</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -371,6 +386,28 @@ export default function AdminDashboard({ onHome }: { onHome: () => void }) {
                         </td>
                         <td>
                           <span className={`status ${p.status}`}>{statusKo(p.status)}</span>
+                        </td>
+                        <td>
+                          <div className="print-dl">
+                            <button
+                              className="btn ghost small"
+                              disabled={dl === `${p.id}-interior`}
+                              title="내지 PDF (실물주문이면 고화질·재단여백·재단선 포함)"
+                              onClick={() => onDownloadPrint(p.id, 'interior')}
+                            >
+                              {dl === `${p.id}-interior` ? '…' : '📄 내지'}
+                            </button>
+                            {p.type === '하드커버' && (
+                              <button
+                                className="btn ghost small"
+                                disabled={dl === `${p.id}-cover`}
+                                title="A3 하드커버 감쌈 표지 PDF"
+                                onClick={() => onDownloadPrint(p.id, 'cover')}
+                              >
+                                {dl === `${p.id}-cover` ? '…' : '📕 표지'}
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

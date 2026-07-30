@@ -49,6 +49,41 @@ public class AdminController {
     private final com.storyai.backend.workflow.WorkflowEngine workflowEngine;
     private final com.storyai.backend.storage.StorageService localStorage;
     private final com.storyai.backend.storage.StorageCleanupService storageCleanupService;
+    private final com.storyai.backend.workflow.handler.PdfGenerationStepHandler pdfGenerationStepHandler;
+
+    /**
+     * 실물배송(하드커버) 인쇄용 내지 PDF 다운로드(관리자). 실물 주문이면 고화질·재단여백·재단선 포함.
+     * 프론트에서 인증 헤더로 fetch → blob 저장.
+     */
+    @GetMapping("/print/{id}/interior.pdf")
+    public org.springframework.http.ResponseEntity<byte[]> interiorPdf(
+            @org.springframework.web.bind.annotation.PathVariable Long id, Authentication auth) {
+        adminGuard.require(auth);
+        byte[] pdf = localStorage.readBookPdf(id);
+        if (pdf == null || pdf.length == 0) {
+            throw new IllegalArgumentException("내지 PDF가 아직 없습니다(전체 생성 완료 후 가능): " + id);
+        }
+        return pdfResponse(pdf, "interior-" + id + ".pdf");
+    }
+
+    /** A3 하드커버 감쌈 표지 PDF를 즉석 생성해 다운로드(관리자). */
+    @GetMapping("/print/{id}/cover.pdf")
+    public org.springframework.http.ResponseEntity<byte[]> coverPdf(
+            @org.springframework.web.bind.annotation.PathVariable Long id, Authentication auth) throws Exception {
+        adminGuard.require(auth);
+        VideoJob job = videoJobRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다: " + id));
+        byte[] pdf = pdfGenerationStepHandler.generateCoverPdf(job);
+        return pdfResponse(pdf, "cover-A3-" + id + ".pdf");
+    }
+
+    private org.springframework.http.ResponseEntity<byte[]> pdfResponse(byte[] pdf, String filename) {
+        org.springframework.http.HttpHeaders h = new org.springframework.http.HttpHeaders();
+        h.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+        h.setContentDisposition(org.springframework.http.ContentDisposition
+                .attachment().filename(filename).build());
+        return new org.springframework.http.ResponseEntity<>(pdf, h, org.springframework.http.HttpStatus.OK);
+    }
 
     /** 저장소 사용량 현황(관리자). */
     @GetMapping("/storage")

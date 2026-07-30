@@ -453,6 +453,24 @@ export function getAdminJobs(): Promise<AdminJob[]> {
   return fetch(apiUrl('/api/admin/jobs'), withCreds).then((r) => handle<AdminJob[]>(r))
 }
 
+/** 관리자: 인쇄용 PDF(내지 고화질 / A3 표지) 다운로드 — 인증 쿠키로 받아 blob 저장. */
+export async function downloadPrintPdf(id: number, kind: 'interior' | 'cover'): Promise<void> {
+  const res = await fetch(apiUrl(`/api/admin/print/${id}/${kind}.pdf`), withCreds)
+  if (!res.ok) {
+    const msg = await res.text().catch(() => '')
+    throw new Error(msg || `다운로드 실패 (${res.status})`)
+  }
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = kind === 'cover' ? `표지A3-${id}.pdf` : `내지-${id}.pdf`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
 /** 소셜 로그인 시작 주소(브라우저 전체 이동용). */
 export function loginUrl(provider: 'google' | 'kakao'): string {
   return apiUrl(`/oauth2/authorization/${provider}`)
