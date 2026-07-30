@@ -123,12 +123,12 @@ public final class ImagePrompts {
                         + "Frame them as a close or medium shot so faces and feelings read clearly. "
                         + "Do NOT draw characters standing straight and still facing the camera. ";
 
-        return styleLine(style) + " Create ONE wide children's storybook illustration for this scene: "
+        return styleLine(style) + " Create ONE tall (portrait) children's storybook illustration for this scene: "
                 + scene + ". " + refInfo + peopleRule + expressive
                 + "Keep each character's clothing EXACTLY the same as in their reference image — do not change, swap, "
                 + "or invent outfits between pages." + ANATOMY + " "
                 + "Full scene with background, warm and tender mood. "
-                + "Fill the entire wide frame edge-to-edge with the scene (full background, no empty margins). "
+                + "Fill the entire tall portrait frame edge-to-edge with the scene (full background, no empty margins). "
                 + "IMPORTANT: pure illustration only — absolutely NO speech bubbles, NO speech balloons, NO dialogue "
                 + "bubbles, NO comic panels or borders, NO captions, NO text, words, letters or watermark anywhere "
                 + "in the image. Show emotion and dialogue only through faces, body language and gestures.";

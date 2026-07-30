@@ -59,9 +59,10 @@ public class GeminiImageGenerator implements ImageGenerator {
             refs = new ArrayList<>(characterSheets);
             refs.add(companionSheet);
         }
+        // 세로형 책(185×255)에 맞게 세로 비율(3:4)로 생성 → 세로 페이지에 크롭 없이 꽉 찬다.
         String prompt = ImagePrompts.illustrate(
                 scene, n, companionSheet != null ? companionDesc : null, style);
-        // 가로형 책에 맞춰 landscape(3:2)로 생성 → 페이지를 여백 없이 꽉 채움.
-        return gemini.generateImage(prompt, refs, "3:2");
+        // 세로형 책(185×255, 3:4에 가까움)에 맞춰 세로 비율로 생성 → 세로 페이지에 크롭 없이 꽉 참.
+        return gemini.generateImage(prompt, refs, "3:4");
     }
 }

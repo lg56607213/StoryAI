@@ -44,7 +44,10 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class PdfGenerationStepHandler implements WorkflowStepHandler {
 
-    private static final int W = 2100, H = 1485, M = 100, GAP = 70;
+    // 세로형 책: 내지 재단 사이즈 185×255mm(비율 0.7255). 6px/mm → 표준 152DPI, 실물(2배) 304DPI.
+    private static final int W = 1110, H = 1530, M = 100, GAP = 70;
+    /** 내지 재단 사이즈(mm) — PDF 페이지(포인트) 계산용. */
+    private static final float PAGE_W_MM = 185f, PAGE_H_MM = 255f;
     private static final Color CREAM = new Color(251, 246, 239);
     private static final Color PANEL = new Color(255, 252, 247);
     private static final Color INK = new Color(90, 74, 84);
@@ -135,13 +138,13 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         Graphics2D g = graphics(bmp);
         // 표지 = 장면 풀블리드 + 하단 제목 밴드 (서점 책 표지 느낌).
         drawImageFullBleed(g, image(imgBytes), W, H);
-        int bandM = 90, bandH = 430, by = H - bandH - 90;
+        int bandM = 70, bandH = 360, by = H - bandH - 70;
         g.setColor(new Color(0, 0, 0, 30));
-        g.fill(new RoundRectangle2D.Float(bandM + 6, by + 10, W - 2 * bandM, bandH, 70, 70));
+        g.fill(new RoundRectangle2D.Float(bandM + 5, by + 8, W - 2 * bandM, bandH, 56, 56));
         g.setColor(new Color(255, 252, 247, 236));
-        g.fill(new RoundRectangle2D.Float(bandM, by, W - 2 * bandM, bandH, 70, 70));
-        drawParagraph(g, title, jua.deriveFont(92f), ACCENT, bandM + 80, by + 66, W - 2 * bandM - 160, 236);
-        drawParagraph(g, BYLINE, gaegu.deriveFont(42f), SUBTLE, bandM + 80, by + bandH - 128, W - 2 * bandM - 160, 88);
+        g.fill(new RoundRectangle2D.Float(bandM, by, W - 2 * bandM, bandH, 56, 56));
+        drawParagraph(g, title, jua.deriveFont(60f), ACCENT, bandM + 55, by + 50, W - 2 * bandM - 110, 190);
+        drawParagraph(g, BYLINE, gaegu.deriveFont(28f), SUBTLE, bandM + 55, by + bandH - 90, W - 2 * bandM - 110, 60);
         g.dispose();
         return bmp;
     }
@@ -149,23 +152,22 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
     private BufferedImage composeDedication(String dedication, byte[] photoBytes, Font gaegu, Font jua) {
         BufferedImage bmp = canvas();
         Graphics2D g = graphics(bmp);
-        scatter(g, 80, 80, W - 160, H - 160, 14, 11);
+        scatter(g, 60, 60, W - 120, H - 120, 12, 11);
         BufferedImage photo = image(photoBytes);
         String msg = (dedication == null || dedication.isBlank()) ? "" : dedication;
         if (photo != null) {
-            // 왼쪽: 흰 액자에 실제 가족 사진(AI 변환 없이 원본 그대로).
-            int fw = 900, fh = 1060, fx = 175, fy = (H - fh) / 2;
+            // 세로형: 위=흰 액자 사진(원본 그대로), 아래=하트+헌정 메시지.
+            int fw = 720, fh = 880, fx = (W - fw) / 2, fy = 130;
             drawPhotoFrame(g, photo, fx, fy, fw, fh);
-            // 오른쪽: 하트 + 헌정 메시지.
-            int tx = fx + fw + 110, tw = W - tx - 150;
-            drawParagraph(g, "♡", jua.deriveFont(84f), ACCENT, tx, H / 2 - 340, tw, 120);
+            int ty = fy + fh + 60;
+            drawParagraph(g, "♡", jua.deriveFont(64f), ACCENT, W / 2 - 100, ty, 200, 90);
             if (!msg.isEmpty()) {
-                drawParagraph(g, msg, gaegu.deriveFont(54f), INK, tx, H / 2 - 170, tw, 460);
+                drawParagraph(g, msg, gaegu.deriveFont(42f), INK, 120, ty + 110, W - 240, H - ty - 200);
             }
         } else {
-            // 사진 없으면 기존처럼 하트+메시지 중앙 배치.
-            drawParagraph(g, "♡", jua.deriveFont(90f), ACCENT, W / 2 - 150, H / 2 - 320, 300, 130);
-            drawParagraph(g, msg, gaegu.deriveFont(58f), INK, W / 2 - 760, H / 2 - 150, 1520, 420);
+            // 사진 없으면 하트+메시지 중앙 배치.
+            drawParagraph(g, "♡", jua.deriveFont(72f), ACCENT, W / 2 - 110, H / 2 - 260, 220, 110);
+            drawParagraph(g, msg, gaegu.deriveFont(46f), INK, 120, H / 2 - 110, W - 240, 360);
         }
         g.dispose();
         return bmp;
@@ -186,8 +188,8 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         Graphics2D g = graphics(bmp);
         BufferedImage img = image(localStorage.loadByUrl(page.getImageUrl()));
         String text = page.getText() != null ? page.getText() : "";
-        Font body = gaegu.deriveFont(60f);
-        Font pn = jua.deriveFont(30f);
+        Font body = gaegu.deriveFont(46f);
+        Font pn = jua.deriveFont(24f);
 
         // 그림을 페이지 전체에 꽉 채우고(풀블리드), 글은 박스 없이 그림 위에 자연스럽게 얹는다.
         drawImageFullBleed(g, img, W, H);
@@ -205,7 +207,7 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
      * 어떤 배경에서도 잘 읽히도록 은은한 그라데이션 스크림 + 흰 글씨 + 부드러운 그림자를 쓴다.
      */
     private void drawStoryText(Graphics2D g, String text, int pageNum, boolean bottom, Font body, Font pn) {
-        int margin = 130;
+        int margin = 90; // 좌우 안전여백(≈15mm) — 제본쪽 글자 잘림 방지
         int maxW = W - 2 * margin;
         g.setFont(body);
         FontMetrics fm = g.getFontMetrics();
@@ -439,10 +441,12 @@ public class PdfGenerationStepHandler implements WorkflowStepHandler {
         // 실물책(고해상도)이면 압축을 줄여 인쇄 품질 확보, 일반 PDF는 파일 크기를 위해 0.85.
         float quality = Math.max(1, pageScale.get()) > 1 ? 0.95f : 0.85f;
         PDImageXObject xo = JPEGFactory.createFromImage(doc, page, quality);
-        PDPage p = new PDPage(new PDRectangle(842, 595)); // A4 가로
+        // 세로형 재단 사이즈 185×255mm를 포인트로(1mm=72/25.4pt).
+        float ptW = PAGE_W_MM * 72f / 25.4f, ptH = PAGE_H_MM * 72f / 25.4f;
+        PDPage p = new PDPage(new PDRectangle(ptW, ptH));
         doc.addPage(p);
         try (PDPageContentStream cs = new PDPageContentStream(doc, p)) {
-            cs.drawImage(xo, 0, 0, 842, 595);
+            cs.drawImage(xo, 0, 0, ptW, ptH);
         }
     }
 }
