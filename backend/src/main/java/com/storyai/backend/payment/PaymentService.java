@@ -101,7 +101,7 @@ public class PaymentService {
         fields.put("TYPE", reqType);
         fields.put("CPID", kiwoom.cpid());
         fields.put("ORDERNO", orderNo);
-        fields.put("PRODUCTTYPE", job.isPhysicalBookRequested() ? "2" : "1"); // 2:실물 1:디지털
+        fields.put("PRODUCTTYPE", kiwoom.productType(job.isPhysicalBookRequested())); // 1:디지털 2:실물(상점 등록과 일치해야 함)
         fields.put("AMOUNT", String.valueOf(amount));
         fields.put("PRODUCTNAME", productName(job));
         fields.put("PRODUCTCODE", job.getPurchaseType() == null ? "BOOK" : job.getPurchaseType());

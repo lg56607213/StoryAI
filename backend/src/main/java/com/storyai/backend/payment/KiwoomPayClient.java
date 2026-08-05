@@ -32,6 +32,7 @@ public class KiwoomPayClient {
     private final String cpid;
     private final String cancelAuthKey;
     private final String cardMethod;
+    private final String productTypeOverride;
     private final String apiBase;
     private final ObjectMapper mapper;
     private final HttpClient http = HttpClient.newBuilder()
@@ -43,12 +44,14 @@ public class KiwoomPayClient {
             @Value("${storyai.payment.kiwoom.cpid:}") String cpid,
             @Value("${storyai.payment.kiwoom.cancel-auth-key:}") String cancelAuthKey,
             @Value("${storyai.payment.kiwoom.card-method:CARD}") String cardMethod,
+            @Value("${storyai.payment.kiwoom.product-type:}") String productTypeOverride,
             @Value("${storyai.payment.kiwoom.api-base:https://apitest.kiwoompay.co.kr}") String apiBase,
             ObjectMapper mapper) {
         this.provider = provider;
         this.cpid = cpid;
         this.cancelAuthKey = cancelAuthKey;
         this.cardMethod = cardMethod;
+        this.productTypeOverride = productTypeOverride;
         this.apiBase = apiBase.replaceAll("/+$", "");
         this.mapper = mapper;
     }
@@ -75,6 +78,18 @@ public class KiwoomPayClient {
 
     public String cardMethod() {
         return cardMethod;
+    }
+
+    /**
+     * 상품구분(1:디지털, 2:실물). 상점에 등록된 구분과 일치해야 함(불일치 시 9102 오류).
+     * KIWOOM_PRODUCT_TYPE 환경변수가 지정되면 그 값으로 고정(심사/단일구분 테스트 상점용),
+     * 없으면 주문 유형(실물=2/디지털=1)에 따라 자동.
+     */
+    public String productType(boolean physical) {
+        if (productTypeOverride != null && !productTypeOverride.isBlank()) {
+            return productTypeOverride.trim();
+        }
+        return physical ? "2" : "1";
     }
 
     public String linkEncUrl() {

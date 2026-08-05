@@ -91,6 +91,9 @@ storyai:
       cancel-auth-key: ${KIWOOM_CANCEL_AUTH_KEY:}   # 취소 API용 결제연동키(Authorization)
       # 신용카드 결제수단: CARD(신용카드D) 또는 CARDK(신용카드K). 계약에 맞춰 지정.
       card-method: ${KIWOOM_CARD_METHOD:CARD}
+      # 상품구분(1:디지털, 2:실물) 강제값. 상점 등록 구분과 달라 9102 나면 여기서 고정.
+      # 비우면 주문 유형(실물=2/디지털=1)에 따라 자동. 심사/단일구분 테스트 상점은 보통 1로 고정.
+      product-type: ${KIWOOM_PRODUCT_TYPE:}
       # 개발서버 apitest / 운영서버 api. 심사·테스트는 개발서버로.
       api-base: ${KIWOOM_API_BASE:https://apitest.kiwoompay.co.kr}
   # 낭독 영상(mp4) 합성. ffmpeg는 배포 이미지(Dockerfile)에 설치돼 있어야 함.
