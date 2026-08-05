@@ -229,6 +229,16 @@ function App() {
     if (m) {
       const kind = m[1] as 'return' | 'fail' | 'cancel'
       const jobId = Number(new URLSearchParams(window.location.search).get('job'))
+      // PC 결제 팝업(TYPE=P) 안에서 돌아온 경우: 부모창에 결과를 알리고 팝업을 닫는다.
+      if (window.opener && window.opener !== window) {
+        try {
+          window.opener.postMessage({ __kiwoompay: true, kind, jobId }, window.location.origin)
+        } catch {
+          // 무시
+        }
+        window.close()
+        return
+      }
       setPayLanding(kind)
       if (jobId) {
         getProject(jobId)
@@ -245,6 +255,26 @@ function App() {
       // 주소창을 정리해 새로고침 시 배너가 반복되지 않게 한다.
       window.history.replaceState(null, '', '/')
     }
+  }, [])
+
+  // PC 결제 팝업(TYPE=P)에서 결제 완료/취소 후 보내온 결과 메시지 처리(부모창).
+  useEffect(() => {
+    function onMsg(e: MessageEvent) {
+      if (e.origin !== window.location.origin) return
+      const d = e.data as { __kiwoompay?: boolean; kind?: 'return' | 'fail' | 'cancel'; jobId?: number }
+      if (!d || !d.__kiwoompay || !d.kind) return
+      setPayLanding(d.kind)
+      if (d.jobId) {
+        getProject(d.jobId)
+          .then((j) => {
+            if (d.kind === 'return') enterPostFlow(j)
+            else setJob(j)
+          })
+          .catch(() => {})
+      }
+    }
+    window.addEventListener('message', onMsg)
+    return () => window.removeEventListener('message', onMsg)
   }, [])
 
   // 스타일 샘플이 아직 생성 중이면(첫 방문 시 백그라운드 생성) 준비될 때까지 잠깐씩 다시 불러온다.

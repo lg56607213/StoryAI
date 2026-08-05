@@ -58,16 +58,32 @@ export default function PaymentCheckout({
   }
 
   // 유료 결제 → 키움페이 결제창으로 폼 전송(쿠폰 적용된 금액).
+  // PC는 팝업(TYPE=P)에서 열어야 카드사 인증창(비씨 ISP/페이북·KB Pay·하나 큐원페이)이 뜬다.
+  // 모바일은 현재창(TYPE=M)으로 이동. 팝업은 반드시 클릭 제스처 안에서 먼저 열어야 팝업차단을 피한다.
   async function onPay() {
     if (!requireAgree()) return
     setError(null)
     setBusy(true)
+
+    const isMobile = /Android|iPhone|iPad|iPod|IEMobile|Mobile/i.test(navigator.userAgent)
+    const payType: 'M' | 'P' = isMobile ? 'M' : 'P'
+    let payWin: Window | null = null
+    if (payType === 'P') {
+      payWin = window.open('', 'KIWOOMPAY', 'width=468,height=750,scrollbars=yes,resizable=yes')
+      if (!payWin) {
+        setError('결제 팝업이 차단되었어요. 브라우저의 팝업 차단을 해제한 뒤 다시 시도해 주세요.')
+        setBusy(false)
+        return
+      }
+    }
+
     try {
-      const { action, fields } = await preparePayment(job.id, 'M', coupon?.valid ? couponInput.trim() : undefined)
+      const { action, fields } = await preparePayment(job.id, payType, coupon?.valid ? couponInput.trim() : undefined)
       const form = document.createElement('form')
       form.method = 'POST'
       form.action = action
       form.acceptCharset = 'UTF-8'
+      form.target = payType === 'P' ? 'KIWOOMPAY' : '_self' // P: 팝업창으로 / M: 현재창으로
       Object.entries(fields).forEach(([k, v]) => {
         const input = document.createElement('input')
         input.type = 'hidden'
@@ -77,7 +93,13 @@ export default function PaymentCheckout({
       })
       document.body.appendChild(form)
       form.submit()
+      if (payType === 'P') {
+        // 팝업으로 보냈으니 현재 화면은 다시 조작 가능(결제 완료는 팝업→부모창 메시지로 처리).
+        form.remove()
+        setBusy(false)
+      }
     } catch (e) {
+      if (payWin) payWin.close()
       setError(String((e as Error).message ?? e))
       setBusy(false)
     }
