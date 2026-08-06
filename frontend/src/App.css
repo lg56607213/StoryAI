@@ -1476,3 +1476,10 @@ textarea.area {
 }
 
 .print-dl{display:flex;gap:6px;flex-wrap:wrap}
+
+/* 테스트 ID/PW 로그인 폼(심사·데모용) */
+.login-divider{display:flex;align-items:center;gap:10px;color:#aaa;font-size:13px;margin:14px 0}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:#e5e0e6}
+.test-login{display:flex;flex-direction:column;gap:8px;text-align:left}
+.test-login-title{font-size:13px;color:#8a7f8a;margin-bottom:2px}
+.test-login .text{width:100%}

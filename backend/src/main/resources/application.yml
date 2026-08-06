@@ -96,6 +96,13 @@ storyai:
       product-type: ${KIWOOM_PRODUCT_TYPE:}
       # 개발서버 apitest / 운영서버 api. 심사·테스트는 개발서버로.
       api-base: ${KIWOOM_API_BASE:https://apitest.kiwoompay.co.kr}
+  # 테스트 ID/PW 로그인(카드사 심사·데모용). ID·PW 둘 다 설정해야 활성화. 미설정이면 구글 로그인만.
+  auth:
+    test:
+      username: ${TEST_LOGIN_ID:}
+      password: ${TEST_LOGIN_PW:}
+      email: ${TEST_LOGIN_EMAIL:tester@todayhero.co.kr}
+      name: ${TEST_LOGIN_NAME:심사 테스터}
   # 낭독 영상(mp4) 합성. ffmpeg는 배포 이미지(Dockerfile)에 설치돼 있어야 함.
   video:
     ffmpeg-path: ${FFMPEG_PATH:ffmpeg}

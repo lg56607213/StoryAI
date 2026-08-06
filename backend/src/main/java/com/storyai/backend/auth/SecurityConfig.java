@@ -29,6 +29,12 @@ public class SecurityConfig {
     @Value("${storyai.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
+    /** 세션 기반 SecurityContext 저장소 — 테스트 ID/PW 로그인이 세션에 인증을 저장할 때 사용. */
+    @Bean
+    public org.springframework.security.web.context.HttpSessionSecurityContextRepository securityContextRepository() {
+        return new org.springframework.security.web.context.HttpSessionSecurityContextRepository();
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
@@ -39,6 +45,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .securityContext(sc -> sc.securityContextRepository(securityContextRepository()))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                 .logout(logout -> logout
                         .logoutUrl("/api/logout")

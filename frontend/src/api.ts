@@ -290,6 +290,7 @@ export function confirmProject(
 export interface Me {
   authenticated: boolean
   loginEnabled?: boolean
+  testLoginEnabled?: boolean
   isAdmin?: boolean
   provider?: string
   name?: string | null
@@ -298,6 +299,26 @@ export interface Me {
 
 export function getMe(): Promise<Me> {
   return fetch(apiUrl('/api/me'), withCreds).then((r) => handle<Me>(r))
+}
+
+/** 테스트 ID/PW 로그인(카드사 심사·데모용). 성공 시 세션 쿠키가 설정됨. */
+export async function testLogin(username: string, password: string): Promise<void> {
+  const res = await fetch(apiUrl('/api/auth/login'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+    ...withCreds,
+  })
+  if (!res.ok) {
+    let msg = '로그인에 실패했어요.'
+    try {
+      const j = await res.json()
+      if (j?.error) msg = j.error
+    } catch {
+      // 무시
+    }
+    throw new Error(msg)
+  }
 }
 
 export function logout(): Promise<void> {

@@ -8,6 +8,7 @@ import OutlineReview from './OutlineReview'
 import ParentVoiceRecorder from './ParentVoiceRecorder'
 import PaymentCheckout from './PaymentCheckout'
 import CompletionScreen from './CompletionScreen'
+import TestLoginForm from './TestLoginForm'
 import {
   apiUrl,
   confirmProject,
@@ -594,7 +595,7 @@ function App() {
   }
 
   // (여기부터는 view === 'create') 로그인 안 했으면 → 로그인 화면.
-  if (!me.authenticated && me.loginEnabled) {
+  if (!me.authenticated && (me.loginEnabled || me.testLoginEnabled)) {
     return (
       <main className="app">
         <div className="login-bar">
@@ -607,10 +608,20 @@ function App() {
           </header>
           <section className="card login-card">
             <p className="login-lead">로그인하고 우리 아이 동화를 만들어보세요</p>
-            {KAKAO_LOGIN_ENABLED && (
-              <a className="btn login-kakao" href={loginUrl('kakao')}>카카오로 시작하기</a>
+            {me.loginEnabled && (
+              <>
+                {KAKAO_LOGIN_ENABLED && (
+                  <a className="btn login-kakao" href={loginUrl('kakao')}>카카오로 시작하기</a>
+                )}
+                <a className="btn login-google" href={loginUrl('google')}>구글로 시작하기</a>
+              </>
             )}
-            <a className="btn login-google" href={loginUrl('google')}>구글로 시작하기</a>
+            {me.testLoginEnabled && (
+              <>
+                {me.loginEnabled && <div className="login-divider">또는</div>}
+                <TestLoginForm onSuccess={() => getMe().then(setMe).catch(() => {})} />
+              </>
+            )}
             <p className="muted small center">로그인하면 만든 동화를 내 계정에 안전하게 보관해요</p>
           </section>
         </div>
